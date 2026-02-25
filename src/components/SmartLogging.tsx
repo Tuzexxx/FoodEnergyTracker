@@ -33,7 +33,8 @@ const SmartLogging = () => {
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isProcessing) {
@@ -179,25 +180,43 @@ const SmartLogging = () => {
                     />
                 </div>
 
+                {/* Native Camera Capture Input */}
                 <input
                     type="file"
                     accept="image/*"
                     capture="environment"
                     className="hidden"
-                    ref={fileInputRef}
+                    ref={cameraInputRef}
                     onChange={handleImageUpload}
                 />
 
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-3 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-xl hover:bg-black/5 active:scale-95 flex items-center gap-1"
-                    disabled={isProcessing}
-                    title="Camera or Image Upload"
-                >
-                    <Camera size={20} strokeWidth={1.5} />
-                    <span className="opacity-30 text-xs">/</span>
-                    <ImageIcon size={20} strokeWidth={1.5} />
-                </button>
+                {/* Photo Gallery Selection Input */}
+                <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={galleryInputRef}
+                    onChange={handleImageUpload}
+                />
+
+                <div className="flex bg-black/5 rounded-xl mr-2 p-1">
+                    <button
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="p-2 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-lg hover:bg-black/5 active:scale-95"
+                        disabled={isProcessing}
+                        title="Take Photo"
+                    >
+                        <Camera size={20} strokeWidth={1.5} />
+                    </button>
+                    <button
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="p-2 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-lg hover:bg-black/5 active:scale-95"
+                        disabled={isProcessing}
+                        title="Upload from Gallery"
+                    >
+                        <ImageIcon size={20} strokeWidth={1.5} />
+                    </button>
+                </div>
 
                 <input
                     type="text"
