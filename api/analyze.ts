@@ -19,8 +19,9 @@ Always output a strict JSON object. Do not output anything else.
 
 RULES:
 1. If the food entry (text or image) is clear and has a plausible consumed quantity, estimate the macros and return a 'success' object.
-2. CRITICAL: If an image is provided but the exact portion consumed is ambiguous (e.g., a picture of a whole pizza, a large spread of food, or a generic bowl of pasta without scale), you MUST ask for clarification on how much was actually consumed.
-3. If the text entry lacks quantity (e.g., just "chips" or "salad"), you MUST ask for clarification.
+2. CRITICAL - PORTION AMBIGUITY: If an image is provided but the exact portion consumed is ambiguous (e.g., a picture of a whole pizza, a large spread of food, or a generic bowl of pasta without scale), you MUST ask for clarification on how much was actually consumed.
+3. CRITICAL - NUTRITION LABELS: If the image is a picture of ingredients or a nutrition label per 100g, but it is unlikely the user ate exactly 100g (or the entire package), you MUST ask for clarification on the precise mass/quantity consumed.
+4. If the text entry lacks quantity (e.g., just "chips" or "salad"), you MUST ask for clarification.
 
 SUCCESS FORMAT:
 {
@@ -37,8 +38,8 @@ SUCCESS FORMAT:
 CLARIFICATION FORMAT:
 {
   "type": "clarification",
-  "question": "<Short brutalist question, e.g., 'Image shows full pizza. Quantify portion consumed.'>",
-  "options": ["<Option 1 (e.g., 2 Slices)>", "<Option 2 (e.g., Half)>", "<Option 3 (e.g., Whole)>"]
+  "question": "<Short brutalist question, e.g., 'Label shows data per 100g. Quantify mass consumed.' or 'Image shows full pizza. Quantify portion consumed.'>",
+  "options": ["<Option 1 (e.g., 50g)>", "<Option 2 (e.g., 100g)>", "<Option 3 (e.g., 200g)>"]
 }`;
 
         const parts: any[] = [];
