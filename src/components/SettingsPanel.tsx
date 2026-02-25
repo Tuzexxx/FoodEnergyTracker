@@ -6,6 +6,8 @@ import { X, Save, RefreshCw } from 'lucide-react';
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const { profile, resetAll, calibrateUser, resetDaily } = useStore();
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
+    const [height, setHeight] = useState(profile?.height?.toString() || '');
+    const [age, setAge] = useState(profile?.age?.toString() || '');
     const [goal, setGoal] = useState(profile?.goal || 'RECOMP (Maintain/Muscle)');
 
     const panelRef = useRef(null);
@@ -29,15 +31,25 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const handleSave = () => {
         if (!profile) return;
 
-        let multiplier = 24;
-        if (goal.includes('SHRED')) multiplier = 20;
-        if (goal.includes('TITAN')) multiplier = 28;
+        let calorieMultiplier = 24;
+        let proteinMultiplier = 1.8;
 
-        const targetKcal = Math.round(Number(weight) * multiplier);
-        const targetProtein = Math.round(Number(weight) * 2.2);
+        if (goal.includes('SKINNY')) {
+            calorieMultiplier = 18;
+            proteinMultiplier = 2.2;
+        } else if (goal.includes('SHRED')) {
+            calorieMultiplier = 20;
+            proteinMultiplier = 2.0;
+        } else if (goal.includes('TITAN')) {
+            calorieMultiplier = 28;
+            proteinMultiplier = 1.6;
+        }
+
+        const targetKcal = Math.round(Number(weight) * calorieMultiplier);
+        const targetProtein = Math.round(Number(weight) * proteinMultiplier);
 
         calibrateUser(
-            { ...profile, weight: Number(weight), goal },
+            { ...profile, weight: Number(weight), height: Number(height), age: Number(age), goal },
             targetKcal,
             targetProtein
         );
@@ -61,7 +73,28 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                     </button>
                 </div>
 
-                <div className="p-6 flex flex-col gap-8 flex-1 overflow-y-auto">
+                <div className="p-6 flex flex-col gap-6 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Age</label>
+                            <input
+                                type="number"
+                                value={age}
+                                onChange={(e) => setAge(e.target.value)}
+                                className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-xl transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Height (CM)</label>
+                            <input
+                                type="number"
+                                value={height}
+                                onChange={(e) => setHeight(e.target.value)}
+                                className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-xl transition-colors"
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Mass Update (KG)</label>
                         <input
@@ -75,7 +108,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-4">Primary Objective</label>
                         <div className="flex flex-col gap-2">
-                            {['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
+                            {['SKINNY (Cut Aggressive)', 'SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
                                 <button
                                     key={g}
                                     onClick={() => setGoal(g)}

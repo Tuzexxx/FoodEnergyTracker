@@ -8,7 +8,7 @@ const steps = [
     { id: 'age', question: 'Enter operational age (years):', type: 'number', placeholder: 'e.g. 28' },
     { id: 'height', question: 'Enter vertical dimension (cm):', type: 'number', placeholder: 'e.g. 180' },
     { id: 'weight', question: 'Enter exact mass (kg):', type: 'number', placeholder: 'e.g. 75' },
-    { id: 'goal', question: 'Select primary objective:', options: ['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'] }
+    { id: 'goal', question: 'Select primary objective:', options: ['SKINNY (Cut Aggressive)', 'SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'] }
 ];
 
 const OnboardingModal = () => {
@@ -51,12 +51,22 @@ const OnboardingModal = () => {
 
     const finishCalibration = (data: any) => {
         // Simple mock macro calculation based on goal
-        let multiplier = 24; // Base BMR mock (Maintain/Recomp)
-        if (data.goal.includes('SHRED')) multiplier = 20;
-        if (data.goal.includes('TITAN')) multiplier = 28;
+        let calorieMultiplier = 24; // Base BMR mock (Maintain/Recomp)
+        let proteinMultiplier = 1.8; // Maintain protein
 
-        const targetKcal = Math.round(Number(data.weight) * multiplier);
-        const targetProtein = Math.round(Number(data.weight) * 2.2); // 2.2g per kg mock
+        if (data.goal.includes('SKINNY')) {
+            calorieMultiplier = 18;
+            proteinMultiplier = 2.2; // Higher protein to preserve muscle in aggressive deficit
+        } else if (data.goal.includes('SHRED')) {
+            calorieMultiplier = 20;
+            proteinMultiplier = 2.0;
+        } else if (data.goal.includes('TITAN')) {
+            calorieMultiplier = 28;
+            proteinMultiplier = 1.6; // Less protein needed per kg in surplus
+        }
+
+        const targetKcal = Math.round(Number(data.weight) * calorieMultiplier);
+        const targetProtein = Math.round(Number(data.weight) * proteinMultiplier);
 
         calibrateUser(
             {
