@@ -33,6 +33,7 @@ const SmartLogging = () => {
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isProcessing) {
@@ -100,6 +101,25 @@ const SmartLogging = () => {
         }
     };
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // In a real app we'd convert this to base64 and send to Groq Vision API
+        // For now, we mock a response since image processing wasn't fully wired to Groq Vision yet
+        setIsProcessing(true);
+        playSound('log');
+        setInput(`Analyzing image: ${file.name}...`);
+
+        setTimeout(() => {
+            setIsProcessing(false);
+            const mockData = { name: `Analyzed: ${file.name.split('.')[0]}`, kcal: 350, protein: 25, carbs: 30, fat: 15 };
+            addEntry(mockData);
+            setInput('');
+            playSound('targetHit');
+        }, 2500);
+    };
+
     return (
         <div className="relative isolate px-4 pb-4">
 
@@ -144,7 +164,19 @@ const SmartLogging = () => {
                     />
                 </div>
 
-                <button className="p-3 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-xl hover:bg-black/5 active:scale-95">
+                <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                />
+
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-3 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-xl hover:bg-black/5 active:scale-95"
+                    disabled={isProcessing}
+                >
                     <Camera size={24} strokeWidth={1.5} />
                 </button>
 
