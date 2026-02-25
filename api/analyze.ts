@@ -15,7 +15,7 @@ export default async function handler(req: any, res: any) {
         }
 
         const prompt = `You are a brutally efficient military/sci-fi AI telemetry module. Your job is to parse food entries from text or images.
-Always output a strict JSON object. Do not output anything else.
+Always output ONLY a strict JSON object. Do not output any conversational text before or after the JSON.
 
 RULES:
 1. If the food entry (text or image) is clear and has a plausible consumed quantity, estimate the macros and return a 'success' object.
@@ -71,10 +71,7 @@ CLARIFICATION FORMAT:
                     parts: [{ text: prompt }]
                 },
                 contents: [{ parts }],
-                tools: [{ googleSearch: {} }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
+                tools: [{ googleSearch: {} }]
             })
         });
 
@@ -101,15 +98,31 @@ CLARIFICATION FORMAT:
 
         let resultText = textPart.text;
 
-        // Sometimes Gemini wraps JSON in markdown blocks even with responseMimeType set, 
-        // especially when tools are enabled. Let's safely strip it if it exists.
-        resultText = resultText.replace(/^```json\n/, '').replace(/\n```$/, '').trim();
-
-        const result = JSON.parse(resultText);
+        let result;
+        try {
+            // Robustly extract JSON block even if model includes conversational text or markdown
+            const firstBrace = resultText.indexOf('{');
+            const lastBrace = resultText.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+                const jsonString = resultText.substring(firstBrace, lastBrace + 1);
+                result = JSON.parse(jsonString);
+            } else {
+                throw new Error("No JSON object braces found in response");
+            }
+        } catch (parseError) {
+            console.warn("Gemini output was not valid JSON. Forwarding raw text as clarification.", resultText);
+            // If Gemini refuses to output JSON and gives a conversational text (like "I can't recognize this image"),
+            // we safely package it as a clarification so the frontend displays it in the red interrogation panel instead of exploding.
+            result = {
+                type: 'clarification',
+                question: resultText.substring(0, 150) + (resultText.length > 150 ? '...' : ''),
+                options: ['Retry Upload', 'Manual Log']
+            };
+        }
 
         return res.status(200).json(result);
-    } catch (error) {
-        console.error('API Route Error:', error);
-        return res.status(500).json({ error: 'Internal Server Error', type: 'error' });
+    } catch (error: any) {
+        console.error('API Route Error:', error.message || error);
+        return res.status(500).json({ error: 'Internal Server Error', type: 'error', details: error.message });
     }
 }
