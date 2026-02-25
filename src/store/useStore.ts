@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface FoodEntry {
     id: string;
@@ -29,40 +30,55 @@ interface AppState {
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
     resetDaily: () => void;
+    resetAll: () => void;
 }
 
-export const useStore = create<AppState>((set) => ({
-    isCalibrated: false,
-    profile: null,
-    targetKcal: 0,
-    targetProtein: 0,
-    consumedKcal: 0,
-    consumedProtein: 0,
-    dailyLog: [],
+export const useStore = create<AppState>()(
+    persist(
+        (set) => ({
+            isCalibrated: false,
+            profile: null,
+            targetKcal: 0,
+            targetProtein: 0,
+            consumedKcal: 0,
+            consumedProtein: 0,
+            dailyLog: [],
 
-    calibrateUser: (profile, kcal, protein) => set(() => ({
-        isCalibrated: true,
-        profile,
-        targetKcal: kcal,
-        targetProtein: protein,
-        consumedKcal: 0,
-        consumedProtein: 0,
-        dailyLog: []
-    })),
+            calibrateUser: (profile, kcal, protein) => set(() => ({
+                isCalibrated: true,
+                profile,
+                targetKcal: kcal,
+                targetProtein: protein,
+            })),
 
-    addEntry: (entry) => set((state) => ({
-        consumedKcal: state.consumedKcal + entry.kcal,
-        consumedProtein: state.consumedProtein + entry.protein,
-        dailyLog: [{
-            ...entry,
-            id: Math.random().toString(36).substring(7),
-            timestamp: Date.now()
-        }, ...state.dailyLog]
-    })),
+            addEntry: (entry) => set((state) => ({
+                consumedKcal: state.consumedKcal + entry.kcal,
+                consumedProtein: state.consumedProtein + entry.protein,
+                dailyLog: [{
+                    ...entry,
+                    id: Math.random().toString(36).substring(7),
+                    timestamp: Date.now()
+                }, ...state.dailyLog]
+            })),
 
-    resetDaily: () => set(() => ({
-        consumedKcal: 0,
-        consumedProtein: 0,
-        dailyLog: []
-    }))
-}));
+            resetDaily: () => set(() => ({
+                consumedKcal: 0,
+                consumedProtein: 0,
+                dailyLog: []
+            })),
+
+            resetAll: () => set(() => ({
+                isCalibrated: false,
+                profile: null,
+                targetKcal: 0,
+                targetProtein: 0,
+                consumedKcal: 0,
+                consumedProtein: 0,
+                dailyLog: []
+            }))
+        }),
+        {
+            name: 'macro-tracker-storage', // unique name
+        }
+    )
+);

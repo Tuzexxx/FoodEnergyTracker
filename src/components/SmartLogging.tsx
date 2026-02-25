@@ -2,34 +2,27 @@ import { useState, useRef, useEffect } from 'react';
 import { Camera, Send, X, Activity } from 'lucide-react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
+import { playSound } from '../utils/audio';
 
-// Mock AI Logic
-const mockAiResponse = (input: string) => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const lowerInput = input.toLowerCase();
+// Real AI Logic integrating with Vercel Serverless Function
+const getAiResponse = async (input: string) => {
+    try {
+        const res = await fetch('/api/groq', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input })
+        });
 
-            // Exact match parsing
-            if (lowerInput.includes('chicken wrap')) {
-                resolve({ type: 'success', data: { name: 'Chicken Wrap', kcal: 450, protein: 35, carbs: 40, fat: 12 } });
-            }
-            else if (lowerInput.includes('eggs') || lowerInput.includes('egg')) {
-                resolve({ type: 'success', data: { name: '2x Scrambled Eggs', kcal: 140, protein: 12, carbs: 2, fat: 10 } });
-            }
-            // Ambiguous match triggers 'The Interrogator'
-            else if (lowerInput.includes('chips')) {
-                resolve({
-                    type: 'clarification',
-                    question: 'Incomplete data sequence. Quantify "chips".',
-                    options: ['Small Bag (40g)', 'Large Bag (150g)', 'Handful']
-                });
-            }
-            // Fallback pseudo-random macro assignment
-            else {
-                resolve({ type: 'success', data: { name: input, kcal: Math.floor(Math.random() * 500) + 100, protein: Math.floor(Math.random() * 40) + 5, carbs: Math.floor(Math.random() * 60) + 10, fat: Math.floor(Math.random() * 30) + 5 } });
-            }
-        }, 1500); // Mock processing delay
-    });
+        if (!res.ok) {
+            console.error("API Error", await res.text());
+            return { type: 'error' };
+        }
+
+        return await res.json();
+    } catch (e) {
+        console.error("Network Error", e);
+        return { type: 'error' };
+    }
 };
 
 const SmartLogging = () => {
@@ -70,33 +63,41 @@ const SmartLogging = () => {
         if (!input.trim() || isProcessing) return;
         setIsProcessing(true);
 
-        const response: any = await mockAiResponse(input);
+        const response: any = await getAiResponse(input);
         setIsProcessing(false);
 
         if (response.type === 'success') {
+            playSound('log');
             addEntry(response.data);
             setInput('');
         } else if (response.type === 'clarification') {
-            setInterrogation(response);
+            playSound('error');
+            setInterrogation({ ...response, originalInput: input });
+        } else if (response.type === 'error') {
+            playSound('error');
+            alert("Telemetry connection failed. Ensure GROQ_API_KEY is configured on the server.");
         }
     };
 
-    const handleClarification = (option: string) => {
+    const handleClarification = async (option: string) => {
         // Dismiss panel
         gsap.to(interrogatePanelRef.current, {
             y: 100, opacity: 0, duration: 0.4, ease: 'power3.in',
             onComplete: () => setInterrogation(null)
         });
 
-        // Auto-resolve mapped to the option
-        setTimeout(() => {
-            let data = { name: `Chips (${option})`, kcal: 200, protein: 2, carbs: 20, fat: 12 };
-            if (option.includes('Large')) data = { name: `Large Chips`, kcal: 780, protein: 8, carbs: 85, fat: 45 };
-            if (option.includes('Handful')) data = { name: `Handful of Chips`, kcal: 80, protein: 1, carbs: 8, fat: 5 };
+        setIsProcessing(true);
+        const resolvedInput = `${interrogation.originalInput} (${option})`;
+        const response: any = await getAiResponse(resolvedInput);
+        setIsProcessing(false);
 
-            addEntry(data);
+        if (response.type === 'success') {
+            playSound('log');
+            addEntry(response.data);
             setInput('');
-        }, 400);
+        } else {
+            playSound('error');
+        }
     };
 
     return (
