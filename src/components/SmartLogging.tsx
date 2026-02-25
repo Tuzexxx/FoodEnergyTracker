@@ -67,16 +67,17 @@ const SmartLogging = () => {
         const response: any = await getAiResponse(input);
         setIsProcessing(false);
 
-        if (response.type === 'success') {
+        if (response.type === 'success' && response.data) {
             playSound('log');
             addEntry(response.data);
             setInput('');
-        } else if (response.type === 'clarification') {
+        } else if (response.type === 'clarification' && response.options) {
             playSound('error');
             setInterrogation({ ...response, originalInput: input });
-        } else if (response.type === 'error') {
+        } else {
             playSound('error');
-            alert("Telemetry connection failed. Ensure GEMINI_API_KEY is configured on the server.");
+            console.error("Unhappy path hit:", response);
+            alert("Telemetry connection failed or returned an unexpected format. Please try again.");
         }
     };
 
@@ -116,18 +117,19 @@ const SmartLogging = () => {
             const response: any = await getAiResponse("Analyze this food image and estimate macros.", base64Image);
 
             setIsProcessing(false);
-            if (response.type === 'success') {
+            if (response.type === 'success' && response.data) {
                 playSound('targetHit');
                 addEntry(response.data);
                 setInput('');
-            } else if (response.type === 'clarification') {
+            } else if (response.type === 'clarification' && response.options) {
                 playSound('error');
                 setInterrogation({ ...response, originalInput: "Analyze this food image" });
                 setInput('');
             } else {
                 playSound('error');
                 setInput('');
-                alert("Visual telemetry connection failed. Ensure GEMINI_API_KEY is configured.");
+                console.error("Image upload unhappy path hit:", response);
+                alert("Visual telemetry connection failed or returned an unexpected format. Please try again.");
             }
         };
         reader.readAsDataURL(file);
