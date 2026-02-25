@@ -1,28 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Smart AI Macro Tracker</title>
-    
-    <!-- Google Fonts for Brutalist Signal Preset -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-off-white text-brutal-black antialiased overflow-hidden selection:bg-signal-red selection:text-off-white">
-    <!-- SVG Noise Overlay Filter -->
-    <svg style="display:none;" xmlns="http://www.w3.org/2000/svg">
-      <filter id="noiseFilter">
-        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-      </filter>
-    </svg>
-    <div class="pointer-events-none fixed inset-0 z-50 opacity-5 mix-blend-multiply" style="filter: url(#noiseFilter);"></div>
 
-    <div id="root" class="h-full w-full relative z-0 hide-scrollbar overflow-y-auto"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Smart AI Macro Tracker</title>
+
+  <!-- Open Graph / WhatsApp / Social Sharing Meta Tags -->
+  <meta property="og:title" content="MacroTrack | Smart AI Nutrition" />
+  <meta property="og:description" content="Brutally efficient AI-powered food tracking and visual telemetry." />
+  <meta property="og:image" content="https://food-energy-tracker.vercel.app/favicon.svg" />
+  <meta property="og:url" content="https://food-energy-tracker.vercel.app/" />
+  <meta property="og:type" content="website" />
+
+  <!-- Google Fonts for Brutalist Signal Preset -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body
+  class="bg-off-white text-brutal-black antialiased overflow-hidden selection:bg-signal-red selection:text-off-white">
+  <!-- SVG Noise Overlay Filter -->
+  <svg style="display:none;" xmlns="http://www.w3.org/2000/svg">
+    <filter id="noiseFilter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+    </filter>
+  </svg>
+  <div class="pointer-events-none fixed inset-0 z-50 opacity-5 mix-blend-multiply" style="filter: url(#noiseFilter);">
+  </div>
+
+  <div id="root" class="h-full w-full relative z-0 hide-scrollbar overflow-y-auto"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
