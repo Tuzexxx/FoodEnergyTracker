@@ -107,33 +107,70 @@ const SmartLogging = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Display "Processing" state immediately
+        setIsProcessing(true);
+        playSound('log');
+        setInput(`Compressing & analyzing visual telemetry...`);
+
         const reader = new FileReader();
-        reader.onloadend = async () => {
-            const base64Image = reader.result as string;
+        reader.onloadend = () => {
+            const img = new Image();
+            img.onload = async () => {
+                // Compression logic to prevent Vercel 413 "Payload Too Large"
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX_DIMENSION = 1000;
 
-            setIsProcessing(true);
-            playSound('log');
-            setInput(`Analyzing visual telemetry: ${file.name}...`);
+                if (width > height) {
+                    if (width > MAX_DIMENSION) {
+                        height *= MAX_DIMENSION / width;
+                        width = MAX_DIMENSION;
+                    }
+                } else {
+                    if (height > MAX_DIMENSION) {
+                        width *= MAX_DIMENSION / height;
+                        height = MAX_DIMENSION;
+                    }
+                }
 
-            const response: any = await getAiResponse("Analyze this food image and estimate macros.", base64Image);
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
 
-            setIsProcessing(false);
-            if (response.type === 'success' && response.data) {
-                playSound('targetHit');
-                addEntry(response.data);
-                setInput('');
-            } else if (response.type === 'clarification' && response.options) {
-                playSound('error');
-                setInterrogation({ ...response, originalInput: "Analyze this food image" });
-                setInput('');
-            } else {
-                playSound('error');
-                setInput('');
-                console.error("Image upload unhappy path hit:", response);
-                alert("Visual telemetry connection failed or returned an unexpected format. Please try again.");
-            }
+                // Compress to highly efficient JPEG (Gemini handles this perfectly)
+                const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+
+                try {
+                    const response: any = await getAiResponse("Analyze this food image and estimate macros.", base64Image);
+
+                    setIsProcessing(false);
+                    if (response.type === 'success' && response.data) {
+                        playSound('targetHit');
+                        addEntry(response.data);
+                        setInput('');
+                    } else if (response.type === 'clarification' && response.options) {
+                        playSound('error');
+                        setInterrogation({ ...response, originalInput: "Analyze this food image" });
+                        setInput('');
+                    } else {
+                        throw new Error("Unexpected format");
+                    }
+                } catch (error) {
+                    setIsProcessing(false);
+                    playSound('error');
+                    setInput('');
+                    console.error("Image upload unhappy path hit:", error);
+                    alert("Visual telemetry connection failed or returned an unexpected format. Please try again.");
+                }
+            };
+            img.src = reader.result as string;
         };
         reader.readAsDataURL(file);
+
+        // Clear the file input so the same file can be selected again if needed
+        e.target.value = '';
     };
 
     return (
