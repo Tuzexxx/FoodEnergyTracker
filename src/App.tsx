@@ -16,8 +16,8 @@ function App() {
     return (
         <div className="min-h-screen w-full flex flex-col relative pb-32">
             {/* Settings / PWA Install Bridge */}
-            <nav className="p-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0 bg-paper/80 backdrop-blur-md border-b border-brutal-black/5">
-                <h1 className="font-drama tracking-wide text-xl flex items-center gap-2 text-brutal-black">
+            <nav className="p-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0">
+                <h1 className="font-drama tracking-wide text-xl flex items-center gap-2 text-brutal-black drop-shadow-sm">
                     MacroTrack
                 </h1>
                 <div className="flex items-center gap-4 text-brutal-black">
