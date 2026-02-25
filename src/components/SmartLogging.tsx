@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, X, Activity } from 'lucide-react';
+import { Camera, Send, X, Activity, Image as ImageIcon } from 'lucide-react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -174,10 +174,13 @@ const SmartLogging = () => {
 
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-3 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-xl hover:bg-black/5 active:scale-95"
+                    className="p-3 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-xl hover:bg-black/5 active:scale-95 flex items-center gap-1"
                     disabled={isProcessing}
+                    title="Camera or Image Upload"
                 >
-                    <Camera size={24} strokeWidth={1.5} />
+                    <Camera size={20} strokeWidth={1.5} />
+                    <span className="opacity-30 text-xs">/</span>
+                    <ImageIcon size={20} strokeWidth={1.5} />
                 </button>
 
                 <input

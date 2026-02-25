@@ -66,7 +66,7 @@ const DailyLog = () => {
                     {dailyLog.map((entry, i) => (
                         <div
                             key={entry.id}
-                            className={`log-card brutal-card p-5 flex justify-between items-center transition-colors duration-300 hover:border-brutal-black/40 bg-paper z-${50 - i}`}
+                            className={`log-card brutal-card p-5 flex justify-between items-center transition-all duration-300 border border-transparent hover:border-brutal-black/30 hover:shadow-lg bg-paper z-${50 - i}`}
                             style={{ zIndex: 50 - i }}
                         >
                             <div>

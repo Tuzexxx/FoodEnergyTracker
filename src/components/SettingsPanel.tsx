@@ -6,7 +6,7 @@ import { X, Save, RefreshCw } from 'lucide-react';
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const { profile, resetAll, calibrateUser, resetDaily } = useStore();
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
-    const [goal, setGoal] = useState(profile?.goal || 'MAINTAIN');
+    const [goal, setGoal] = useState(profile?.goal || 'RECOMP (Maintain/Muscle)');
 
     const panelRef = useRef(null);
 
@@ -30,8 +30,8 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
         if (!profile) return;
 
         let multiplier = 24;
-        if (goal === 'CUT') multiplier = 20;
-        if (goal === 'BULK') multiplier = 28;
+        if (goal.includes('SHRED')) multiplier = 20;
+        if (goal.includes('TITAN')) multiplier = 28;
 
         const targetKcal = Math.round(Number(weight) * multiplier);
         const targetProtein = Math.round(Number(weight) * 2.2);
@@ -74,8 +74,8 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
 
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-4">Primary Objective</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {['CUT', 'MAINTAIN', 'BULK'].map(g => (
+                        <div className="flex flex-col gap-2">
+                            {['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
                                 <button
                                     key={g}
                                     onClick={() => setGoal(g)}
