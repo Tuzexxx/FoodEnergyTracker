@@ -24,7 +24,7 @@ const PWAInstall = () => {
     return (
         <button
             onClick={handleInstall}
-            className="btn-magnetic px-3 py-1.5 rounded-full border border-brutal-black/20 text-xs font-sans tracking-wider uppercase flex items-center gap-2 hover:bg-brutal-black/5 transition-colors"
+            className="btn-magnetic px-3 py-1.5 rounded-full bg-brutal-black text-off-white text-xs font-sans tracking-wider uppercase flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md"
         >
             <Download size={14} /> Install App
         </button>
