@@ -85,7 +85,26 @@ CLARIFICATION FORMAT:
         }
 
         const data = await geminiResponse.json();
-        const resultText = data.candidates[0].content.parts[0].text;
+        const candidate = data.candidates?.[0];
+        if (!candidate || !candidate.content || !candidate.content.parts) {
+            console.error("Unexpected Gemini response structure:", JSON.stringify(data));
+            return res.status(500).json({ error: 'Unexpected response format from AI', type: 'error' });
+        }
+
+        // When using tools, the text might be nested or the first part might be a function call.
+        // We find the part that actually contains the text response.
+        const textPart = candidate.content.parts.find((p: any) => p.text);
+        if (!textPart) {
+            console.error("No text part found in Gemini response:", JSON.stringify(data));
+            return res.status(500).json({ error: 'No text returned from AI', type: 'error' });
+        }
+
+        let resultText = textPart.text;
+
+        // Sometimes Gemini wraps JSON in markdown blocks even with responseMimeType set, 
+        // especially when tools are enabled. Let's safely strip it if it exists.
+        resultText = resultText.replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+
         const result = JSON.parse(resultText);
 
         return res.status(200).json(result);
