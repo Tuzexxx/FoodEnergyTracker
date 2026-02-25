@@ -4,13 +4,13 @@ import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
 
-// Real AI Logic integrating with Vercel Serverless Function
-const getAiResponse = async (input: string) => {
+// Real AI Logic integrating with Vercel Serverless Function and Google Gemini
+const getAiResponse = async (input: string, image?: string) => {
     try {
-        const res = await fetch('/api/groq', {
+        const res = await fetch('/api/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input })
+            body: JSON.stringify({ input, image })
         });
 
         if (!res.ok) {
@@ -76,7 +76,7 @@ const SmartLogging = () => {
             setInterrogation({ ...response, originalInput: input });
         } else if (response.type === 'error') {
             playSound('error');
-            alert("Telemetry connection failed. Ensure GROQ_API_KEY is configured on the server.");
+            alert("Telemetry connection failed. Ensure GEMINI_API_KEY is configured on the server.");
         }
     };
 
@@ -105,19 +105,32 @@ const SmartLogging = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // In a real app we'd convert this to base64 and send to Groq Vision API
-        // For now, we mock a response since image processing wasn't fully wired to Groq Vision yet
-        setIsProcessing(true);
-        playSound('log');
-        setInput(`Analyzing image: ${file.name}...`);
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64Image = reader.result as string;
 
-        setTimeout(() => {
+            setIsProcessing(true);
+            playSound('log');
+            setInput(`Analyzing visual telemetry: ${file.name}...`);
+
+            const response: any = await getAiResponse("Analyze this food image and estimate macros.", base64Image);
+
             setIsProcessing(false);
-            const mockData = { name: `Analyzed: ${file.name.split('.')[0]}`, kcal: 350, protein: 25, carbs: 30, fat: 15 };
-            addEntry(mockData);
-            setInput('');
-            playSound('targetHit');
-        }, 2500);
+            if (response.type === 'success') {
+                playSound('targetHit');
+                addEntry(response.data);
+                setInput('');
+            } else if (response.type === 'clarification') {
+                playSound('error');
+                setInterrogation({ ...response, originalInput: "Analyze this food image" });
+                setInput('');
+            } else {
+                playSound('error');
+                setInput('');
+                alert("Visual telemetry connection failed. Ensure GEMINI_API_KEY is configured.");
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     return (
