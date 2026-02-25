@@ -34,7 +34,7 @@ function App() {
                 </div>
             </nav>
 
-            <main className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-8 flex flex-col gap-8">
+            <main className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-40 flex flex-col gap-8">
                 {!isCalibrated ? (
                     <OnboardingModal />
                 ) : (
