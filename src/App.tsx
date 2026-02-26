@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from './store/useStore';
 import { Settings } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
@@ -7,10 +7,26 @@ import DailyLog from './components/DailyLog';
 import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
+import AuthScreen from './components/AuthScreen';
+import { supabase } from './utils/supabase';
 
 function App() {
-    const { isCalibrated } = useStore();
+    const { isCalibrated, session, setSession } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+    }, [setSession]);
 
     // Basic mobile-first layout structure
     return (
@@ -35,7 +51,9 @@ function App() {
             </nav>
 
             <main className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-40 flex flex-col gap-8">
-                {!isCalibrated ? (
+                {!session ? (
+                    <AuthScreen />
+                ) : !isCalibrated ? (
                     <OnboardingModal />
                 ) : (
                     <>
@@ -46,7 +64,7 @@ function App() {
             </main>
 
             {/* Floating Smart Input - bottom anchored */}
-            {isCalibrated && (
+            {session && isCalibrated && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 z-40 w-full max-w-md mx-auto bg-gradient-to-t from-off-white via-off-white to-transparent pt-12">
                     <SmartLogging />
                 </div>

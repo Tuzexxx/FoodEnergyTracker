@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { Session } from '@supabase/supabase-js';
 
 export interface FoodEntry {
     id: string;
@@ -21,6 +22,8 @@ interface UserProfile {
 }
 
 interface AppState {
+    session: Session | null;
+    setSession: (session: Session | null) => void;
     isCalibrated: boolean;
     profile: UserProfile | null;
     targetKcal: number;
@@ -38,6 +41,8 @@ interface AppState {
 export const useStore = create<AppState>()(
     persist(
         (set) => ({
+            session: null,
+            setSession: (session) => set({ session }),
             isCalibrated: false,
             profile: null,
             targetKcal: 0,

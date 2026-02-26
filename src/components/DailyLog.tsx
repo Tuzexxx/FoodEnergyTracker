@@ -57,12 +57,7 @@ const DailyLog = () => {
                             key={entry.id}
                             className={`log-card brutal-card p-5 transition-all duration-300 border bg-paper group relative ${entry.requiresReview ? 'border-signal-red border-dashed' : 'border-transparent hover:border-brutal-black/30'}`}
                         >
-                            {/* Assumption Badge */}
-                            {entry.requiresReview && editingId !== entry.id && (
-                                <div className="absolute top-2 right-2 bg-signal-red text-off-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-md animate-pulse z-10">
-                                    Review Assumption
-                                </div>
-                            )}
+                            {/* Removed text badge, relying on prominent edit button instead */}
 
                             {editingId === entry.id ? (
                                 <div className="flex flex-col gap-3">
@@ -103,10 +98,13 @@ const DailyLog = () => {
                                 <div className="flex justify-between items-center relative">
                                     <button
                                         onClick={() => startEdit(entry)}
-                                        className="absolute -top-2 -right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-brutal-black/50 hover:text-signal-red bg-off-white/80 rounded-full"
+                                        className={`absolute -top-4 -right-2 p-3 transition-all rounded-full z-10 flex items-center justify-center ${entry.requiresReview
+                                                ? 'bg-signal-red text-off-white shadow-md animate-pulse opacity-100 scale-[1.15]'
+                                                : 'text-brutal-black/50 hover:text-signal-red opacity-100 bg-black/5 hover:bg-black/10'
+                                            }`}
                                         title="Edit Entry"
                                     >
-                                        <Edit2 size={14} />
+                                        <Edit2 size={16} strokeWidth={entry.requiresReview ? 2.5 : 2} />
                                     </button>
 
                                     <div className="pr-8">
