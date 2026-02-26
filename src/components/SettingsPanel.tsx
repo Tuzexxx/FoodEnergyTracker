@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
-import { X, Save, RefreshCw } from 'lucide-react';
+import { X, Save, RefreshCw, LogOut } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const { profile, resetAll, calibrateUser, resetDaily } = useStore();
@@ -58,6 +59,14 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
 
     const handleWipe = () => {
         if (confirm("System Wipe: Are you sure you want to delete all local telemetry?")) {
+            resetAll();
+            handleClose();
+        }
+    };
+
+    const handleSignOut = async () => {
+        if (confirm("Are you sure you want to sign out? Your cloud data is safe.")) {
+            await supabase.auth.signOut();
             resetAll();
             handleClose();
         }
@@ -142,6 +151,13 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                 Wipe All
                             </button>
                         </div>
+
+                        <button
+                            onClick={handleSignOut}
+                            className="w-full mt-2 py-4 text-xs tracking-widest uppercase font-sans border-2 border-brutal-black hover:bg-brutal-black hover:text-off-white flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <LogOut size={14} /> Sign Out
+                        </button>
                     </div>
                 </div>
             </div>
