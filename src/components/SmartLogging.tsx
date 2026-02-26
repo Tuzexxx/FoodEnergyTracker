@@ -95,7 +95,11 @@ const SmartLogging = () => {
         setIsProcessing(false);
 
         if (response.type === 'success' && response.data) {
-            playSound('log');
+            if (response.data.requiresReview) {
+                playSound('error'); // Play softer notification sound for assumptions
+            } else {
+                playSound('log'); // Play solid success sound for confident logs
+            }
             addEntry(response.data);
             setInput('');
         } else if (response.type === 'clarification' && response.options) {

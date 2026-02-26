@@ -59,8 +59,8 @@ const DailyLog = () => {
                         >
                             {/* Assumption Badge */}
                             {entry.requiresReview && editingId !== entry.id && (
-                                <div className="absolute -top-2 left-4 bg-signal-red text-off-white text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full font-sans animate-pulse">
-                                    Review AI Assumption
+                                <div className="absolute top-2 right-2 bg-signal-red text-off-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-md animate-pulse z-10">
+                                    Review Assumption
                                 </div>
                             )}
 
@@ -112,7 +112,6 @@ const DailyLog = () => {
                                     <div className="pr-8">
                                         <p className="font-sans font-medium text-lg leading-tight mb-1">{entry.name}</p>
                                         <div className="flex items-center gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-signal-red/50"></span>
                                             <p className="font-data text-xs opacity-50 tracking-widest">
                                                 {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
