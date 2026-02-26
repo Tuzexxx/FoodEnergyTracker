@@ -14,40 +14,13 @@ const DailyLog = () => {
 
         const cards = gsap.utils.toArray('.log-card') as HTMLElement[];
 
-        // Clean up previous triggers on re-render
-        ScrollTrigger.getAll().forEach(t => t.kill());
-
-        // The sticky stacking effect
-        cards.forEach((card, i) => {
-            // Don't animate the last card pushing down
-            if (i === cards.length - 1) return;
-
-            gsap.to(card, {
-                scale: 0.9 + (i * 0.02), // progressively scale down
-                opacity: 0.3,
-                filter: 'blur(4px)',
-                scrollTrigger: {
-                    trigger: card,
-                    start: `top top+=${100 + (i * 10)}`, // Offset stagger
-                    end: 'bottom top',
-                    scrub: true,
-                    pin: true,
-                    pinSpacing: false
-                }
-            });
-        });
-
-        // Animate *new* entries dropping in
+        // Animate *new* entries dropping in (only animation needed now)
         if (cards.length > 0) {
             gsap.fromTo(cards[0],
                 { y: -20, opacity: 0, scale: 0.95 },
                 { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.7)' }
             );
         }
-
-        return () => {
-            ScrollTrigger.getAll().forEach(t => t.kill());
-        };
     }, [dailyLog]);
 
     return (
@@ -66,8 +39,14 @@ const DailyLog = () => {
                     {dailyLog.map((entry, i) => (
                         <div
                             key={entry.id}
-                            className={`log-card brutal-card p-5 flex justify-between items-center transition-all duration-300 border border-transparent hover:border-brutal-black/30 hover:shadow-lg bg-paper z-${50 - i}`}
-                            style={{ zIndex: 50 - i }}
+                            className={`log-card brutal-card p-5 flex justify-between items-center transition-all duration-300 border border-transparent hover:border-brutal-black/30 hover:shadow-lg bg-paper sticky z-${50 - i}`}
+                            style={{
+                                zIndex: 50 - i,
+                                top: `${100 + (i * 10)}px`,
+                                transform: `scale(${1 - (i * 0.02)})`,
+                                filter: i > 0 ? `blur(${Math.min(i, 4)}px)` : 'none',
+                                opacity: Math.max(0.3, 1 - (i * 0.1))
+                            }}
                         >
                             <div>
                                 <p className="font-sans font-medium text-lg leading-tight mb-1">{entry.name}</p>
