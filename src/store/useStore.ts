@@ -35,6 +35,7 @@ interface AppState {
     consumedKcal: number;
     consumedProtein: number;
     dailyLog: FoodEntry[];
+    calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
     updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id'>>) => void;
     deleteEntry: (id: string) => void;
@@ -119,7 +120,7 @@ export const useStore = create<AppState>()(
             consumedProtein: 0,
             dailyLog: [],
 
-            calibrateUser: async (profile, kcal, protein) => {
+            calibrateUser: async (profile: UserProfile, kcal: number, protein: number) => {
                 set(() => ({
                     isCalibrated: true,
                     profile,
