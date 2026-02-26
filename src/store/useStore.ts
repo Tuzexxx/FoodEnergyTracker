@@ -25,6 +25,8 @@ interface UserProfile {
 interface AppState {
     session: Session | null;
     setSession: (session: Session | null) => void;
+    isGuest: boolean;
+    setGuestMode: (isGuest: boolean) => void;
     fetchCloudData: () => Promise<void>;
     isCalibrated: boolean;
     profile: UserProfile | null;
@@ -33,9 +35,9 @@ interface AppState {
     consumedKcal: number;
     consumedProtein: number;
     dailyLog: FoodEntry[];
-    calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
-    updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id' | 'timestamp'>>) => void;
+    updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id'>>) => void;
+    deleteEntry: (id: string) => void;
     resetDaily: () => void;
     resetAll: () => void;
 }
@@ -45,11 +47,13 @@ export const useStore = create<AppState>()(
         (set, get) => ({
             session: null,
             setSession: (session) => {
-                set({ session });
+                set({ session, isGuest: false });
                 if (session) {
                     get().fetchCloudData();
                 }
             },
+            isGuest: false,
+            setGuestMode: (isGuest) => set({ isGuest }),
 
             fetchCloudData: async () => {
                 const { session } = get();
@@ -140,7 +144,7 @@ export const useStore = create<AppState>()(
                 }
             },
 
-            addEntry: async (entry) => {
+            addEntry: async (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => {
                 const newId = Math.random().toString(36).substring(7);
                 const timestamp = Date.now();
                 const newEntry = { ...entry, id: newId, timestamp };
@@ -196,9 +200,30 @@ export const useStore = create<AppState>()(
                         protein: updated.protein,
                         carbs: updated.carbs,
                         fat: updated.fat,
+                        timestamp: updated.timestamp,
                         requires_review: updated.requiresReview || false
                     }).eq('id', id);
                     if (error) console.error('Supabase Sync Error:', error.message);
+                }
+            },
+
+            deleteEntry: async (id) => {
+                set((state) => {
+                    const entryToDelete = state.dailyLog.find(e => e.id === id);
+                    if (!entryToDelete) return state;
+
+                    return {
+                        consumedKcal: Math.max(0, state.consumedKcal - entryToDelete.kcal),
+                        consumedProtein: Math.max(0, state.consumedProtein - entryToDelete.protein),
+                        dailyLog: state.dailyLog.filter(e => e.id !== id)
+                    };
+                });
+
+                // Delete from cloud
+                const { session } = get();
+                if (session?.user) {
+                    const { error } = await supabase.from('food_entries').delete().eq('id', id);
+                    if (error) console.error('Supabase Delete Error:', error.message);
                 }
             },
 
@@ -210,6 +235,7 @@ export const useStore = create<AppState>()(
 
             resetAll: () => set(() => ({
                 isCalibrated: false,
+                isGuest: false,
                 profile: null,
                 targetKcal: 0,
                 targetProtein: 0,
