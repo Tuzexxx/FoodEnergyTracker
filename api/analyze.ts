@@ -72,27 +72,7 @@ CLARIFICATION FORMAT:
                     parts: [{ text: prompt }]
                 },
                 contents: [{ parts }],
-                tools: [{ googleSearch: {} }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            type: { type: "STRING" },
-                            data: {
-                                type: "OBJECT",
-                                properties: {
-                                    name: { type: "STRING" },
-                                    kcal: { type: "NUMBER" },
-                                    protein: { type: "NUMBER" },
-                                    carbs: { type: "NUMBER" },
-                                    fat: { type: "NUMBER" },
-                                    requiresReview: { type: "BOOLEAN" }
-                                }
-                            }
-                        }
-                    }
-                }
+                tools: [{ googleSearch: {} }]
             })
         });
 
