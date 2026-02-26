@@ -236,7 +236,7 @@ const SmartLogging = () => {
                     onChange={handleImageUpload}
                 />
 
-                <div className="flex bg-black/5 rounded-xl mr-2 p-1">
+                <div className="flex rounded-xl mr-2 p-1 gap-1">
                     <button
                         onClick={() => cameraInputRef.current?.click()}
                         className="p-2 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-lg hover:bg-black/5 active:scale-95"
