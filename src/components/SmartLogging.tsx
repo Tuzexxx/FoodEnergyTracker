@@ -83,7 +83,7 @@ const SmartLogging = () => {
     };
 
     const handleClarification = async (option: string) => {
-        // Dismiss panel
+        // Dismiss current panel visually first
         gsap.to(interrogatePanelRef.current, {
             y: 100, opacity: 0, duration: 0.4, ease: 'power3.in',
             onComplete: () => setInterrogation(null)
@@ -94,12 +94,18 @@ const SmartLogging = () => {
         const response: any = await getAiResponse(resolvedInput);
         setIsProcessing(false);
 
-        if (response.type === 'success') {
+        if (response.type === 'success' && response.data) {
             playSound('log');
             addEntry(response.data);
             setInput('');
+        } else if (response.type === 'clarification' && response.options) {
+            // AI still needs more info (e.g. "salad (100g)" -> "What kind of salad?")
+            playSound('error');
+            setInterrogation({ ...response, originalInput: resolvedInput });
         } else {
             playSound('error');
+            console.error("Clarification unhappy path hit:", response);
+            alert("Telemetry connection failed or returned an unexpected format during interrogation. Please try again.");
         }
     };
 
