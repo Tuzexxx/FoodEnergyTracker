@@ -18,29 +18,30 @@ export default async function handler(req: any, res: any) {
 Always output ONLY a strict JSON object. Do not output any conversational text before or after the JSON.
 
 RULES:
-1. If the food entry (text or image) is clear and has a plausible consumed quantity, estimate the macros and return a 'success' object.
+1. If the food entry (text or image) is clear and has a plausible consumed quantity, estimate the macros and set 'requiresReview' to false.
 2. CRITICAL - SPECIFIC BRANDS: If the user provides a specific brand or product name (e.g., "Gustavo Gusto pizza"), you MUST use Google Search to find the exact nutritional values for that specific brand before estimating.
-3. CRITICAL - PORTION AMBIGUITY: If an image is provided but the exact portion consumed is ambiguous (e.g., a picture of a whole pizza, a large spread of food, or a generic bowl of pasta without scale), you MUST ask for clarification on how much was actually consumed.
-4. CRITICAL - NUTRITION LABELS: If the image is a picture of ingredients or a nutrition label per 100g, but it is unlikely the user ate exactly 100g (or the entire package), you MUST ask for clarification on the precise mass/quantity consumed.
-5. If the text entry lacks quantity (e.g., just "chips" or "salad"), you MUST ask for clarification.
+3. CRITICAL - AMBIGUITY & GRACEFUL ASSUMPTION: If the portion is ambiguous (e.g., "salad" or an image without scale), DO NOT ask for clarification. Make a mathematically sound, educated guess based on statistical average portion sizes (e.g., "1 average medium bowl of mixed salad (approx 300g)"). If you have to make an assumption like this, you MUST set the 'requiresReview' flag to true.
+4. If an image is just ingredients or a nutrition label per 100g, assume a standard single serving size for that food type and set 'requiresReview' to true.
 
 SUCCESS FORMAT:
 {
   "type": "success",
   "data": {
-    "name": "<Short Description (e.g. 2x Scrambled Eggs or 1/2 Pepperoni Pizza)>",
+    "name": "<Description (e.g. 2x Scrambled Eggs or 1 average bowl Mixed Salad)>",
     "kcal": <number>,
     "protein": <number in grams>,
     "carbs": <number in grams>,
-    "fat": <number in grams>
+    "fat": <number in grams>,
+    "requiresReview": <boolean>
   }
 }
 
 CLARIFICATION FORMAT:
+(Use ONLY for fundamentally unparseable requests or non-food images, NOT for portion ambiguity)
 {
   "type": "clarification",
-  "question": "<Short brutalist question, e.g., 'Label shows data per 100g. Quantify mass consumed.' or 'Image shows full pizza. Quantify portion consumed.'>",
-  "options": ["<Option 1 (e.g., 50g)>", "<Option 2 (e.g., 100g)>", "<Option 3 (e.g., 200g)>"]
+  "question": "<Short brutalist question>",
+  "options": ["<Option 1>", "<Option 2>", "<Option 3>"]
 }`;
 
         const parts: any[] = [];

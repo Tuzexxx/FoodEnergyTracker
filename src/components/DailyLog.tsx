@@ -33,7 +33,8 @@ const DailyLog = () => {
             kcal: Number(editForm.kcal),
             protein: Number(editForm.protein),
             carbs: Number(editForm.carbs),
-            fat: Number(editForm.fat)
+            fat: Number(editForm.fat),
+            requiresReview: false
         });
         setEditingId(null);
     };
@@ -54,8 +55,15 @@ const DailyLog = () => {
                     {dailyLog.map((entry) => (
                         <div
                             key={entry.id}
-                            className="log-card brutal-card p-5 transition-all duration-300 border border-transparent hover:border-brutal-black/30 bg-paper group"
+                            className={`log-card brutal-card p-5 transition-all duration-300 border bg-paper group relative ${entry.requiresReview ? 'border-signal-red border-dashed' : 'border-transparent hover:border-brutal-black/30'}`}
                         >
+                            {/* Assumption Badge */}
+                            {entry.requiresReview && editingId !== entry.id && (
+                                <div className="absolute -top-2 left-4 bg-signal-red text-off-white text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full font-sans animate-pulse">
+                                    Review AI Assumption
+                                </div>
+                            )}
+
                             {editingId === entry.id ? (
                                 <div className="flex flex-col gap-3">
                                     <input

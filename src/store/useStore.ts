@@ -9,6 +9,7 @@ export interface FoodEntry {
     carbs: number;
     fat: number;
     timestamp: number;
+    requiresReview?: boolean;
 }
 
 interface UserProfile {
