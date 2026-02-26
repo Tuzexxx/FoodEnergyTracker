@@ -29,6 +29,7 @@ interface AppState {
     dailyLog: FoodEntry[];
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
+    updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id' | 'timestamp'>>) => void;
     resetDaily: () => void;
     resetAll: () => void;
 }
@@ -60,6 +61,22 @@ export const useStore = create<AppState>()(
                     timestamp: Date.now()
                 }, ...state.dailyLog]
             })),
+
+            updateEntry: (id, updatedData) => set((state) => {
+                const oldEntry = state.dailyLog.find(e => e.id === id);
+                if (!oldEntry) return state;
+
+                const kcalDiff = (updatedData.kcal ?? oldEntry.kcal) - oldEntry.kcal;
+                const proteinDiff = (updatedData.protein ?? oldEntry.protein) - oldEntry.protein;
+
+                return {
+                    consumedKcal: Math.max(0, state.consumedKcal + kcalDiff),
+                    consumedProtein: Math.max(0, state.consumedProtein + proteinDiff),
+                    dailyLog: state.dailyLog.map(entry =>
+                        entry.id === id ? { ...entry, ...updatedData } : entry
+                    )
+                };
+            }),
 
             resetDaily: () => set(() => ({
                 consumedKcal: 0,
