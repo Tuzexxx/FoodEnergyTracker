@@ -1,35 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, X, Activity, Image as ImageIcon } from 'lucide-react';
+import { Camera, Send, X, Activity, Image as ImageIcon, Mic, Star } from 'lucide-react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
-
-// Real AI Logic integrating with Vercel Serverless Function and Google Gemini
-const getAiResponse = async (input: string, image?: string) => {
-    try {
-        const res = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input, image })
-        });
-
-        if (!res.ok) {
-            console.error("API Error", await res.text());
-            return { type: 'error' };
-        }
-
-        return await res.json();
-    } catch (e) {
-        console.error("Network Error", e);
-        return { type: 'error' };
-    }
-};
+import { getAiResponse } from '../utils/ai';
 
 const SmartLogging = () => {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
-    const { isCalibrated, addEntry } = useStore();
+    const { isCalibrated, addEntry, favorites } = useStore();
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
@@ -183,6 +163,34 @@ const SmartLogging = () => {
         e.target.value = '';
     };
 
+    const startDictation = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Váš prohlížeč nepodporuje rozpoznávání hlasu.");
+            return;
+        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'cs-CZ';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => setIsProcessing(true);
+        recognition.onend = () => setIsProcessing(false);
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInput((prev) => prev ? prev + ' ' + transcript : transcript);
+            playSound('log');
+        };
+
+        recognition.onerror = (event: any) => {
+            console.error("Speech recognition error", event.error);
+            setIsProcessing(false);
+        };
+
+        recognition.start();
+    };
+
     return (
         <div className="relative isolate px-4 pb-4">
 
@@ -216,76 +224,112 @@ const SmartLogging = () => {
                 </div>
             )}
 
-            {/* Main Input Matrix */}
-            <div className={`brutal-card p-2 flex items-center shadow-[0_20px_50px_rgba(17,17,17,0.15)] bg-paper/90 backdrop-blur-xl border-t-white/50 transition-all ${isProcessing ? 'border-signal-red scale-[0.98]' : ''}`}>
+            {/* Native Camera Capture Input */}
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                ref={cameraInputRef}
+                onChange={handleImageUpload}
+            />
 
-                {/* Processing Laser Animation */}
-                <div className="absolute top-0 left-0 w-full h-[2px] overflow-hidden rounded-t-[2rem] opacity-50">
-                    <div
-                        ref={scannerRef}
-                        className="w-1/3 h-full bg-signal-red shadow-[0_0_10px_#E63B2E] translate-x-[-100%]"
-                    />
+            {/* Photo Gallery Selection Input */}
+            <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={galleryInputRef}
+                onChange={handleImageUpload}
+            />
+
+            {/* Favorites List */}
+            {favorites && favorites.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar px-1">
+                    {favorites.map((fav, i) => (
+                        <button
+                            key={i}
+                            onClick={() => {
+                                setInput((prev) => prev ? prev + ', ' + fav.name : fav.name);
+                                playSound('click');
+                            }}
+                            className="bg-black/5 text-brutal-black px-4 py-2 rounded-full font-sans text-sm whitespace-nowrap hover:bg-black/10 transition-colors flex items-center gap-1 shrink-0 border border-black/5 shadow-sm"
+                        >
+                            <Star size={14} className="text-brutal-black/50" /> {fav.name}
+                        </button>
+                    ))}
                 </div>
+            )}
 
-                {/* Native Camera Capture Input */}
-                <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    ref={cameraInputRef}
-                    onChange={handleImageUpload}
-                />
-
-                {/* Photo Gallery Selection Input */}
-                <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={galleryInputRef}
-                    onChange={handleImageUpload}
-                />
-
-                <div className="flex rounded-xl mr-2 p-1 gap-1">
+            {/* Main Input Container */}
+            <div className="flex gap-2 items-end">
+                {/* Tools - Outside the text box completely left */}
+                <div className="flex flex-col gap-2 shrink-0">
                     <button
                         onClick={() => cameraInputRef.current?.click()}
-                        className="p-2 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-lg hover:bg-black/5 active:scale-95"
+                        className="p-3 bg-paper shadow-md rounded-2xl text-brutal-black/60 hover:text-brutal-black transition-all hover:bg-black/5 active:scale-95 border border-black/5"
                         disabled={isProcessing}
                         title="Take Photo"
                     >
-                        <Camera size={20} strokeWidth={1.5} />
+                        <Camera size={22} strokeWidth={1.5} />
                     </button>
                     <button
                         onClick={() => galleryInputRef.current?.click()}
-                        className="p-2 text-brutal-black/50 hover:text-brutal-black transition-colors rounded-lg hover:bg-black/5 active:scale-95"
+                        className="p-3 bg-paper shadow-md rounded-2xl text-brutal-black/60 hover:text-brutal-black transition-all hover:bg-black/5 active:scale-95 border border-black/5"
                         disabled={isProcessing}
                         title="Upload from Gallery"
                     >
-                        <ImageIcon size={20} strokeWidth={1.5} />
+                        <ImageIcon size={22} strokeWidth={1.5} />
+                    </button>
+                    <button
+                        onClick={startDictation}
+                        className="p-3 bg-paper shadow-md rounded-2xl text-signal-red/80 hover:text-signal-red transition-all hover:bg-signal-red/10 active:scale-95 border border-signal-red/20"
+                        disabled={isProcessing}
+                        title="Voice Dictation"
+                    >
+                        {isProcessing ? <Activity size={22} className="animate-spin" /> : <Mic size={22} strokeWidth={1.5} />}
                     </button>
                 </div>
 
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                    placeholder="Log food... (e.g. 2 eggs)"
-                    disabled={isProcessing}
-                    className="flex-1 bg-transparent border-none outline-none px-4 font-sans text-lg placeholder:text-brutal-black/30 w-full min-w-0 disabled:opacity-50"
-                />
+                {/* Text Box Matrix */}
+                <div className={`brutal-card p-1 flex-1 flex flex-col shadow-[0_20px_50px_rgba(17,17,17,0.15)] bg-paper/90 backdrop-blur-xl border-t-white/50 transition-all relative ${isProcessing ? 'border-signal-red scale-[0.98]' : 'border border-black/5'}`}>
+                    {/* Processing Laser Animation */}
+                    <div className="absolute top-0 left-0 w-full h-[2px] overflow-hidden rounded-t-[2rem] opacity-50">
+                        <div
+                            ref={scannerRef}
+                            className="w-1/3 h-full bg-signal-red shadow-[0_0_10px_#E63B2E] translate-x-[-100%]"
+                        />
+                    </div>
 
-                <button
-                    onClick={handleSubmit}
-                    className="btn-liquid p-3 rounded-full overflow-hidden shrink-0 flex items-center justify-center w-[48px] h-[48px] disabled:opacity-50 disabled:pointer-events-none group"
-                    disabled={!input.trim() || isProcessing}
-                >
-                    {isProcessing ? (
-                        <Activity size={20} className="relative z-10 animate-spin text-off-white" strokeWidth={2} />
-                    ) : (
-                        <Send size={20} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" strokeWidth={2} />
-                    )}
-                </button>
+                    <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSubmit();
+                            }
+                        }}
+                        placeholder="Log food... (e.g. 2 eggs)"
+                        disabled={isProcessing}
+                        rows={3}
+                        className="bg-transparent border-none outline-none px-3 py-3 font-sans text-lg placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50"
+                    />
+
+                    <div className="flex justify-end p-1">
+                        <button
+                            onClick={handleSubmit}
+                            className="btn-liquid p-2 rounded-full overflow-hidden shrink-0 flex items-center justify-center w-[44px] h-[44px] disabled:opacity-50 disabled:pointer-events-none group"
+                            disabled={!input.trim() || isProcessing}
+                        >
+                            {isProcessing ? (
+                                <Activity size={18} className="relative z-10 animate-spin text-off-white" strokeWidth={2} />
+                            ) : (
+                                <Send size={18} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" strokeWidth={2} />
+                            )}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

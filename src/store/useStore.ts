@@ -41,6 +41,9 @@ interface AppState {
     deleteEntry: (id: string) => void;
     resetDaily: () => void;
     resetAll: () => void;
+    favorites: Omit<FoodEntry, 'id' | 'timestamp'>[];
+    addFavorite: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
+    removeFavorite: (name: string) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -119,6 +122,7 @@ export const useStore = create<AppState>()(
             consumedKcal: 0,
             consumedProtein: 0,
             dailyLog: [],
+            favorites: [],
 
             calibrateUser: async (profile: UserProfile, kcal: number, protein: number) => {
                 set(() => ({
@@ -243,6 +247,14 @@ export const useStore = create<AppState>()(
                 consumedKcal: 0,
                 consumedProtein: 0,
                 dailyLog: []
+            })),
+
+            addFavorite: (entry) => set((state) => ({
+                favorites: [...state.favorites.filter(f => f.name !== entry.name), entry]
+            })),
+
+            removeFavorite: (name) => set((state) => ({
+                favorites: state.favorites.filter(f => f.name !== name)
             }))
         }),
         {

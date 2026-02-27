@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { Edit2, Check, X, Trash2 } from 'lucide-react';
+import { Edit2, Check, X, Trash2, Star, Activity } from 'lucide-react';
 import gsap from 'gsap';
+import { getAiResponse } from '../utils/ai';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         if (!containerRef.current || dailyLog.length === 0) return;
@@ -34,12 +36,15 @@ const DailyLog = () => {
         });
     };
 
-    const saveEdit = (id: string, originalTimestamp: number) => {
+    const saveEdit = async (id: string, originalTimestamp: number) => {
+        const entry = dailyLog.find(e => e.id === id);
+        if (!entry) return;
+
         const [hours, minutes] = editForm.time.split(':');
         const updatedDate = new Date(originalTimestamp);
         updatedDate.setHours(Number(hours), Number(minutes), 0, 0);
 
-        updateEntry(id, {
+        let finalData = {
             name: editForm.name,
             kcal: Number(editForm.kcal),
             protein: Number(editForm.protein),
@@ -47,7 +52,28 @@ const DailyLog = () => {
             fat: Number(editForm.fat),
             timestamp: updatedDate.getTime(),
             requiresReview: false
-        });
+        };
+
+        if (entry.name !== editForm.name) {
+            const wantsRecalc = window.confirm("Změnili jste název. Chcete podle něj nechat AI znovu přepočítat hodnoty? (Jinak zůstanou současná čísla)");
+            if (wantsRecalc) {
+                setIsProcessing(true);
+                const aiRes: any = await getAiResponse(editForm.name);
+                setIsProcessing(false);
+                if (aiRes.type === 'success' && aiRes.data) {
+                    finalData.kcal = aiRes.data.kcal;
+                    finalData.protein = aiRes.data.protein;
+                    finalData.carbs = aiRes.data.carbs;
+                    finalData.fat = aiRes.data.fat;
+                } else if (aiRes.type === 'clarification') {
+                    alert("AI potřebuje upřesnění. Hodnoty zůstanou původní, upravte je ručně.");
+                } else {
+                    alert("Chyba při komunikaci s AI. Hodnoty zůstanou původní.");
+                }
+            }
+        }
+
+        updateEntry(id, finalData);
         setEditingId(null);
     };
 
@@ -118,8 +144,8 @@ const DailyLog = () => {
                                             <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded hover:bg-black/10 transition-colors">
                                                 <X size={16} />
                                             </button>
-                                            <button onClick={() => saveEdit(entry.id, entry.timestamp)} className="p-2 bg-signal-red text-white rounded hover:bg-signal-red/80 transition-colors">
-                                                <Check size={16} />
+                                            <button onClick={() => saveEdit(entry.id, entry.timestamp)} disabled={isProcessing} className="p-2 bg-signal-red text-white rounded hover:bg-signal-red/80 transition-colors disabled:opacity-50">
+                                                {isProcessing ? <Activity size={16} className="animate-spin" /> : <Check size={16} />}
                                             </button>
                                         </div>
                                     </div>
@@ -137,8 +163,21 @@ const DailyLog = () => {
                                         <Edit2 size={16} strokeWidth={entry.requiresReview ? 2.5 : 2} />
                                     </button>
 
-                                    <div className="pr-8">
-                                        <p className="font-sans font-medium text-lg leading-tight mb-1">{entry.name}</p>
+                                    <div className="pr-8 pt-1">
+                                        <div className="flex items-start gap-2 mb-1">
+                                            <button
+                                                onClick={() => {
+                                                    const isFav = favorites.some(f => f.name === entry.name);
+                                                    if (isFav) removeFavorite(entry.name);
+                                                    else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
+                                                }}
+                                                className={`mt-1 transition-colors ${favorites.some(f => f.name === entry.name) ? 'text-[#F5B041]' : 'text-brutal-black/20 hover:text-[#F5B041]'}`}
+                                                title="Favorite"
+                                            >
+                                                <Star size={16} fill={favorites.some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
+                                            </button>
+                                            <p className="font-sans font-medium text-lg leading-tight">{entry.name}</p>
+                                        </div>
                                         <div className="flex items-center gap-2">
                                             <p className="font-data text-xs opacity-50 tracking-widest">
                                                 {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
