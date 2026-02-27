@@ -232,7 +232,7 @@ const SmartLogging = () => {
 
             {/* Favorites List - Floating above the pill */}
             {showFavorites && favorites && favorites.length > 0 && (
-                <div className="flex flex-col gap-2 pb-4 mb-2 px-2 w-full max-w-sm animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex flex-wrap gap-2 pb-4 mb-2 px-2 w-full max-w-sm justify-center animate-in fade-in slide-in-from-bottom-2">
                     {(favorites || []).map((fav, i) => (
                         <button
                             key={i}
@@ -241,17 +241,17 @@ const SmartLogging = () => {
                                 setShowFavorites(false);
                                 playSound('click');
                             }}
-                            className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-3 rounded-2xl font-sans text-sm font-medium hover:bg-white active:scale-95 transition-all flex items-center justify-between gap-2 w-full border border-black/5 shadow-sm"
+                            className="bg-white/80 backdrop-blur-md text-brutal-black px-3 py-2 rounded-full font-sans text-sm font-medium hover:bg-white active:scale-95 transition-all flex items-center gap-2 w-max max-w-full border border-black/5 shadow-sm"
                         >
-                            <div className="flex items-center gap-2 truncate min-w-0 flex-1 pr-2">
-                                <Star size={16} className="text-amber-400 fill-amber-400 shrink-0" />
+                            <div className="flex items-center gap-1.5 truncate min-w-0 pr-1">
+                                <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
                                 <span className="font-bold truncate">{fav.name.split('||')[0]}</span>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-[10px] font-bold uppercase opacity-60 bg-black/5 px-2 py-1 rounded-md">
+                                <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
                                     {fav.kcal} kcal
                                 </span>
-                                <span className="text-[10px] font-bold uppercase opacity-60 bg-black/5 px-2 py-1 rounded-md">
+                                <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
                                     {fav.protein}g prot
                                 </span>
                             </div>
