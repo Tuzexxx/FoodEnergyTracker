@@ -43,6 +43,13 @@ const MacroDashboard = () => {
 
     return (
         <div className="brutal-card w-full shadow-2xl relative bg-black text-off-white overflow-hidden group">
+            {/* Background Liquid fill visualizer for Calories */}
+            <div
+                ref={progressLineRef}
+                className="absolute inset-y-0 left-0 bg-signal-red/20 pointer-events-none"
+                style={{ width: '0%' }}
+            />
+
             <div className="relative z-10 p-6 flex flex-col justify-between h-56">
                 <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse" />
@@ -51,36 +58,26 @@ const MacroDashboard = () => {
 
                 <div className="flex flex-col gap-4 items-end mt-auto w-full">
                     {/* Calories Section */}
-                    <div className="flex flex-col items-end w-full max-w-[95%]">
-                        <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right mb-2">
-                            {isOverCalories && <AlertCircle className="text-signal-red animate-pulse" size={24} />}
-                            {isExactCalories && <CheckCircle2 className="text-green-500" size={24} />}
-                            <span
-                                ref={kcalRef}
-                                className={`font-data text-7xl tracking-tighter leading-none ${isOverCalories ? 'text-signal-red drop-shadow-[0_0_15px_rgba(255,51,51,0.5)]' : ''}`}
-                            >
-                                0
-                            </span>
-                            <span className="font-sans text-xs uppercase tracking-widest text-signal-red whitespace-nowrap">/ {targetKcal} KCAL</span>
-                        </div>
-                        {/* Consistent Calories Progress Bar border-radius */}
-                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden flex justify-end">
-                            <div
-                                ref={progressLineRef}
-                                className={`h-full transition-all duration-1000 ease-out ${isOverCalories ? 'bg-signal-red' : 'bg-white'}`}
-                                style={{ width: '0%' }}
-                            />
-                        </div>
+                    <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right mb-2">
+                        {isOverCalories && <AlertCircle className="text-signal-red animate-pulse" size={24} />}
+                        {isExactCalories && <CheckCircle2 className="text-green-500" size={24} />}
+                        <span
+                            ref={kcalRef}
+                            className={`font-data text-7xl tracking-tighter leading-none ${isOverCalories ? 'text-signal-red drop-shadow-[0_0_15px_rgba(255,51,51,0.5)]' : ''}`}
+                        >
+                            0
+                        </span>
+                        <span className="font-sans text-xs uppercase tracking-widest text-signal-red whitespace-nowrap">/ {targetKcal} KCAL</span>
                     </div>
 
                     {/* Protein Section */}
-                    <div className="flex flex-col items-end w-full max-w-[95%]">
+                    <div className="flex flex-col items-end w-full max-w-[80%]">
                         <div className="flex items-baseline gap-2 opacity-80 group-hover:scale-[1.02] transition-transform duration-500 origin-right delay-75 mb-2">
                             <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none">0</span>
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
                         </div>
-                        {/* Consistent Protein Progress Bar */}
-                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden flex justify-end">
+                        {/* Continuous Protein Progress Bar (Left-to-Right) */}
+                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden flex justify-start">
                             <div
                                 className="h-full bg-white opacity-80 transition-all duration-1000 ease-out"
                                 style={{ width: `${proteinPercent}%` }}
