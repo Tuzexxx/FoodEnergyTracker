@@ -232,7 +232,7 @@ const SmartLogging = () => {
 
             {/* Favorites List - Floating above the pill */}
             {showFavorites && favorites && favorites.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar px-2 w-full max-w-sm animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex flex-col gap-2 pb-4 mb-2 px-2 w-full max-w-sm animate-in fade-in slide-in-from-bottom-2">
                     {(favorites || []).map((fav, i) => (
                         <button
                             key={i}
@@ -241,13 +241,13 @@ const SmartLogging = () => {
                                 setShowFavorites(false);
                                 playSound('click');
                             }}
-                            className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-2 rounded-2xl font-sans text-sm font-medium whitespace-nowrap hover:bg-white active:scale-95 transition-all flex items-center gap-2 shrink-0 border border-black/5 shadow-sm"
+                            className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-3 rounded-2xl font-sans text-sm font-medium hover:bg-white active:scale-95 transition-all flex items-center justify-between gap-2 w-full border border-black/5 shadow-sm"
                         >
-                            <div className="flex items-center gap-1.5">
-                                <Star size={14} className="text-amber-400 fill-amber-400" />
-                                <span>{fav.name.split('||')[0]}</span>
+                            <div className="flex items-center gap-2 truncate">
+                                <Star size={16} className="text-amber-400 fill-amber-400 shrink-0" />
+                                <span className="truncate">{fav.name.split('||')[0]}</span>
                             </div>
-                            <span className="text-[10px] font-bold uppercase opacity-50 bg-black/5 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[10px] font-bold uppercase opacity-50 bg-black/5 px-2 py-1 rounded-md shrink-0">
                                 {fav.kcal} kcal
                             </span>
                         </button>
