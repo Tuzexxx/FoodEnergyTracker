@@ -34,6 +34,8 @@ interface AppState {
     targetProtein: number;
     consumedKcal: number;
     consumedProtein: number;
+    yesterdayKcal: number;
+    yesterdayProtein: number;
     dailyLog: FoodEntry[];
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
@@ -69,11 +71,22 @@ export const useStore = create<AppState>()(
                 // Fetch today's entries
                 const startOfDay = new Date();
                 startOfDay.setHours(0, 0, 0, 0);
+
+                // Fetch yesterday's entries (for summary)
+                const startOfYesterday = new Date(startOfDay);
+                startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
                 const { data: entries } = await supabase.from('food_entries')
                     .select('*')
                     .eq('user_id', session.user.id)
                     .gte('timestamp', startOfDay.getTime())
                     .order('timestamp', { ascending: false });
+
+                const { data: yesterdayEntries } = await supabase.from('food_entries')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .gte('timestamp', startOfYesterday.getTime())
+                    .lt('timestamp', startOfDay.getTime());
 
                 if (profileData) {
                     set({
@@ -88,6 +101,16 @@ export const useStore = create<AppState>()(
                         targetKcal: profileData.target_kcal,
                         targetProtein: profileData.target_protein
                     });
+                }
+
+                if (yesterdayEntries) {
+                    let yKcal = 0;
+                    let yProtein = 0;
+                    yesterdayEntries.forEach(e => {
+                        yKcal += Number(e.kcal);
+                        yProtein += Number(e.protein);
+                    });
+                    set({ yesterdayKcal: yKcal, yesterdayProtein: yProtein });
                 }
 
                 if (entries) {
@@ -121,6 +144,8 @@ export const useStore = create<AppState>()(
             targetProtein: 0,
             consumedKcal: 0,
             consumedProtein: 0,
+            yesterdayKcal: 0,
+            yesterdayProtein: 0,
             dailyLog: [],
             favorites: [],
 
@@ -232,7 +257,9 @@ export const useStore = create<AppState>()(
                 }
             },
 
-            resetDaily: () => set(() => ({
+            resetDaily: () => set((state) => ({
+                yesterdayKcal: state.consumedKcal,
+                yesterdayProtein: state.consumedProtein,
                 consumedKcal: 0,
                 consumedProtein: 0,
                 dailyLog: []

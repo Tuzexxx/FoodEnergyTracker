@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
@@ -177,7 +177,16 @@ const DailyLog = () => {
                                             >
                                                 <Star size={16} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
                                             </button>
-                                            <p className="font-sans font-medium text-lg leading-tight">{entry.name}</p>
+                                            <div className="flex flex-col">
+                                                <p className="font-sans font-medium text-lg leading-tight">
+                                                    {entry.name.includes('||') ? entry.name.split('||')[0] : entry.name}
+                                                </p>
+                                                {entry.name.includes('||') && (
+                                                    <p className="font-sans text-[11px] opacity-60 leading-tight mt-0.5 pr-2">
+                                                        {entry.name.substring(entry.name.indexOf('||') + 2)}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <p className="font-data text-xs opacity-50 tracking-widest">
@@ -208,6 +217,24 @@ const DailyLog = () => {
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Yesterday 's Summary */}
+            {(yesterdayKcal > 0 || yesterdayProtein > 0) && (
+                <div className="mt-8 brutal-card p-4 bg-black/5 border border-black/10 flex flex-col items-center justify-center text-center opacity-80">
+                    <h4 className="font-sans text-xs uppercase tracking-widest opacity-50 mb-2">Předchozí den</h4>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-baseline gap-1">
+                            <span className={`font-data text-xl ${yesterdayKcal > targetKcal ? 'text-signal-red' : ''}`}>{yesterdayKcal}</span>
+                            <span className="font-sans text-[10px] uppercase opacity-60">/ {targetKcal} kcal</span>
+                        </div>
+                        <div className="w-[1px] h-4 bg-black/20" />
+                        <div className="flex items-baseline gap-1">
+                            <span className="font-data text-xl">{yesterdayProtein}</span>
+                            <span className="font-sans text-[10px] uppercase opacity-60">/ {targetProtein}g pro</span>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

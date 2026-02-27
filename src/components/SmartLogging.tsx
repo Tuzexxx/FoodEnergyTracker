@@ -8,6 +8,7 @@ import { getAiResponse } from '../utils/ai';
 const SmartLogging = () => {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const { isCalibrated, addEntry, favorites } = useStore();
 
@@ -304,6 +305,8 @@ const SmartLogging = () => {
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -312,8 +315,8 @@ const SmartLogging = () => {
                         }}
                         placeholder="Log food... (e.g. 2 eggs)"
                         disabled={isProcessing}
-                        rows={3}
-                        className="bg-transparent border-none outline-none px-3 py-3 font-sans text-lg placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50"
+                        rows={isFocused || input.trim().length > 0 ? 3 : 1}
+                        className="bg-transparent border-none outline-none px-3 py-3 font-sans text-lg placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50 transition-all duration-300 ease-in-out"
                     />
 
                     <div className="flex justify-end p-1">

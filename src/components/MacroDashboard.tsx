@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const MacroDashboard = () => {
@@ -11,6 +12,10 @@ const MacroDashboard = () => {
 
     // Math
     const kcalPercent = Math.min((consumedKcal / targetKcal) * 100, 100);
+    const proteinPercent = Math.min((consumedProtein / targetProtein) * 100, 100);
+
+    const isOverCalories = consumedKcal > targetKcal;
+    const isExactCalories = consumedKcal === targetKcal && consumedKcal > 0;
 
     useEffect(() => {
         // Number counter animation
@@ -51,15 +56,31 @@ const MacroDashboard = () => {
                     Telemetry Center
                 </h2>
 
-                <div className="flex flex-col gap-1 items-end mt-auto">
+                <div className="flex flex-col gap-1 items-end mt-auto w-full">
                     <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
-                        <span ref={kcalRef} className="font-data text-7xl tracking-tighter leading-none">0</span>
+                        {isOverCalories && <AlertCircle className="text-signal-red animate-pulse" size={24} />}
+                        {isExactCalories && <CheckCircle2 className="text-green-500" size={24} />}
+                        <span
+                            ref={kcalRef}
+                            className={`font-data text-7xl tracking-tighter leading-none ${isOverCalories ? 'text-signal-red drop-shadow-[0_0_15px_rgba(255,51,51,0.5)]' : ''}`}
+                        >
+                            0
+                        </span>
                         <span className="font-sans text-xs uppercase tracking-widest text-signal-red whitespace-nowrap">/ {targetKcal} KCAL</span>
                     </div>
 
-                    <div className="flex items-baseline gap-2 opacity-80 group-hover:scale-[1.02] transition-transform duration-500 origin-right delay-75">
-                        <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none">0</span>
-                        <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
+                    <div className="flex flex-col items-end w-full max-w-[80%] mt-2">
+                        <div className="flex items-baseline gap-2 opacity-80 group-hover:scale-[1.02] transition-transform duration-500 origin-right delay-75 mb-1">
+                            <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none">0</span>
+                            <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
+                        </div>
+                        {/* Thin Protein Progress Bar */}
+                        <div className="w-full h-[2px] bg-off-white/10 rounded-full overflow-hidden flex justify-end">
+                            <div
+                                className="h-full bg-off-white transition-all duration-1000 ease-out"
+                                style={{ width: `${proteinPercent}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
