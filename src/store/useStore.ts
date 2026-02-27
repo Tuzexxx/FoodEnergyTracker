@@ -250,11 +250,11 @@ export const useStore = create<AppState>()(
             })),
 
             addFavorite: (entry) => set((state) => ({
-                favorites: [...state.favorites.filter(f => f.name !== entry.name), entry]
+                favorites: [...(state.favorites || []).filter(f => f.name !== entry.name), entry]
             })),
 
             removeFavorite: (name) => set((state) => ({
-                favorites: state.favorites.filter(f => f.name !== name)
+                favorites: (state.favorites || []).filter(f => f.name !== name)
             }))
         }),
         {

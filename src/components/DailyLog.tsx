@@ -167,14 +167,15 @@ const DailyLog = () => {
                                         <div className="flex items-start gap-2 mb-1">
                                             <button
                                                 onClick={() => {
-                                                    const isFav = favorites.some(f => f.name === entry.name);
+                                                    const safeFavorites = favorites || [];
+                                                    const isFav = safeFavorites.some(f => f.name === entry.name);
                                                     if (isFav) removeFavorite(entry.name);
                                                     else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
                                                 }}
-                                                className={`mt-1 transition-colors ${favorites.some(f => f.name === entry.name) ? 'text-[#F5B041]' : 'text-brutal-black/20 hover:text-[#F5B041]'}`}
+                                                className={`mt-1 transition-colors ${(favorites || []).some(f => f.name === entry.name) ? 'text-[#F5B041]' : 'text-brutal-black/20 hover:text-[#F5B041]'}`}
                                                 title="Favorite"
                                             >
-                                                <Star size={16} fill={favorites.some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
+                                                <Star size={16} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
                                             </button>
                                             <p className="font-sans font-medium text-lg leading-tight">{entry.name}</p>
                                         </div>

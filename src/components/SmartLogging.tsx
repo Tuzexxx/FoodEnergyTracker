@@ -246,7 +246,7 @@ const SmartLogging = () => {
             {/* Favorites List */}
             {favorites && favorites.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar px-1">
-                    {favorites.map((fav, i) => (
+                    {(favorites || []).map((fav, i) => (
                         <button
                             key={i}
                             onClick={() => {
