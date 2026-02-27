@@ -66,8 +66,10 @@ function App() {
 
             {/* Floating Smart Input - bottom anchored */}
             {(session || isGuest) && isCalibrated && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 z-40 w-full max-w-md mx-auto bg-gradient-to-t from-off-white via-off-white to-transparent pt-12">
-                    <SmartLogging />
+                <div className="fixed bottom-6 left-0 right-0 px-4 z-40 w-full max-w-md mx-auto pointer-events-none">
+                    <div className="pointer-events-auto">
+                        <SmartLogging />
+                    </div>
                 </div>
             )}
 

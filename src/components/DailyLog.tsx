@@ -8,6 +8,7 @@ const DailyLog = () => {
     const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -55,7 +56,7 @@ const DailyLog = () => {
         };
 
         if (entry.name !== editForm.name) {
-            const wantsRecalc = window.confirm("Změnili jste název. Chcete podle něj nechat AI znovu přepočítat hodnoty? (Jinak zůstanou současná čísla)");
+            const wantsRecalc = window.confirm("You changed the name. Do you want AI to recalculate the values based on it? (Otherwise current numbers remain)");
             if (wantsRecalc) {
                 setIsProcessing(true);
                 const aiRes: any = await getAiResponse(editForm.name);
@@ -66,9 +67,9 @@ const DailyLog = () => {
                     finalData.carbs = aiRes.data.carbs;
                     finalData.fat = aiRes.data.fat;
                 } else if (aiRes.type === 'clarification') {
-                    alert("AI potřebuje upřesnění. Hodnoty zůstanou původní, upravte je ručně.");
+                    alert("AI needs clarification. Values remain original, adjust them manually.");
                 } else {
-                    alert("Chyba při komunikaci s AI. Hodnoty zůstanou původní.");
+                    alert("Error communicating with AI. Values remain original.");
                 }
             }
         }
@@ -86,154 +87,197 @@ const DailyLog = () => {
 
     return (
         <div ref={containerRef} className="flex flex-col gap-4 mt-8 pb-32">
-            <h3 className="font-sans text-sm uppercase tracking-widest opacity-50 mb-2 sticky top-20 z-20 bg-off-white/80 backdrop-blur py-2 mix-blend-multiply">
-                Daily Archive Sequences
+            <h3 className="font-sans text-xs uppercase tracking-[0.2em] opacity-50 mb-4 sticky top-20 z-20 bg-off-white/80 backdrop-blur-xl py-2 px-2 rounded-lg mix-blend-multiply flex items-center justify-between">
+                <span>Timeline</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
             </h3>
 
             {dailyLog.length === 0 ? (
-                <div className="brutal-card p-8 border-dashed border-brutal-black/20 bg-transparent opacity-50 text-center">
-                    <p className="font-sans text-sm uppercase tracking-widest">No telemetry recorded</p>
-                    <div className="w-8 h-[1px] bg-brutal-black/30 mx-auto mt-4"></div>
+                <div className="p-8 border-dashed border-brutal-black/20 rounded-2xl bg-black/5 text-center">
+                    <p className="font-sans text-sm tracking-widest opacity-60">No entries yet.</p>
                 </div>
             ) : (
-                <div className="flex flex-col gap-3 relative z-10">
-                    {dailyLog.map((entry) => (
-                        <div
-                            key={entry.id}
-                            className={`log-card brutal-card p-5 transition-all duration-300 border bg-paper group relative ${entry.requiresReview ? 'border-signal-red border-dashed' : 'border-transparent hover:border-brutal-black/30'}`}
-                        >
-                            {editingId === entry.id ? (
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={editForm.name}
-                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                            className="font-sans font-medium text-lg leading-tight bg-black/5 p-2 rounded-lg outline-none flex-1"
-                                        />
-                                        <input
-                                            type="time"
-                                            value={editForm.time}
-                                            onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
-                                            className="font-sans font-medium text-lg leading-tight bg-black/5 p-2 rounded-lg outline-none w-24 shrink-0 text-center"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <div>
-                                            <label className="text-[10px] uppercase opacity-50 block mb-1">Kcal</label>
-                                            <input type="number" value={editForm.kcal} onChange={(e) => setEditForm({ ...editForm, kcal: e.target.value })} className="w-full bg-black/5 p-2 rounded outline-none font-data" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] uppercase opacity-50 block mb-1">Pro</label>
-                                            <input type="number" value={editForm.protein} onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })} className="w-full bg-black/5 p-2 rounded outline-none font-data" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] uppercase opacity-50 block mb-1">Carb</label>
-                                            <input type="number" value={editForm.carbs} onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })} className="w-full bg-black/5 p-2 rounded outline-none font-data" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] uppercase opacity-50 block mb-1">Fat</label>
-                                            <input type="number" value={editForm.fat} onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })} className="w-full bg-black/5 p-2 rounded outline-none font-data" />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-2 border-t border-black/10 pt-3">
-                                        <button onClick={() => handleDelete(entry.id)} className="p-2 text-signal-red hover:bg-signal-red/10 rounded transition-colors flex items-center gap-1 text-xs tracking-widest uppercase font-sans font-bold">
-                                            <Trash2 size={14} /> Delete
-                                        </button>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded hover:bg-black/10 transition-colors">
-                                                <X size={16} />
-                                            </button>
-                                            <button onClick={() => saveEdit(entry.id, entry.timestamp)} disabled={isProcessing} className="p-2 bg-signal-red text-white rounded hover:bg-signal-red/80 transition-colors disabled:opacity-50">
-                                                {isProcessing ? <Activity size={16} className="animate-spin" /> : <Check size={16} />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex justify-between items-center relative">
-                                    <button
-                                        onClick={() => startEdit(entry)}
-                                        className={`absolute -top-4 -right-2 p-3 transition-all rounded-full z-10 flex items-center justify-center ${entry.requiresReview
-                                            ? 'bg-signal-red text-off-white shadow-md animate-pulse opacity-100 scale-[1.15]'
-                                            : 'text-brutal-black/50 hover:text-signal-red opacity-100 bg-black/5 hover:bg-black/10'
-                                            }`}
-                                        title="Edit Entry"
-                                    >
-                                        <Edit2 size={16} strokeWidth={entry.requiresReview ? 2.5 : 2} />
-                                    </button>
+                <div className="relative flex flex-col gap-4 z-10 pl-4">
+                    {/* Vertical Timeline Guide */}
+                    <div className="absolute left-0 top-6 bottom-6 w-[1px] bg-brutal-black/10 border-l border-dashed border-brutal-black/20 -z-10" />
 
-                                    <div className="pr-8 pt-1">
-                                        <div className="flex items-start gap-2 mb-1">
-                                            <button
-                                                onClick={() => {
-                                                    const safeFavorites = favorites || [];
-                                                    const isFav = safeFavorites.some(f => f.name === entry.name);
-                                                    if (isFav) removeFavorite(entry.name);
-                                                    else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
-                                                }}
-                                                className={`mt-1 transition-colors ${(favorites || []).some(f => f.name === entry.name) ? 'text-[#F5B041]' : 'text-brutal-black/20 hover:text-[#F5B041]'}`}
-                                                title="Favorite"
-                                            >
-                                                <Star size={16} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
-                                            </button>
-                                            <div className="flex flex-col">
-                                                <p className="font-sans font-medium text-lg leading-tight">
-                                                    {entry.name.includes('||') ? entry.name.split('||')[0] : entry.name}
-                                                </p>
-                                                {entry.name.includes('||') && (
-                                                    <p className="font-sans text-[11px] opacity-60 leading-tight mt-0.5 pr-2">
-                                                        {entry.name.substring(entry.name.indexOf('||') + 2)}
-                                                    </p>
-                                                )}
+                    {dailyLog.map((entry) => {
+                        let displayTitle = entry.name;
+                        let displayDetails = '';
+
+                        if (entry.name.includes('||')) {
+                            const parts = entry.name.split('||');
+                            displayTitle = parts[0];
+                            displayDetails = parts.slice(1).join('||');
+                        } else {
+                            const words = entry.name.trim().split(/\s+/);
+                            if (words.length > 1) {
+                                displayTitle = words[0];
+                                displayDetails = words.slice(1).join(' ');
+                            }
+                        }
+
+                        return (
+                            <div key={entry.id} className="relative w-full">
+                                {/* Timeline dot */}
+                                <div className="absolute -left-5 top-8 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/20 z-10" />
+
+                                <div
+                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white/60 backdrop-blur-md shadow-sm border group relative cursor-pointer
+                                ${entry.requiresReview ? 'border-orange-300 bg-orange-50/30' : 'border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/80'}`}
+                                    onClick={() => {
+                                        if (editingId !== entry.id) {
+                                            setExpandedId(prev => prev === entry.id ? null : entry.id);
+                                        }
+                                    }}
+                                >
+                                    {editingId === entry.id ? (
+                                        <div className="flex flex-col gap-3" onClick={e => e.stopPropagation()}>
+                                            {/* Editing Form */}
+                                            <div className="flex gap-2">
+                                                <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="font-sans font-medium text-lg bg-black/5 p-2 rounded-xl outline-none flex-1 transition-colors focus:bg-white" />
+                                                <input type="time" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} className="font-sans font-medium text-lg bg-black/5 p-2 rounded-xl outline-none w-24 shrink-0 text-center transition-colors focus:bg-white" />
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                <div><label className="text-[10px] uppercase opacity-50 block mb-1">Kcal</label><input type="number" value={editForm.kcal} onChange={(e) => setEditForm({ ...editForm, kcal: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
+                                                <div><label className="text-[10px] uppercase opacity-50 block mb-1">Pro</label><input type="number" value={editForm.protein} onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
+                                                <div><label className="text-[10px] uppercase opacity-50 block mb-1">Carb</label><input type="number" value={editForm.carbs} onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
+                                                <div><label className="text-[10px] uppercase opacity-50 block mb-1">Fat</label><input type="number" value={editForm.fat} onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-2 border-t border-black/5 pt-3">
+                                                <button onClick={() => handleDelete(entry.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1 text-xs font-sans font-medium">
+                                                    <Trash2 size={16} /> Delete
+                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded-xl hover:bg-black/10 transition-colors"><X size={18} /></button>
+                                                    <button onClick={() => saveEdit(entry.id, entry.timestamp)} disabled={isProcessing} className="p-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-colors disabled:opacity-50">
+                                                        {isProcessing ? <Activity size={18} className="animate-spin" /> : <Check size={18} />}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-data text-xs opacity-50 tracking-widest">
-                                                {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ) : (
+                                        <div className="flex flex-col w-full relative">
+                                            {/* Status Indicator for items needing review */}
+                                            {entry.requiresReview && expandedId !== entry.id && (
+                                                <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 rounded-full bg-orange-500 animate-pulse" title="Requires Review" />
+                                            )}
 
-                                    <div className="text-right flex flex-col items-end shrink-0">
-                                        <div className="flex items-baseline gap-1">
-                                            <p className="font-data text-2xl tracking-tighter leading-none">{entry.kcal}</p>
-                                            <span className="text-[9px] uppercase tracking-widest text-signal-red font-sans">KCAL</span>
-                                        </div>
+                                            {/* Collapsed 1-row view */}
+                                            {expandedId !== entry.id && (
+                                                <div className="flex items-center justify-between w-full h-8">
+                                                    <div className="flex items-center gap-3 w-3/4 pr-4 overflow-hidden">
+                                                        <span className="font-sans text-[11px] font-medium opacity-50 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
+                                                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                        <div className="flex items-baseline gap-2 truncate">
+                                                            <span className="font-sans font-semibold text-lg leading-tight text-brutal-black shrink-0 capitalize">
+                                                                {displayTitle}
+                                                            </span>
+                                                            {displayDetails && (
+                                                                <span className="font-sans text-xs opacity-50 truncate">
+                                                                    {displayDetails}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-baseline gap-1 shrink-0">
+                                                        <span className="font-data text-2xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
+                                                        <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                        <div className="flex gap-3 font-data text-[10px] opacity-40 mt-2 border-t border-brutal-black/10 pt-1">
-                                            <span className="flex gap-1">
-                                                <span className="opacity-50">P</span>{entry.protein}
-                                            </span>
-                                            <span className="flex gap-1">
-                                                <span className="opacity-50">C</span>{entry.carbs}
-                                            </span>
-                                            <span className="flex gap-1">
-                                                <span className="opacity-50">F</span>{entry.fat}
-                                            </span>
+                                            {/* Expanded 3-row view */}
+                                            {expandedId === entry.id && (
+                                                <div className="flex flex-col gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+                                                    <div className="flex justify-between items-start gap-4">
+                                                        <div className="flex flex-col flex-1 min-w-0">
+                                                            <span className="font-sans text-[11px] font-medium opacity-50 bg-black/5 px-2 py-0.5 rounded-md w-fit mb-2">
+                                                                {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                            <span className="font-sans font-semibold text-xl leading-tight text-brutal-black break-words capitalize">
+                                                                {displayTitle}
+                                                            </span>
+                                                            {displayDetails && (
+                                                                <span className="font-sans text-sm opacity-70 leading-snug mt-1.5 italic text-brutal-black/90 whitespace-pre-wrap">
+                                                                    {displayDetails}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-baseline gap-1 shrink-0 pl-2">
+                                                            <span className="font-data text-3xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
+                                                            <span className="text-[10px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex justify-between items-center mt-2 border-t border-black/5 pt-3">
+                                                        <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-3 py-1.5 rounded-lg border border-black/5">
+                                                            <span className="flex gap-1.5 items-center">
+                                                                <span className="opacity-50 text-[9px] uppercase">Pro</span><span className="text-brutal-black/80">{entry.protein}</span>
+                                                            </span>
+                                                            <span className="w-[1px] h-3.5 bg-black/10" />
+                                                            <span className="flex gap-1.5 items-center">
+                                                                <span className="opacity-50 text-[9px] uppercase">Carb</span><span className="text-brutal-black/80">{entry.carbs}</span>
+                                                            </span>
+                                                            <span className="w-[1px] h-3.5 bg-black/10" />
+                                                            <span className="flex gap-1.5 items-center">
+                                                                <span className="opacity-50 text-[9px] uppercase">Fat</span><span className="text-brutal-black/80">{entry.fat}</span>
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="flex gap-2 shrink-0">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const safeFavorites = favorites || [];
+                                                                    const isFav = safeFavorites.some(f => f.name === entry.name);
+                                                                    if (isFav) removeFavorite(entry.name);
+                                                                    else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
+                                                                }}
+                                                                className={`p-2 transition-colors rounded-full shadow-sm border ${(favorites || []).some(f => f.name === entry.name)
+                                                                    ? 'bg-amber-50 text-amber-500 border-amber-200'
+                                                                    : 'text-brutal-black/40 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
+                                                                    }`}
+                                                                title="Favorite"
+                                                            >
+                                                                <Star size={16} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); startEdit(entry); }}
+                                                                className={`p-2 transition-colors rounded-full shadow-sm flex items-center justify-center border ${entry.requiresReview
+                                                                    ? 'bg-orange-100 text-orange-600 border-orange-200'
+                                                                    : 'text-brutal-black/40 hover:text-indigo-500 bg-white hover:bg-indigo-50 border-black/5'
+                                                                    }`}
+                                                                title="Edit Entry"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
             {/* Yesterday 's Summary */}
             {(yesterdayKcal > 0 || yesterdayProtein > 0) && (
-                <div className="mt-8 brutal-card p-4 bg-black/5 border border-black/10 flex flex-col items-center justify-center text-center opacity-80">
-                    <h4 className="font-sans text-xs uppercase tracking-widest opacity-50 mb-2">Předchozí den</h4>
+                <div className="mt-8 p-6 bg-brutal-black/5 rounded-3xl flex flex-col items-center justify-center text-center border border-brutal-black/5">
+                    <h4 className="font-sans text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-4 text-brutal-black">Yesterday's Summary</h4>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-baseline gap-1">
-                            <span className={`font-data text-xl ${yesterdayKcal > targetKcal ? 'text-signal-red' : ''}`}>{yesterdayKcal}</span>
-                            <span className="font-sans text-[10px] uppercase opacity-60">/ {targetKcal} kcal</span>
-                        </div>
-                        <div className="w-[1px] h-4 bg-black/20" />
-                        <div className="flex items-baseline gap-1">
-                            <span className="font-data text-xl">{yesterdayProtein}</span>
-                            <span className="font-sans text-[10px] uppercase opacity-60">/ {targetProtein}g pro</span>
-                        </div>
+                        <span className={`font-data text-2xl ${yesterdayKcal > targetKcal ? 'text-signal-red' : 'text-brutal-black'}`}>
+                            {yesterdayKcal} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetKcal} KCAL</span>
+                        </span>
+                        <div className="w-[1px] h-6 bg-brutal-black/10" />
+                        <span className={`font-data text-2xl ${yesterdayProtein < targetProtein ? 'text-signal-red' : 'text-brutal-black'}`}>
+                            {yesterdayProtein} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetProtein}G PRO</span>
+                        </span>
                     </div>
                 </div>
             )}

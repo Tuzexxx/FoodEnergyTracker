@@ -5,7 +5,7 @@ import { X, Save, RefreshCw, LogOut } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
-    const { profile, resetAll, calibrateUser, resetDaily } = useStore();
+    const { profile, resetAll, calibrateUser, resetDaily, session, isGuest } = useStore();
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
     const [height, setHeight] = useState(profile?.height?.toString() || '');
     const [age, setAge] = useState(profile?.age?.toString() || '');
@@ -158,6 +158,12 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         >
                             <LogOut size={14} /> Sign Out
                         </button>
+
+                        {(session?.user?.email || isGuest) && (
+                            <span className="text-[10px] font-sans text-center text-brutal-black/30 w-full truncate px-2">
+                                {isGuest ? 'Logged in as Guest User' : `Logged in as ${session?.user?.email}`}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>

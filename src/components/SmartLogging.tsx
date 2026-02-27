@@ -9,6 +9,7 @@ const SmartLogging = () => {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const [showFavorites, setShowFavorites] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const { isCalibrated, addEntry, favorites } = useStore();
 
@@ -167,11 +168,11 @@ const SmartLogging = () => {
     const startDictation = () => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            alert("Váš prohlížeč nepodporuje rozpoznávání hlasu.");
+            alert("Your browser does not support voice recognition.");
             return;
         }
         const recognition = new SpeechRecognition();
-        recognition.lang = 'cs-CZ';
+        // Removed hardcoded recognition.lang = 'cs-CZ' to allow browser default / multi-language support.
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
@@ -193,29 +194,28 @@ const SmartLogging = () => {
     };
 
     return (
-        <div className="relative isolate px-4 pb-4">
-
+        <div className="relative isolate flex flex-col items-center">
             {/* The Interrogator Panel */}
             {interrogation && (
-                <div ref={interrogatePanelRef} className="absolute bottom-full left-4 right-4 mb-4 z-10">
-                    <div className="brutal-card p-4 bg-signal-red text-off-white shadow-xl">
-                        <div className="flex justify-between items-start mb-4">
-                            <h3 className="font-data text-xs uppercase tracking-widest opacity-80 flex items-center gap-2">
+                <div ref={interrogatePanelRef} className="absolute bottom-full mb-4 w-full px-2 z-10">
+                    <div className="p-5 rounded-3xl bg-orange-500/90 backdrop-blur-xl text-off-white shadow-xl shadow-orange-500/20 border border-white/20">
+                        <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-sans font-semibold text-xs tracking-wider uppercase opacity-90 flex items-center gap-2">
                                 <Activity size={12} className="animate-pulse" /> Interrogation Required
                             </h3>
-                            <button onClick={() => setInterrogation(null)} className="opacity-50 hover:opacity-100 transition-opacity">
-                                <X size={16} />
+                            <button onClick={() => setInterrogation(null)} className="opacity-60 hover:opacity-100 transition-opacity p-1 bg-black/10 rounded-full">
+                                <X size={14} />
                             </button>
                         </div>
 
-                        <p className="font-sans text-lg mb-4">{interrogation.question}</p>
+                        <p className="font-sans font-medium text-lg leading-tight mb-4">{interrogation.question}</p>
 
                         <div className="flex flex-wrap gap-2">
                             {interrogation.options.map((opt: string) => (
                                 <button
                                     key={opt}
                                     onClick={() => handleClarification(opt)}
-                                    className="bg-off-white text-signal-red px-3 py-1.5 rounded-full font-sans text-sm hover:scale-105 transition-transform"
+                                    className="bg-white text-orange-600 px-4 py-2 rounded-2xl font-sans font-medium text-sm hover:scale-95 active:scale-90 shadow-sm transition-all"
                                 >
                                     {opt}
                                 </button>
@@ -226,82 +226,75 @@ const SmartLogging = () => {
             )}
 
             {/* Native Camera Capture Input */}
-            <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                ref={cameraInputRef}
-                onChange={handleImageUpload}
-            />
-
+            <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraInputRef} onChange={handleImageUpload} />
             {/* Photo Gallery Selection Input */}
-            <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={galleryInputRef}
-                onChange={handleImageUpload}
-            />
+            <input type="file" accept="image/*" className="hidden" ref={galleryInputRef} onChange={handleImageUpload} />
 
-            {/* Favorites List */}
-            {favorites && favorites.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar px-1">
+            {/* Favorites List - Floating above the pill */}
+            {showFavorites && favorites && favorites.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar px-2 w-full max-w-sm animate-in fade-in slide-in-from-bottom-2">
                     {(favorites || []).map((fav, i) => (
                         <button
                             key={i}
                             onClick={() => {
                                 setInput((prev) => prev ? prev + ', ' + fav.name : fav.name);
+                                setShowFavorites(false);
                                 playSound('click');
                             }}
-                            className="bg-black/5 text-brutal-black px-4 py-2 rounded-full font-sans text-sm whitespace-nowrap hover:bg-black/10 transition-colors flex items-center gap-1 shrink-0 border border-black/5 shadow-sm"
+                            className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-2 rounded-2xl font-sans text-sm font-medium whitespace-nowrap hover:bg-white active:scale-95 transition-all flex items-center gap-1.5 shrink-0 border border-black/5 shadow-sm"
                         >
-                            <Star size={14} className="text-brutal-black/50" /> {fav.name}
+                            <Star size={14} className="text-amber-400 fill-amber-400" /> {fav.name}
                         </button>
                     ))}
                 </div>
             )}
 
-            {/* Main Input Container */}
-            <div className="flex gap-2 items-end">
-                {/* Tools - Outside the text box completely left */}
-                <div className="flex flex-col gap-2 shrink-0">
-                    <button
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="p-3 bg-paper shadow-md rounded-2xl text-brutal-black/60 hover:text-brutal-black transition-all hover:bg-black/5 active:scale-95 border border-black/5"
-                        disabled={isProcessing}
-                        title="Take Photo"
-                    >
-                        <Camera size={22} strokeWidth={1.5} />
-                    </button>
-                    <button
-                        onClick={() => galleryInputRef.current?.click()}
-                        className="p-3 bg-paper shadow-md rounded-2xl text-brutal-black/60 hover:text-brutal-black transition-all hover:bg-black/5 active:scale-95 border border-black/5"
-                        disabled={isProcessing}
-                        title="Upload from Gallery"
-                    >
-                        <ImageIcon size={22} strokeWidth={1.5} />
-                    </button>
-                    <button
-                        onClick={startDictation}
-                        className="p-3 bg-paper shadow-md rounded-2xl text-signal-red/80 hover:text-signal-red transition-all hover:bg-signal-red/10 active:scale-95 border border-signal-red/20"
-                        disabled={isProcessing}
-                        title="Voice Dictation"
-                    >
-                        {isProcessing ? <Activity size={22} className="animate-spin" /> : <Mic size={22} strokeWidth={1.5} />}
-                    </button>
+            {/* Main Interactive Pill Container */}
+            <div className={`p-1.5 flex flex-col w-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] bg-white/85 backdrop-blur-2xl transition-all relative rounded-3xl z-40
+                ${isFocused || input.trim().length > 0 ? 'rounded-[2rem] border-white/80' : 'rounded-full border-white/60'} 
+                ${isProcessing ? 'border-indigo-400 scale-[0.98]' : 'border'}`}>
+
+                {/* Processing Laser Animation */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-[inherit] pointer-events-none opacity-50 z-0">
+                    <div ref={scannerRef} className="w-1/3 h-full bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent translate-x-[-100%]" />
                 </div>
 
-                {/* Text Box Matrix */}
-                <div className={`brutal-card p-1 flex-1 flex flex-col shadow-[0_20px_50px_rgba(17,17,17,0.15)] bg-paper/90 backdrop-blur-xl border-t-white/50 transition-all relative ${isProcessing ? 'border-signal-red scale-[0.98]' : 'border border-black/5'}`}>
-                    {/* Processing Laser Animation */}
-                    <div className="absolute top-0 left-0 w-full h-[2px] overflow-hidden rounded-t-[2rem] opacity-50">
-                        <div
-                            ref={scannerRef}
-                            className="w-1/3 h-full bg-signal-red shadow-[0_0_10px_#E63B2E] translate-x-[-100%]"
-                        />
+                <div className="flex gap-1 items-end relative z-10 w-full">
+                    {/* Tool Bar inside the Pill */}
+                    <div className="flex items-center gap-1 shrink-0 p-1">
+                        <button
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
+                            disabled={isProcessing} title="Take Photo"
+                        >
+                            <Camera size={20} strokeWidth={2} />
+                        </button>
+                        <button
+                            onClick={() => galleryInputRef.current?.click()}
+                            className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
+                            disabled={isProcessing} title="Upload from Gallery"
+                        >
+                            <ImageIcon size={20} strokeWidth={2} />
+                        </button>
+                        <button
+                            onClick={startDictation}
+                            className="w-10 h-10 flex items-center justify-center rounded-full text-red-500 hover:text-white transition-all hover:bg-red-500 active:scale-90"
+                            disabled={isProcessing} title="Voice Dictation"
+                        >
+                            {isProcessing ? <Activity size={20} className="animate-spin" /> : <Mic size={20} strokeWidth={2} />}
+                        </button>
+                        {favorites && favorites.length > 0 && (
+                            <button
+                                onClick={() => setShowFavorites(!showFavorites)}
+                                className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                title="Toggle Favorites"
+                            >
+                                <Star size={20} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
+                            </button>
+                        )}
                     </div>
 
+                    {/* Fluid Text Area */}
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -313,22 +306,24 @@ const SmartLogging = () => {
                                 handleSubmit();
                             }
                         }}
-                        placeholder="Log food... (e.g. 2 eggs)"
+                        placeholder="Log food... (e.g. eggs)"
                         disabled={isProcessing}
                         rows={isFocused || input.trim().length > 0 ? 3 : 1}
-                        className="bg-transparent border-none outline-none px-3 py-3 font-sans text-lg placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50 transition-all duration-300 ease-in-out"
+                        className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50 transition-all duration-300 ease-spring scrollbar-hide
+                            ${isFocused || input.trim().length > 0 ? 'py-3 px-2 min-h-[72px]' : 'py-3.5 px-2 min-h-[44px]'}`}
                     />
 
-                    <div className="flex justify-end p-1">
+                    {/* Submit Button */}
+                    <div className="flex items-end justify-end p-1 shrink-0">
                         <button
                             onClick={handleSubmit}
-                            className="btn-liquid p-2 rounded-full overflow-hidden shrink-0 flex items-center justify-center w-[44px] h-[44px] disabled:opacity-50 disabled:pointer-events-none group"
+                            className="bg-indigo-600 text-white rounded-full overflow-hidden shrink-0 flex items-center justify-center w-10 h-10 disabled:opacity-40 disabled:pointer-events-none group active:scale-95 transition-all shadow-md shadow-indigo-600/20"
                             disabled={!input.trim() || isProcessing}
                         >
                             {isProcessing ? (
-                                <Activity size={18} className="relative z-10 animate-spin text-off-white" strokeWidth={2} />
+                                <Activity size={18} className="animate-spin" strokeWidth={2.5} />
                             ) : (
-                                <Send size={18} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" strokeWidth={2} />
+                                <Send size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 -ml-0.5 mt-0.5" strokeWidth={2.5} />
                             )}
                         </button>
                     </div>
