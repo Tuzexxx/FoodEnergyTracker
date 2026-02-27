@@ -259,6 +259,14 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'macro-tracker-storage', // Keep local storage as a fallback/offline buffer
+            version: 1, // Added version tracking
+            migrate: (persistedState: any, version: number) => {
+                if (version === 0) {
+                    // if the stored value is in version 0, we add favorites
+                    persistedState.favorites = [];
+                }
+                return persistedState as AppState;
+            }
         }
     )
 );
