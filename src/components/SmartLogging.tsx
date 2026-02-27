@@ -245,14 +245,16 @@ const SmartLogging = () => {
                         >
                             <div className="flex items-center gap-2 truncate min-w-0 flex-1 pr-2">
                                 <Star size={16} className="text-amber-400 fill-amber-400 shrink-0" />
-                                <span className="font-bold shrink-0">{fav.name.split('||')[0]}</span>
-                                {fav.name.includes('||') && (
-                                    <span className="opacity-50 truncate text-xs">{fav.name.split('||').slice(1).join('||')}</span>
-                                )}
+                                <span className="font-bold truncate">{fav.name.split('||')[0]}</span>
                             </div>
-                            <span className="text-[10px] font-bold uppercase opacity-50 bg-black/5 px-2 py-1 rounded-md shrink-0">
-                                {fav.kcal} kcal
-                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-[10px] font-bold uppercase opacity-60 bg-black/5 px-2 py-1 rounded-md">
+                                    {fav.kcal} kcal
+                                </span>
+                                <span className="text-[10px] font-bold uppercase opacity-60 bg-black/5 px-2 py-1 rounded-md">
+                                    {fav.protein}g prot
+                                </span>
+                            </div>
                         </button>
                     ))}
                 </div>
