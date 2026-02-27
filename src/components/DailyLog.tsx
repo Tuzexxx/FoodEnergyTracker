@@ -172,7 +172,7 @@ const DailyLog = () => {
                                                         </span>
                                                         <div className="flex items-baseline gap-2 truncate">
                                                             <span className="font-sans font-semibold text-lg leading-tight text-brutal-black shrink-0 capitalize">
-                                                                {displayTitle}
+                                                                *{displayTitle}*
                                                             </span>
                                                             {displayDetails && (
                                                                 <span className="font-sans text-xs opacity-50 truncate">
@@ -197,7 +197,7 @@ const DailyLog = () => {
                                                                 {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                             <span className="font-sans font-semibold text-xl leading-tight text-brutal-black break-words capitalize">
-                                                                {displayTitle}
+                                                                *{displayTitle}*
                                                             </span>
                                                             {displayDetails && (
                                                                 <span className="font-sans text-sm opacity-70 leading-snug mt-1.5 italic text-brutal-black/90 whitespace-pre-wrap">
