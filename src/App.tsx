@@ -8,6 +8,7 @@ import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
 import AuthScreen from './components/AuthScreen';
+import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './utils/supabase';
 
 function App() {
@@ -71,6 +72,7 @@ function App() {
             )}
 
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
+            <Analytics />
         </div>
     );
 }
