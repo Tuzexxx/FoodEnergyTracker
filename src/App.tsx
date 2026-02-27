@@ -33,7 +33,7 @@ function App() {
     return (
         <div className="min-h-screen w-full flex flex-col relative pb-32">
             {/* Settings / PWA Install Bridge */}
-            <nav className="p-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0">
+            <nav className="py-4 px-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0 bg-off-white/90 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm">
                 <h1 className="font-drama tracking-wide text-xl flex items-center gap-2 text-brutal-black drop-shadow-sm">
                     MacroTrack
                 </h1>

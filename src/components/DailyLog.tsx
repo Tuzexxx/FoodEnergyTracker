@@ -87,10 +87,13 @@ const DailyLog = () => {
 
     return (
         <div ref={containerRef} className="flex flex-col gap-4 mt-8 pb-32">
-            <h3 className="font-sans text-xs uppercase tracking-[0.2em] opacity-50 mb-4 sticky top-20 z-20 bg-off-white/80 backdrop-blur-xl py-2 px-2 rounded-lg mix-blend-multiply flex items-center justify-between">
-                <span>Timeline</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
-            </h3>
+            {/* Sticky Timeline Header */}
+            <div className="sticky top-16 z-30 -mx-4 px-4 py-3 bg-off-white/80 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm mb-4">
+                <h3 className="font-sans text-xs uppercase tracking-[0.2em] opacity-50 flex items-center justify-between">
+                    <span>Timeline</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
+                </h3>
+            </div>
 
             {dailyLog.length === 0 ? (
                 <div className="p-8 border-dashed border-brutal-black/20 rounded-2xl bg-black/5 text-center">

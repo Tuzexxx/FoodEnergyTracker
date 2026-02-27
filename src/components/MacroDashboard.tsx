@@ -51,10 +51,15 @@ const MacroDashboard = () => {
             />
 
             <div className="relative z-10 p-6 flex flex-col justify-between h-56">
-                <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse" />
-                    Telemetry Center
-                </h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse" />
+                        Macro Tracker
+                    </h2>
+                    <span className="font-sans text-[9px] uppercase tracking-widest opacity-40 bg-white/10 px-2 py-0.5 rounded-full border border-white/5">
+                        by MiHo
+                    </span>
+                </div>
 
                 <div className="flex flex-col gap-1 items-end mt-auto w-full">
                     <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
