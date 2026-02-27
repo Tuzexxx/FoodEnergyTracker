@@ -124,7 +124,7 @@ const DailyLog = () => {
 
                                 <div
                                     className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white/60 backdrop-blur-md shadow-sm border group relative cursor-pointer
-                                ${entry.requiresReview ? 'border-orange-300 bg-orange-50/30' : 'border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/80'}`}
+                                border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/80`}
                                     onClick={() => {
                                         if (editingId !== entry.id) {
                                             setExpandedId(prev => prev === entry.id ? null : entry.id);
@@ -211,7 +211,17 @@ const DailyLog = () => {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex justify-between items-center mt-2 border-t border-black/5 pt-3">
+                                                    {/* AI Estimation Legend Banner */}
+                                                    {entry.requiresReview && (
+                                                        <div className="mt-2 w-full flex items-center gap-2 p-2 bg-orange-50/50 rounded-lg border border-orange-200">
+                                                            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
+                                                            <span className="font-sans text-[10px] uppercase font-semibold text-orange-600 tracking-wider">
+                                                                AI Estimated Portion - Please check
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex justify-between items-center pt-3 border-t border-brutal-black/5 mt-1">
                                                         <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-3 py-1.5 rounded-lg border border-black/5">
                                                             <span className="flex gap-1.5 items-center">
                                                                 <span className="opacity-50 text-[9px] uppercase">Pro</span><span className="text-brutal-black/80">{entry.protein}</span>
