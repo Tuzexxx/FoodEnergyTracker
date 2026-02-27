@@ -241,9 +241,15 @@ const SmartLogging = () => {
                                 setShowFavorites(false);
                                 playSound('click');
                             }}
-                            className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-2 rounded-2xl font-sans text-sm font-medium whitespace-nowrap hover:bg-white active:scale-95 transition-all flex items-center gap-1.5 shrink-0 border border-black/5 shadow-sm"
+                            className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-2 rounded-2xl font-sans text-sm font-medium whitespace-nowrap hover:bg-white active:scale-95 transition-all flex items-center gap-2 shrink-0 border border-black/5 shadow-sm"
                         >
-                            <Star size={14} className="text-amber-400 fill-amber-400" /> {fav.name}
+                            <div className="flex items-center gap-1.5">
+                                <Star size={14} className="text-amber-400 fill-amber-400" />
+                                <span>{fav.name.split('||')[0]}</span>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase opacity-50 bg-black/5 px-1.5 py-0.5 rounded-md">
+                                {fav.kcal} kcal
+                            </span>
                         </button>
                     ))}
                 </div>

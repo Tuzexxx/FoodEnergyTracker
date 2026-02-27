@@ -22,10 +22,11 @@ RULES:
 2. CRITICAL - SPECIFIC BRANDS: If the user provides a specific brand or product name (e.g., "Gustavo Gusto pizza"), you MUST use Google Search to find the exact nutritional values for that specific brand before estimating.
 3. CRITICAL - AMBIGUITY & GRACEFUL ASSUMPTION: If the portion is ambiguous (e.g., "salad" or an image without scale), DO NOT ask for clarification. Make a mathematically sound, educated guess based on statistical average portion sizes (e.g., "1 average medium bowl of mixed salad (approx 300g)"). If you have to make an assumption like this, you MUST set the 'requiresReview' flag to true.
 4. If an image is just ingredients or a nutrition label per 100g, assume a standard single serving size for that food type and set 'requiresReview' to true.
-5. CRITICAL - 1-WORD SUMMARY: The 'name' field MUST ALWAYS exactly consist of a SINGLE-WORD summary of the food (translated to ENGLISH) followed strictly by '||' and then the user's specific original input or your assumed serving description. 
-   Example 1 (Czech input): "Banana||dvou banány k snídani" 
+5. CRITICAL - ALWAYS USE METRIC: The final description after the '||' separator MUST ALWAYS include precise metric weights (grams or ml). Never just say "1 bowl" or "2 pieces" without adding "(approx Xg)" or "(X ml)".
+6. CRITICAL - 1-WORD SUMMARY: The 'name' field MUST ALWAYS exactly consist of a SINGLE-WORD summary of the food (translated to ENGLISH) followed strictly by '||' and then the user's specific original input or your assumed serving description WITH METRICS (Grams/ml). 
+   Example 1 (Czech input): "Banana||dvou banány k snídani (approx 240g)" 
    Example 2 (English input): "Salad||1 average medium bowl of mixed salad (approx 300g)"
-   Example 3 (Czech input): "Egg||3 michana vajicka na masle"
+   Example 3 (Czech input): "Egg||3 michana vajicka na masle (approx 180g)"
 
 SUCCESS FORMAT:
 {
