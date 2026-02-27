@@ -71,13 +71,13 @@ const MacroDashboard = () => {
                     </div>
 
                     {/* Protein Section */}
-                    <div className="flex flex-col items-end w-full max-w-[80%]">
-                        <div className="flex items-baseline gap-2 opacity-80 group-hover:scale-[1.02] transition-transform duration-500 origin-right delay-75 mb-2">
+                    <div className="flex flex-col items-start w-full mt-2">
+                        <div className="flex justify-end w-full items-baseline gap-2 opacity-80 group-hover:scale-[1.02] transition-transform duration-500 origin-right delay-75 mb-2">
                             <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none">0</span>
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
                         </div>
                         {/* Continuous Protein Progress Bar (Left-to-Right) */}
-                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden flex justify-start">
+                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden flex justify-start mt-1">
                             <div
                                 className="h-full bg-white opacity-80 transition-all duration-1000 ease-out"
                                 style={{ width: `${proteinPercent}%` }}
