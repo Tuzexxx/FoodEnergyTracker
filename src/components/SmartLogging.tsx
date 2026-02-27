@@ -243,9 +243,12 @@ const SmartLogging = () => {
                             }}
                             className="bg-white/80 backdrop-blur-md text-brutal-black px-4 py-3 rounded-2xl font-sans text-sm font-medium hover:bg-white active:scale-95 transition-all flex items-center justify-between gap-2 w-full border border-black/5 shadow-sm"
                         >
-                            <div className="flex items-center gap-2 truncate">
+                            <div className="flex items-center gap-2 truncate min-w-0 flex-1 pr-2">
                                 <Star size={16} className="text-amber-400 fill-amber-400 shrink-0" />
-                                <span className="truncate">{fav.name.split('||')[0]}</span>
+                                <span className="font-bold shrink-0">{fav.name.split('||')[0]}</span>
+                                {fav.name.includes('||') && (
+                                    <span className="opacity-50 truncate text-xs">{fav.name.split('||').slice(1).join('||')}</span>
+                                )}
                             </div>
                             <span className="text-[10px] font-bold uppercase opacity-50 bg-black/5 px-2 py-1 rounded-md shrink-0">
                                 {fav.kcal} kcal
@@ -256,18 +259,17 @@ const SmartLogging = () => {
             )}
 
             {/* Main Interactive Pill Container */}
-            <div className={`p-1.5 flex flex-col w-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] bg-white/85 backdrop-blur-2xl transition-all relative rounded-3xl z-40
-                ${isFocused || input.trim().length > 0 ? 'rounded-[2rem] border-white/80' : 'rounded-full border-white/60'} 
-                ${isProcessing ? 'border-indigo-400 scale-[0.98]' : 'border'}`}>
+            <div className={`p-2 flex flex-col w-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] bg-white/85 backdrop-blur-2xl transition-all relative rounded-3xl z-40 border
+                ${isProcessing ? 'border-indigo-400 scale-[0.98]' : 'border-white/80'}`}>
 
                 {/* Processing Laser Animation */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-[inherit] pointer-events-none opacity-50 z-0">
                     <div ref={scannerRef} className="w-1/3 h-full bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent translate-x-[-100%]" />
                 </div>
 
-                <div className="flex gap-1 items-end relative z-10 w-full">
-                    {/* Tool Bar inside the Pill */}
-                    <div className="flex items-center gap-1 shrink-0 p-1">
+                <div className="flex flex-col relative z-10 w-full">
+                    {/* Tool Bar Stacked Above */}
+                    <div className="flex items-center gap-1 px-1 border-b border-black/5 pb-2 mb-1">
                         <button
                             onClick={() => cameraInputRef.current?.click()}
                             className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
@@ -289,6 +291,7 @@ const SmartLogging = () => {
                         >
                             {isProcessing ? <Activity size={20} className="animate-spin" /> : <Mic size={20} strokeWidth={2} />}
                         </button>
+                        <div className="w-[1px] h-6 bg-black/10 mx-1"></div>
                         {favorites && favorites.length > 0 && (
                             <button
                                 onClick={() => setShowFavorites(!showFavorites)}
@@ -300,38 +303,41 @@ const SmartLogging = () => {
                         )}
                     </div>
 
-                    {/* Fluid Text Area */}
-                    <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => setIsFocused(false)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSubmit();
-                            }
-                        }}
-                        placeholder="Log food... (e.g. eggs)"
-                        disabled={isProcessing}
-                        rows={isFocused || input.trim().length > 0 ? 3 : 1}
-                        className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50 transition-all duration-300 ease-spring scrollbar-hide
-                            ${isFocused || input.trim().length > 0 ? 'py-3 px-2 min-h-[72px]' : 'py-3.5 px-2 min-h-[44px]'}`}
-                    />
+                    {/* Bottom Row: Input & Submit */}
+                    <div className="flex gap-2 items-end w-full px-1">
+                        {/* Fluid Text Area */}
+                        <textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit();
+                                }
+                            }}
+                            placeholder="Log food... (e.g. eggs)"
+                            disabled={isProcessing}
+                            rows={isFocused || input.trim().length > 0 ? 2 : 1}
+                            className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50 transition-all duration-300 ease-spring scrollbar-hide py-2 px-1
+                                ${isFocused || input.trim().length > 0 ? 'min-h-[52px]' : 'min-h-[28px]'}`}
+                        />
 
-                    {/* Submit Button */}
-                    <div className="flex items-end justify-end p-1 shrink-0">
-                        <button
-                            onClick={handleSubmit}
-                            className="bg-indigo-600 text-white rounded-full overflow-hidden shrink-0 flex items-center justify-center w-10 h-10 disabled:opacity-40 disabled:pointer-events-none group active:scale-95 transition-all shadow-md shadow-indigo-600/20"
-                            disabled={!input.trim() || isProcessing}
-                        >
-                            {isProcessing ? (
-                                <Activity size={18} className="animate-spin" strokeWidth={2.5} />
-                            ) : (
-                                <Send size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 -ml-0.5 mt-0.5" strokeWidth={2.5} />
-                            )}
-                        </button>
+                        {/* Submit Button */}
+                        <div className="flex items-end justify-end pb-1.5 pr-1 shrink-0">
+                            <button
+                                onClick={handleSubmit}
+                                className="bg-indigo-600 text-white rounded-full overflow-hidden shrink-0 flex items-center justify-center w-10 h-10 disabled:opacity-40 disabled:pointer-events-none group active:scale-95 transition-all shadow-md shadow-indigo-600/20"
+                                disabled={!input.trim() || isProcessing}
+                            >
+                                {isProcessing ? (
+                                    <Activity size={18} className="animate-spin" strokeWidth={2.5} />
+                                ) : (
+                                    <Send size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 -ml-0.5 mt-0.5" strokeWidth={2.5} />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
