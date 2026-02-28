@@ -46,6 +46,7 @@ interface AppState {
     favorites: Omit<FoodEntry, 'id' | 'timestamp'>[];
     addFavorite: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
     removeFavorite: (name: string) => void;
+    updateFavorite: (oldName: string, updatedFav: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -282,7 +283,14 @@ export const useStore = create<AppState>()(
 
             removeFavorite: (name) => set((state) => ({
                 favorites: (state.favorites || []).filter(f => f.name !== name)
-            }))
+            })),
+
+            updateFavorite: (oldName, updatedFav) => set((state) => {
+                const updatedList = (state.favorites || []).map(f =>
+                    f.name === oldName ? updatedFav : f
+                );
+                return { favorites: updatedList };
+            })
         }),
         {
             name: 'macro-tracker-storage', // Keep local storage as a fallback/offline buffer

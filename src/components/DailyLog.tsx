@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useStore } from '../store/useStore';
-import { Edit2, Check, X, Trash2, Star, Activity } from 'lucide-react';
+import { useStore, FoodEntry } from '../store/useStore';
+import { Edit2, Check, X, Trash2, Star, Activity, MessageSquare, Send } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 
@@ -11,6 +11,11 @@ const DailyLog = () => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Brainstorm chat states
+    const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
+    const [isChatting, setIsChatting] = useState<Record<string, boolean>>({});
+    const [chatMessages, setChatMessages] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (!containerRef.current || dailyLog.length === 0) return;
@@ -82,6 +87,38 @@ const DailyLog = () => {
         if (confirm("Are you sure you want to delete this entry?")) {
             deleteEntry(id);
             setEditingId(null);
+        }
+    };
+
+    const handleBrainstorm = async (entry: FoodEntry, e: React.FormEvent) => {
+        e.preventDefault();
+        const message = chatInputs[entry.id];
+        if (!message || !message.trim()) return;
+
+        setIsChatting(prev => ({ ...prev, [entry.id]: true }));
+
+        try {
+            const res = await fetch('/api/edit-entry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry, message })
+            });
+            const data = await res.json();
+
+            if (data.type === 'success' && data.data) {
+                // Instantly update the parent store
+                updateEntry(entry.id, data.data);
+                // Clear input, set confirmation message
+                setChatInputs(prev => ({ ...prev, [entry.id]: '' }));
+                setChatMessages(prev => ({ ...prev, [entry.id]: data.aiMessage || 'Macros updated.' }));
+            } else {
+                alert("Failed to update entry.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Network error.");
+        } finally {
+            setIsChatting(prev => ({ ...prev, [entry.id]: false }));
         }
     };
 
@@ -267,6 +304,35 @@ const DailyLog = () => {
                                                                 <Edit2 size={16} />
                                                             </button>
                                                         </div>
+                                                    </div>
+
+                                                    {/* AI Brainstorm Chat UI */}
+                                                    <div className="mt-3 bg-black/5 rounded-xl overflow-hidden flex flex-col mx-[-8px] px-2 py-2">
+                                                        {chatMessages[entry.id] && (
+                                                            <div className="mb-2 px-3 py-2 bg-indigo-100 text-indigo-800 text-xs font-sans rounded-lg flex items-start gap-2 animate-in fade-in zoom-in-95 duration-200">
+                                                                <MessageSquare size={14} className="mt-0.5 shrink-0" />
+                                                                <span>{chatMessages[entry.id]}</span>
+                                                            </div>
+                                                        )}
+                                                        <form onSubmit={(e) => handleBrainstorm(entry, e)} className="flex items-center gap-2 relative z-20">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Ask AI to adjust recipe/amounts..."
+                                                                className="flex-1 bg-white/60 text-brutal-black font-sans text-xs px-3 py-2 rounded-lg outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 placeholder:opacity-50 transition-colors"
+                                                                value={chatInputs[entry.id] || ''}
+                                                                onChange={(e) => setChatInputs(prev => ({ ...prev, [entry.id]: e.target.value }))}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                disabled={isChatting[entry.id]}
+                                                            />
+                                                            <button
+                                                                type="submit"
+                                                                disabled={isChatting[entry.id] || !chatInputs[entry.id]?.trim()}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 transition-colors shrink-0"
+                                                            >
+                                                                {isChatting[entry.id] ? <Activity size={14} className="animate-spin" /> : <Send size={14} className="-ml-0.5 mt-0.5" />}
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             )}
