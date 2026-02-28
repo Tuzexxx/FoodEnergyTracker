@@ -14,6 +14,13 @@ export interface FoodEntry {
     requiresReview?: boolean;
 }
 
+export interface HistoricalDay {
+    dateStr: string;
+    kcal: number;
+    protein: number;
+    entries: FoodEntry[];
+}
+
 interface UserProfile {
     height: number;
     weight: number;
@@ -42,7 +49,7 @@ interface AppState {
     consumedProtein: number;
     yesterdayKcal: number;
     yesterdayProtein: number;
-    yesterdayLog: FoodEntry[];
+    historicalDays: HistoricalDay[];
     dailyLog: FoodEntry[];
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
@@ -79,24 +86,20 @@ export const useStore = create<AppState>()(
                 // Fetch profile
                 const { data: profileData } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
 
-                // Fetch today's entries
                 const startOfDay = new Date();
                 startOfDay.setHours(0, 0, 0, 0);
 
-                // Fetch yesterday's entries (for summary)
-                const startOfYesterday = new Date(startOfDay);
-                startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-
+                // Fetch today's entries
                 const { data: entries } = await supabase.from('food_entries')
                     .select('*')
                     .eq('user_id', session.user.id)
                     .gte('timestamp', startOfDay.getTime())
                     .order('timestamp', { ascending: false });
 
-                const { data: yesterdayEntries } = await supabase.from('food_entries')
+                // Fetch all historical entries before today
+                const { data: historicalEntries } = await supabase.from('food_entries')
                     .select('*')
                     .eq('user_id', session.user.id)
-                    .gte('timestamp', startOfYesterday.getTime())
                     .lt('timestamp', startOfDay.getTime())
                     .order('timestamp', { ascending: false });
 
@@ -115,39 +118,63 @@ export const useStore = create<AppState>()(
                     });
                 }
 
-                if (yesterdayEntries) {
+                if (historicalEntries) {
+                    const daysMap = new Map<string, HistoricalDay>();
                     let yKcal = 0;
                     let yProtein = 0;
-                    const parsedYesterday = yesterdayEntries.map(e => {
-                        yKcal += Number(e.kcal);
-                        yProtein += Number(e.protein);
-                        return {
+
+                    const startOfYesterday = new Date(startOfDay);
+                    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+                    historicalEntries.forEach(e => {
+                        const date = new Date(Number(e.timestamp));
+                        // Determine the date string
+                        let dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        if (date.getTime() >= startOfYesterday.getTime()) {
+                            dateStr = 'Yesterday';
+                            yKcal += Math.round(Number(e.kcal));
+                            yProtein += Math.round(Number(e.protein));
+                        }
+
+                        if (!daysMap.has(dateStr)) {
+                            daysMap.set(dateStr, { dateStr, kcal: 0, protein: 0, entries: [] });
+                        }
+
+                        const day = daysMap.get(dateStr)!;
+                        day.kcal += Math.round(Number(e.kcal));
+                        day.protein += Math.round(Number(e.protein));
+                        day.entries.push({
                             id: e.id,
                             name: e.name,
-                            kcal: Number(e.kcal),
-                            protein: Number(e.protein),
-                            carbs: Number(e.carbs),
-                            fat: Number(e.fat),
+                            kcal: Math.round(Number(e.kcal)),
+                            protein: Math.round(Number(e.protein)),
+                            carbs: Math.round(Number(e.carbs)),
+                            fat: Math.round(Number(e.fat)),
                             timestamp: Number(e.timestamp),
                             requiresReview: e.requires_review
-                        };
+                        });
                     });
-                    set({ yesterdayKcal: yKcal, yesterdayProtein: yProtein, yesterdayLog: parsedYesterday });
+
+                    set({
+                        yesterdayKcal: yKcal,
+                        yesterdayProtein: yProtein,
+                        historicalDays: Array.from(daysMap.values())
+                    });
                 }
 
                 if (entries) {
                     let totalKcal = 0;
                     let totalProtein = 0;
                     const parsedEntries = entries.map(e => {
-                        totalKcal += Number(e.kcal);
-                        totalProtein += Number(e.protein);
+                        totalKcal += Math.round(Number(e.kcal));
+                        totalProtein += Math.round(Number(e.protein));
                         return {
                             id: e.id,
                             name: e.name,
-                            kcal: Number(e.kcal),
-                            protein: Number(e.protein),
-                            carbs: Number(e.carbs),
-                            fat: Number(e.fat),
+                            kcal: Math.round(Number(e.kcal)),
+                            protein: Math.round(Number(e.protein)),
+                            carbs: Math.round(Number(e.carbs)),
+                            fat: Math.round(Number(e.fat)),
                             timestamp: Number(e.timestamp),
                             requiresReview: e.requires_review
                         };
@@ -168,7 +195,7 @@ export const useStore = create<AppState>()(
             consumedProtein: 0,
             yesterdayKcal: 0,
             yesterdayProtein: 0,
-            yesterdayLog: [],
+            historicalDays: [],
             dailyLog: [],
             favorites: [],
             processingLogs: [],
@@ -208,8 +235,8 @@ export const useStore = create<AppState>()(
 
                 // Optimistic Local UI Update
                 set((state) => ({
-                    consumedKcal: state.consumedKcal + entry.kcal,
-                    consumedProtein: state.consumedProtein + entry.protein,
+                    consumedKcal: Math.round(state.consumedKcal + entry.kcal),
+                    consumedProtein: Math.round(state.consumedProtein + entry.protein),
                     dailyLog: [newEntry, ...state.dailyLog]
                 }));
 
@@ -240,8 +267,8 @@ export const useStore = create<AppState>()(
                     const proteinDiff = (updatedData.protein ?? oldEntry.protein) - oldEntry.protein;
 
                     return {
-                        consumedKcal: Math.max(0, state.consumedKcal + kcalDiff),
-                        consumedProtein: Math.max(0, state.consumedProtein + proteinDiff),
+                        consumedKcal: Math.max(0, Math.round(state.consumedKcal + kcalDiff)),
+                        consumedProtein: Math.max(0, Math.round(state.consumedProtein + proteinDiff)),
                         dailyLog: state.dailyLog.map(entry =>
                             entry.id === id ? { ...entry, ...updatedData } : entry
                         )
@@ -270,8 +297,8 @@ export const useStore = create<AppState>()(
                     if (!entryToDelete) return state;
 
                     return {
-                        consumedKcal: Math.max(0, state.consumedKcal - entryToDelete.kcal),
-                        consumedProtein: Math.max(0, state.consumedProtein - entryToDelete.protein),
+                        consumedKcal: Math.max(0, Math.round(state.consumedKcal - entryToDelete.kcal)),
+                        consumedProtein: Math.max(0, Math.round(state.consumedProtein - entryToDelete.protein)),
                         dailyLog: state.dailyLog.filter(e => e.id !== id)
                     };
                 });

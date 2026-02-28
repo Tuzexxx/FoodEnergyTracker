@@ -5,13 +5,13 @@ import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, yesterdayLog, targetKcal, targetProtein, processingLogs } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, targetKcal, targetProtein, processingLogs } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
-    const [showYesterdayDetails, setShowYesterdayDetails] = useState(false);
+    const [expandedHistoryDate, setExpandedHistoryDate] = useState<string | null>(null);
 
     // Brainstorm chat states
     const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
@@ -369,69 +369,76 @@ const DailyLog = () => {
                 </div>
             )}
 
-            {/* Yesterday 's Summary */}
-            {(yesterdayKcal > 0 || yesterdayProtein > 0) && (
-                <div className="mt-8 p-6 bg-brutal-black/5 rounded-3xl flex flex-col items-center justify-center text-center border border-brutal-black/5 transition-all">
-                    <h4 className="font-sans text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-4 text-brutal-black">Yesterday's Summary</h4>
-                    <div className="flex items-center gap-4">
-                        <span className={`font-data text-2xl ${yesterdayKcal > targetKcal ? 'text-signal-red' : 'text-brutal-black'}`}>
-                            {yesterdayKcal} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetKcal} KCAL</span>
-                        </span>
-                        <div className="w-[1px] h-6 bg-brutal-black/10" />
-                        <span className={`font-data text-2xl ${yesterdayProtein < targetProtein ? 'text-signal-red' : 'text-brutal-black'}`}>
-                            {yesterdayProtein} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetProtein}G PRO</span>
-                        </span>
-                    </div>
-
-                    {yesterdayLog && yesterdayLog.length > 0 && (
-                        <div className="w-full mt-6 flex flex-col items-center">
-                            <button
-                                onClick={() => setShowYesterdayDetails(!showYesterdayDetails)}
-                                className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-brutal-black/50 hover:text-brutal-black transition-colors px-4 py-2 bg-brutal-black/5 rounded-full"
-                            >
-                                {showYesterdayDetails ? 'Hide Details' : 'View Details'}
-                                {showYesterdayDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            </button>
-
-                            {showYesterdayDetails && (
-                                <div className="w-full mt-4 flex flex-col gap-2 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
-                                    {yesterdayLog.map((yEntry) => {
-                                        let yTitle = yEntry.name;
-                                        if (yEntry.name.includes('||')) {
-                                            yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
-                                        } else {
-                                            const words = yEntry.name.trim().split(/\s+/);
-                                            if (words.length > 1) {
-                                                yTitle = words[0];
-                                            }
-                                        }
-                                        return (
-                                            <div key={yEntry.id} className="flex justify-between items-center w-full px-4 py-3 bg-white/40 rounded-xl text-left border border-white">
-                                                <div className="flex items-center gap-3 w-2/3 overflow-hidden">
-                                                    <span className="font-sans text-[10px] font-medium opacity-40 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
-                                                        {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                    <span className="font-sans font-semibold text-sm leading-tight text-brutal-black shrink-0 capitalize truncate">
-                                                        {yTitle}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-baseline gap-2 shrink-0">
-                                                    <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
-                                                        <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                        <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                    </div>
-                                                    <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
-                                                        <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.protein}</span>
-                                                        <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+            {/* Historical Summaries */}
+            {historicalDays && historicalDays.length > 0 && (
+                <div className="mt-8 flex flex-col gap-6">
+                    {historicalDays.map((day) => {
+                        const isExpanded = expandedHistoryDate === day.dateStr;
+                        return (
+                            <div key={day.dateStr} className="p-6 bg-brutal-black/5 rounded-3xl flex flex-col items-center justify-center text-center border border-brutal-black/5 transition-all">
+                                <h4 className="font-sans text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-4 text-brutal-black">{day.dateStr}</h4>
+                                <div className="flex items-center gap-4">
+                                    <span className={`font-data text-2xl ${day.kcal > targetKcal ? 'text-signal-red' : 'text-brutal-black'}`}>
+                                        {day.kcal} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetKcal} KCAL</span>
+                                    </span>
+                                    <div className="w-[1px] h-6 bg-brutal-black/10" />
+                                    <span className={`font-data text-2xl ${day.protein < targetProtein ? 'text-signal-red' : 'text-brutal-black'}`}>
+                                        {day.protein} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetProtein}G PRO</span>
+                                    </span>
                                 </div>
-                            )}
-                        </div>
-                    )}
+
+                                {day.entries && day.entries.length > 0 && (
+                                    <div className="w-full mt-6 flex flex-col items-center">
+                                        <button
+                                            onClick={() => setExpandedHistoryDate(isExpanded ? null : day.dateStr)}
+                                            className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-brutal-black/50 hover:text-brutal-black transition-colors px-4 py-2 bg-brutal-black/5 rounded-full"
+                                        >
+                                            {isExpanded ? 'Hide Details' : 'View Details'}
+                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                        </button>
+
+                                        {isExpanded && (
+                                            <div className="w-full mt-4 flex flex-col gap-2 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
+                                                {day.entries.map((yEntry) => {
+                                                    let yTitle = yEntry.name;
+                                                    if (yEntry.name.includes('||')) {
+                                                        yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
+                                                    } else {
+                                                        const words = yEntry.name.trim().split(/\s+/);
+                                                        if (words.length > 1) {
+                                                            yTitle = words[0];
+                                                        }
+                                                    }
+                                                    return (
+                                                        <div key={yEntry.id} className="flex justify-between items-center w-full px-4 py-3 bg-white/40 rounded-xl text-left border border-white">
+                                                            <div className="flex items-center gap-3 w-2/3 overflow-hidden">
+                                                                <span className="font-sans text-[10px] font-medium opacity-40 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
+                                                                    {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                                <span className="font-sans font-semibold text-sm leading-tight text-brutal-black shrink-0 capitalize truncate">
+                                                                    {yTitle}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-baseline gap-2 shrink-0">
+                                                                <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
+                                                                    <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                                    <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                                </div>
+                                                                <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
+                                                                    <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.protein}</span>
+                                                                    <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>
