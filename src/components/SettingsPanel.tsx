@@ -152,12 +152,14 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             </button>
                         </div>
 
-                        <button
-                            onClick={handleSignOut}
-                            className="w-full mt-2 py-4 text-xs tracking-widest uppercase font-sans border-2 border-brutal-black hover:bg-brutal-black hover:text-off-white flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <LogOut size={14} /> Sign Out
-                        </button>
+                        {!isGuest && (
+                            <button
+                                onClick={handleSignOut}
+                                className="w-full mt-2 py-4 text-xs tracking-widest uppercase font-sans border-2 border-brutal-black hover:bg-brutal-black hover:text-off-white flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <LogOut size={14} /> Sign Out
+                            </button>
+                        )}
 
                         {(session?.user?.email || isGuest) && (
                             <span className="text-[10px] font-sans text-center text-brutal-black/30 w-full truncate px-2">

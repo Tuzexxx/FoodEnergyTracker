@@ -7,13 +7,15 @@ import { getAiResponse } from '../utils/ai';
 
 const SmartLogging = () => {
     const [input, setInput] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [showFavorites, setShowFavorites] = useState(false);
     const [isFavEditMode, setIsFavEditMode] = useState(false);
     const [editingFav, setEditingFav] = useState<any>(null);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [interrogation, setInterrogation] = useState<any>(null);
-    const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite } = useStore();
+    const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog } = useStore();
+
+    const isProcessing = processingLogs.length > 0;
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
@@ -46,23 +48,45 @@ const SmartLogging = () => {
     if (!isCalibrated) return null;
 
     const handleSubmit = async () => {
-        if (!input.trim() || isProcessing) return;
-        setIsProcessing(true);
+        if (!input.trim() && !selectedImage) return;
 
-        const response: any = await getAiResponse(input);
-        setIsProcessing(false);
+        const currentInput = input;
+        const currentImage = selectedImage;
+        const tempId = Math.random().toString(36).substring(7);
 
-        if (response.type === 'success' && response.data) {
-            playSound('log');
-            addEntry(response.data);
-            setInput('');
-        } else if (response.type === 'clarification' && response.options) {
+        // Clear UI instantly for parallel logging
+        setInput('');
+        setSelectedImage(null);
+        setIsFocused(false);
+
+        // Add to global processing queue
+        addProcessingLog({
+            id: tempId,
+            text: currentImage ? (currentInput || 'Analyzing image...') : currentInput,
+            type: currentImage ? 'image' : 'text'
+        });
+
+        // Background AI processing
+        try {
+            const prompt = currentInput || (currentImage ? "Analyze this food image and estimate macros." : "Log this food.");
+            const response: any = await getAiResponse(prompt, currentImage || undefined);
+
+            if (response.type === 'success' && response.data) {
+                playSound('log');
+                addEntry(response.data);
+            } else if (response.type === 'clarification' && response.options) {
+                playSound('error');
+                setInterrogation({ ...response, originalInput: prompt, originalImage: currentImage });
+            } else {
+                playSound('error');
+                console.error("Unhappy path hit:", response);
+                alert("Telemetry connection failed or returned an unexpected format.");
+            }
+        } catch (error) {
             playSound('error');
-            setInterrogation({ ...response, originalInput: input });
-        } else {
-            playSound('error');
-            console.error("Unhappy path hit:", response);
-            alert("Telemetry connection failed or returned an unexpected format. Please try again.");
+            console.error("Unhappy path hit:", error);
+        } finally {
+            removeProcessingLog(tempId);
         }
     };
 
@@ -73,27 +97,38 @@ const SmartLogging = () => {
             onComplete: () => setInterrogation(null)
         });
 
-        setIsProcessing(true);
+        const tempId = Math.random().toString(36).substring(7);
         const resolvedInput = `${interrogation.originalInput} (${option})`;
-        const response: any = await getAiResponse(resolvedInput);
-        setIsProcessing(false);
+        const originalImage = interrogation.originalImage;
 
-        if (response.type === 'success' && response.data) {
-            if (response.data.requiresReview) {
-                playSound('error'); // Play softer notification sound for assumptions
+        addProcessingLog({
+            id: tempId,
+            text: `Clarifying: ${resolvedInput}`,
+            type: originalImage ? 'image' : 'text'
+        });
+
+        try {
+            const response: any = await getAiResponse(resolvedInput, originalImage || undefined);
+
+            if (response.type === 'success' && response.data) {
+                if (response.data.requiresReview) {
+                    playSound('error');
+                } else {
+                    playSound('log');
+                }
+                addEntry(response.data);
+            } else if (response.type === 'clarification' && response.options) {
+                playSound('error');
+                setInterrogation({ ...response, originalInput: resolvedInput, originalImage });
             } else {
-                playSound('log'); // Play solid success sound for confident logs
+                playSound('error');
+                console.error("Clarification unhappy path hit:", response);
+                alert("Telemetry connection failed or returned an unexpected format during interrogation.");
             }
-            addEntry(response.data);
-            setInput('');
-        } else if (response.type === 'clarification' && response.options) {
-            // AI still needs more info (e.g. "salad (100g)" -> "What kind of salad?")
-            playSound('error');
-            setInterrogation({ ...response, originalInput: resolvedInput });
-        } else {
-            playSound('error');
-            console.error("Clarification unhappy path hit:", response);
-            alert("Telemetry connection failed or returned an unexpected format during interrogation. Please try again.");
+        } catch (e) {
+            console.error(e);
+        } finally {
+            removeProcessingLog(tempId);
         }
     };
 
@@ -101,16 +136,11 @@ const SmartLogging = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Display "Processing" state immediately
-        setIsProcessing(true);
         playSound('log');
-        setInput(`Compressing & analyzing visual telemetry...`);
-
         const reader = new FileReader();
         reader.onloadend = () => {
             const img = new Image();
             img.onload = async () => {
-                // Compression logic to prevent Vercel 413 "Payload Too Large"
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
@@ -133,37 +163,13 @@ const SmartLogging = () => {
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
 
-                // Compress to highly efficient JPEG (Gemini handles this perfectly)
                 const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-
-                try {
-                    const response: any = await getAiResponse("Analyze this food image and estimate macros.", base64Image);
-
-                    setIsProcessing(false);
-                    if (response.type === 'success' && response.data) {
-                        playSound('targetHit');
-                        addEntry(response.data);
-                        setInput('');
-                    } else if (response.type === 'clarification' && response.options) {
-                        playSound('error');
-                        setInterrogation({ ...response, originalInput: "Analyze this food image" });
-                        setInput('');
-                    } else {
-                        throw new Error("Unexpected format");
-                    }
-                } catch (error) {
-                    setIsProcessing(false);
-                    playSound('error');
-                    setInput('');
-                    console.error("Image upload unhappy path hit:", error);
-                    alert("Visual telemetry connection failed or returned an unexpected format. Please try again.");
-                }
+                setSelectedImage(base64Image);
+                setIsFocused(true); // Open the box
             };
             img.src = reader.result as string;
         };
         reader.readAsDataURL(file);
-
-        // Clear the file input so the same file can be selected again if needed
         e.target.value = '';
     };
 
@@ -178,18 +184,24 @@ const SmartLogging = () => {
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
-        recognition.onstart = () => setIsProcessing(true);
-        recognition.onend = () => setIsProcessing(false);
+        const tempId = Math.random().toString(36).substring(7);
+        recognition.onstart = () => {
+            addProcessingLog({ id: tempId, text: 'Listening...', type: 'voice' });
+        };
+        recognition.onend = () => {
+            removeProcessingLog(tempId);
+        };
 
         recognition.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript;
             setInput((prev) => prev ? prev + ' ' + transcript : transcript);
             playSound('log');
+            setIsFocused(true);
         };
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error", event.error);
-            setIsProcessing(false);
+            removeProcessingLog(tempId);
         };
 
         recognition.start();
@@ -250,7 +262,7 @@ const SmartLogging = () => {
 
                     <div className="flex flex-wrap justify-center gap-2 w-full">
                         {(favorites || []).map((fav, i) => {
-                            const isEditingThis = editingFav?.name === fav.name;
+                            const isEditingThis = editingFav?.originalName === fav.name;
 
                             if (isEditingThis) {
                                 return (
@@ -302,7 +314,8 @@ const SmartLogging = () => {
                                                 </button>
                                                 <button
                                                     onClick={() => {
-                                                        updateFavorite(fav.name, editingFav);
+                                                        const { originalName, ...toSave } = editingFav;
+                                                        updateFavorite(originalName, toSave);
                                                         setEditingFav(null);
                                                     }}
                                                     className="flex items-center gap-1 px-4 py-2 rounded-full text-xs font-bold uppercase bg-indigo-500 text-white shadow-md shadow-indigo-500/20 hover:bg-indigo-600 transition-all active:scale-95"
@@ -320,7 +333,7 @@ const SmartLogging = () => {
                                     key={i}
                                     onClick={() => {
                                         if (isFavEditMode) {
-                                            setEditingFav(fav);
+                                            setEditingFav({ originalName: fav.name, ...fav });
                                         } else {
                                             // Instant direct inject, completely skipping AI
                                             addEntry({
@@ -406,6 +419,18 @@ const SmartLogging = () => {
                         )}
                     </div>
 
+                    {/* Selected Image Thumbnail */}
+                    {selectedImage && (
+                        <div className="px-3 pb-2 pt-2 w-full animate-in fade-in zoom-in slide-in-from-bottom-2">
+                            <div className="relative inline-block">
+                                <img src={selectedImage} alt="Upload preview" className="h-16 w-16 object-cover rounded-xl border-2 border-indigo-200 shadow-sm" />
+                                <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 active:scale-95 transition-all outline-none">
+                                    <X size={12} strokeWidth={3} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Bottom Row: Input & Submit */}
                     <div className="flex gap-2 items-end w-full px-1">
                         {/* Fluid Text Area */}
@@ -420,11 +445,10 @@ const SmartLogging = () => {
                                     handleSubmit();
                                 }
                             }}
-                            placeholder="Log food... (e.g. eggs)"
-                            disabled={isProcessing}
-                            rows={isFocused || input.trim().length > 0 ? 2 : 1}
-                            className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none disabled:opacity-50 transition-all duration-300 ease-spring scrollbar-hide py-2 px-1
-                                ${isFocused || input.trim().length > 0 ? 'min-h-[52px]' : 'min-h-[28px]'}`}
+                            placeholder={selectedImage ? "Add a comment about the photo..." : "Log food... (e.g. eggs)"}
+                            rows={isFocused || input.trim().length > 0 || selectedImage ? 2 : 1}
+                            className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none transition-all duration-300 ease-spring scrollbar-hide py-2 px-1
+                                ${isFocused || input.trim().length > 0 || selectedImage ? 'min-h-[52px]' : 'min-h-[28px]'}`}
                         />
 
                         {/* Submit Button */}
@@ -432,7 +456,7 @@ const SmartLogging = () => {
                             <button
                                 onClick={handleSubmit}
                                 className="bg-indigo-600 text-white rounded-full overflow-hidden shrink-0 flex items-center justify-center w-10 h-10 disabled:opacity-40 disabled:pointer-events-none group active:scale-95 transition-all shadow-md shadow-indigo-600/20"
-                                disabled={!input.trim() || isProcessing}
+                                disabled={(!input.trim() && !selectedImage)}
                             >
                                 {isProcessing ? (
                                     <Activity size={18} className="animate-spin" strokeWidth={2.5} />

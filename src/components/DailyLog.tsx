@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, Check, X, Trash2, Star, Activity, MessageSquare, Send } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, processingLogs } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -42,7 +42,7 @@ const DailyLog = () => {
         });
     };
 
-    const saveEdit = async (id: string, originalTimestamp: number) => {
+    const saveEdit = async (id: string, originalTimestamp: number, autoAdjust: boolean) => {
         const entry = dailyLog.find(e => e.id === id);
         if (!entry) return;
 
@@ -60,22 +60,19 @@ const DailyLog = () => {
             requiresReview: false
         };
 
-        if (entry.name !== editForm.name) {
-            const wantsRecalc = window.confirm("You changed the name. Do you want AI to recalculate the values based on it? (Otherwise current numbers remain)");
-            if (wantsRecalc) {
-                setIsProcessing(true);
-                const aiRes: any = await getAiResponse(editForm.name);
-                setIsProcessing(false);
-                if (aiRes.type === 'success' && aiRes.data) {
-                    finalData.kcal = aiRes.data.kcal;
-                    finalData.protein = aiRes.data.protein;
-                    finalData.carbs = aiRes.data.carbs;
-                    finalData.fat = aiRes.data.fat;
-                } else if (aiRes.type === 'clarification') {
-                    alert("AI needs clarification. Values remain original, adjust them manually.");
-                } else {
-                    alert("Error communicating with AI. Values remain original.");
-                }
+        if (autoAdjust && entry.name !== editForm.name) {
+            setIsProcessing(true);
+            const aiRes: any = await getAiResponse(editForm.name);
+            setIsProcessing(false);
+            if (aiRes.type === 'success' && aiRes.data) {
+                finalData.kcal = aiRes.data.kcal;
+                finalData.protein = aiRes.data.protein;
+                finalData.carbs = aiRes.data.carbs;
+                finalData.fat = aiRes.data.fat;
+            } else if (aiRes.type === 'clarification') {
+                alert("AI needs clarification. Values remain original, adjust them manually.");
+            } else {
+                alert("Error communicating with AI. Values remain original.");
             }
         }
 
@@ -141,6 +138,20 @@ const DailyLog = () => {
                     {/* Vertical Timeline Guide */}
                     <div className="absolute left-0 top-6 bottom-6 w-[1px] bg-brutal-black/10 border-l border-dashed border-brutal-black/20 -z-10" />
 
+                    {/* Pending API Requests */}
+                    {processingLogs.map((log) => (
+                        <div key={log.id} className="relative w-full opacity-60 pointer-events-none">
+                            <div className="absolute -left-5 top-8 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/20 z-10 animate-pulse" />
+                            <div className="log-card p-4 rounded-2xl bg-white/40 border border-white border-dashed flex items-center justify-between">
+                                <div className="flex flex-col gap-1 w-2/3">
+                                    <div className="h-5 bg-black/10 rounded-md animate-pulse" />
+                                    <span className="font-sans text-xs opacity-50 italic truncate">Analyzing: "{log.text}"...</span>
+                                </div>
+                                <Activity size={20} className="animate-spin text-black/30" />
+                            </div>
+                        </div>
+                    ))}
+
                     {dailyLog.map((entry) => {
                         let displayTitle = entry.name;
                         let displayDetails = '';
@@ -188,10 +199,13 @@ const DailyLog = () => {
                                                 <button onClick={() => handleDelete(entry.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1 text-xs font-sans font-medium">
                                                     <Trash2 size={16} /> Delete
                                                 </button>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 w-full justify-end">
                                                     <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded-xl hover:bg-black/10 transition-colors"><X size={18} /></button>
-                                                    <button onClick={() => saveEdit(entry.id, entry.timestamp)} disabled={isProcessing} className="p-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-colors disabled:opacity-50">
-                                                        {isProcessing ? <Activity size={18} className="animate-spin" /> : <Check size={18} />}
+                                                    <button title="Save Name Only" onClick={() => saveEdit(entry.id, entry.timestamp, false)} disabled={isProcessing} className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50">
+                                                        Save
+                                                    </button>
+                                                    <button title="Recalculate Macros" onClick={() => saveEdit(entry.id, entry.timestamp, true)} disabled={isProcessing} className="px-3 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1">
+                                                        {isProcessing ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} Auto-Adjust
                                                     </button>
                                                 </div>
                                             </div>

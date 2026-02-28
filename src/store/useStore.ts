@@ -22,6 +22,12 @@ interface UserProfile {
     goal: string;
 }
 
+export interface ProcessingLog {
+    id: string;
+    text: string;
+    type: 'text' | 'image' | 'voice';
+}
+
 interface AppState {
     session: Session | null;
     setSession: (session: Session | null) => void;
@@ -47,6 +53,9 @@ interface AppState {
     addFavorite: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
     removeFavorite: (name: string) => void;
     updateFavorite: (oldName: string, updatedFav: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
+    processingLogs: ProcessingLog[];
+    addProcessingLog: (log: ProcessingLog) => void;
+    removeProcessingLog: (id: string) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -149,6 +158,10 @@ export const useStore = create<AppState>()(
             yesterdayProtein: 0,
             dailyLog: [],
             favorites: [],
+            processingLogs: [],
+
+            addProcessingLog: (log) => set((state) => ({ processingLogs: [log, ...state.processingLogs] })),
+            removeProcessingLog: (id) => set((state) => ({ processingLogs: state.processingLogs.filter(l => l.id !== id) })),
 
             calibrateUser: async (profile: UserProfile, kcal: number, protein: number) => {
                 set(() => ({

@@ -36,7 +36,7 @@ const AuthScreen = () => {
         if (isSignUp) {
             const { error } = await supabase.auth.signUp({ email, password });
             if (error) setErrorMsg(error.message);
-            else alert('Check your email for the confirmation link!');
+            else alert('Your account is ready now!');
         } else {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) setErrorMsg(error.message);

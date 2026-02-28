@@ -12,7 +12,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './utils/supabase';
 
 function App() {
-    const { isCalibrated, session, setSession, isGuest } = useStore();
+    const { isCalibrated, session, setSession, isGuest, setGuestMode } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     useEffect(() => {
@@ -61,6 +61,17 @@ function App() {
                     <OnboardingModal />
                 ) : (
                     <>
+                        {isGuest && (
+                            <div className="w-full bg-indigo-50/80 backdrop-blur-md border border-indigo-200/50 text-indigo-900 p-4 rounded-3xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
+                                <span className="text-xs font-sans font-bold uppercase tracking-wider opacity-80">Guest Mode</span>
+                                <button
+                                    onClick={() => setGuestMode(false)}
+                                    className="bg-indigo-600 text-[10px] tracking-widest uppercase text-white px-4 py-2 rounded-full font-bold hover:bg-indigo-700 transition active:scale-95 shadow-md shadow-indigo-600/20"
+                                >
+                                    Log In / Save
+                                </button>
+                            </div>
+                        )}
                         <MacroDashboard />
                         <DailyLog />
                     </>

@@ -42,13 +42,23 @@ const MacroDashboard = () => {
     }, [consumedKcal, targetKcal, consumedProtein, targetProtein, kcalPercent]);
 
     return (
-        <div className="brutal-card w-full shadow-2xl relative bg-black text-off-white overflow-hidden group">
+        <div className="brutal-card w-full shadow-2xl relative bg-black text-off-white group">
             {/* Background Liquid fill visualizer for Calories */}
-            <div
-                ref={progressLineRef}
-                className="absolute inset-y-0 left-0 bg-signal-red/20 pointer-events-none"
-                style={{ width: '0%' }}
-            />
+            <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none z-0">
+                <div
+                    ref={progressLineRef}
+                    className="absolute inset-y-0 left-0 bg-signal-red/20"
+                    style={{ width: '0%' }}
+                />
+            </div>
+
+            {/* Floating % Badges over the edge */}
+            <div className="absolute -top-3 -right-2 bg-signal-red text-white text-[10px] font-bold font-sans tracking-widest px-2 py-0.5 rounded-full shadow-lg border border-black z-20 rotate-3">
+                {Math.round(kcalPercent)}%
+            </div>
+            <div className="absolute bottom-4 -right-3 bg-white text-black text-[10px] font-bold font-sans tracking-widest px-2 py-0.5 rounded-full shadow-lg border border-white/20 z-20 -rotate-6">
+                {Math.round(proteinPercent)}%
+            </div>
 
             <div className="relative z-10 p-6 flex flex-col justify-between h-56">
                 <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
