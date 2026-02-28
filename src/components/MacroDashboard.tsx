@@ -77,7 +77,7 @@ const MacroDashboard = () => {
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
                         </div>
                         {/* Continuous Protein Progress Bar (Left-to-Right) */}
-                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden flex justify-start mt-1">
+                        <div className="w-[calc(100%+1.5rem)] h-[3px] bg-white/10 rounded-r-full overflow-hidden flex justify-start mt-1 -ml-6">
                             <div
                                 className="h-full bg-white opacity-80 transition-all duration-1000 ease-out"
                                 style={{ width: `${proteinPercent}%` }}
