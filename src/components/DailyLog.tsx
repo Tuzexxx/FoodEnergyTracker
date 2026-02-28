@@ -439,28 +439,26 @@ const DailyLog = () => {
                                                 };
 
                                                 return (
-                                                    <div key={yEntry.id} className="flex justify-between items-center w-full px-3 py-2 bg-white/40 rounded-lg text-left border border-white">
-                                                        <div className="flex items-center gap-2 w-1/2 overflow-hidden">
-                                                            <span className="font-sans text-[9px] font-medium opacity-40 bg-black/5 px-1.5 py-0.5 rounded-md shrink-0">
-                                                                {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                            <button
-                                                                onClick={handleFavToggle}
-                                                                className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
-                                                                title={isFav ? "Remove from Favorites" : "Save as Favorite"}
-                                                            >
-                                                                <Star size={12} className={isFav ? "fill-amber-400" : ""} />
-                                                            </button>
-                                                            <span className="font-sans font-semibold text-xs leading-tight text-brutal-black shrink-0 capitalize truncate">
-                                                                {yTitle}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 shrink-0 bg-black/5 px-2 py-0.5 rounded-md border border-black/5">
-                                                            <span className="font-data text-xs font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                            <span className="text-brutal-black/20 mx-0.5">/</span>
-                                                            <span className="font-data text-xs font-bold leading-none text-brutal-black">{yEntry.protein}</span>
-                                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                                    <div key={yEntry.id} className="flex items-center w-full px-2 py-1.5 bg-white/40 rounded-lg text-left border border-white gap-2">
+                                                        <span className="font-sans text-[8px] font-medium opacity-40 bg-black/5 px-1 rounded shrink-0">
+                                                            {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                        <button
+                                                            onClick={handleFavToggle}
+                                                            className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
+                                                            title={isFav ? "Remove from Favorites" : "Save as Favorite"}
+                                                        >
+                                                            <Star size={10} className={isFav ? "fill-amber-400" : ""} />
+                                                        </button>
+                                                        <span className="font-sans font-semibold text-[10px] leading-tight text-brutal-black flex-1 truncate capitalize">
+                                                            {yTitle}
+                                                        </span>
+                                                        <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5 ml-auto">
+                                                            <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                            <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                            <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
+                                                            <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
+                                                            <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
                                                         </div>
                                                     </div>
                                                 );
