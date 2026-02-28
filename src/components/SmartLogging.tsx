@@ -475,9 +475,9 @@ const SmartLogging = () => {
                                 }
                             }}
                             placeholder={selectedImage ? "Add a comment about the photo..." : "Log food... (e.g. eggs)"}
-                            rows={isFocused || input.trim().length > 0 || selectedImage ? 2 : 1}
+                            rows={isFocused || input.trim().length > 0 || selectedImage ? 3 : 1}
                             className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none transition-all duration-300 ease-spring scrollbar-hide py-2 px-1
-                                ${isFocused || input.trim().length > 0 || selectedImage ? 'min-h-[52px]' : 'min-h-[28px]'}`}
+                                ${isFocused || input.trim().length > 0 || selectedImage ? 'min-h-[76px]' : 'min-h-[28px]'}`}
                         />
 
                         {/* Submit Button */}

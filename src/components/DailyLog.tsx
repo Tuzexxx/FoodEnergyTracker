@@ -186,9 +186,9 @@ const DailyLog = () => {
                                     {editingId === entry.id ? (
                                         <div className="flex flex-col gap-3" onClick={e => e.stopPropagation()}>
                                             {/* Editing Form */}
-                                            <div className="flex gap-2">
-                                                <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="font-sans font-medium text-lg bg-black/5 p-2 rounded-xl outline-none flex-1 transition-colors focus:bg-white" />
-                                                <input type="time" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} className="font-sans font-medium text-lg bg-black/5 p-2 rounded-xl outline-none w-24 shrink-0 text-center transition-colors focus:bg-white" />
+                                            <div className="flex gap-2 items-start">
+                                                <textarea rows={2} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="font-sans font-medium text-lg bg-black/5 p-2 rounded-xl outline-none flex-1 transition-colors focus:bg-white resize-none" />
+                                                <input type="time" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} className="font-sans font-medium text-lg bg-black/5 p-2 rounded-xl outline-none w-24 shrink-0 text-center transition-colors focus:bg-white h-[44px]" />
                                             </div>
                                             <div className="grid grid-cols-4 gap-2">
                                                 <div><label className="text-[10px] uppercase opacity-50 block mb-1">Kcal</label><input type="number" value={editForm.kcal} onChange={(e) => setEditForm({ ...editForm, kcal: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
