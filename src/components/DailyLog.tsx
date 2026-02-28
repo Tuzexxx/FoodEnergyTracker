@@ -415,12 +415,40 @@ const DailyLog = () => {
                                                             yTitle = words[0];
                                                         }
                                                     }
+                                                    let yNameForFav = yEntry.name;
+                                                    if (yEntry.name.includes('||')) {
+                                                        yNameForFav = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
+                                                    }
+                                                    const isFav = favorites.some((f) => f.name === yNameForFav);
+
+                                                    const handleFavToggle = (e: React.MouseEvent) => {
+                                                        e.stopPropagation();
+                                                        if (isFav) {
+                                                            removeFavorite(yNameForFav);
+                                                        } else {
+                                                            addFavorite({
+                                                                name: yNameForFav,
+                                                                kcal: yEntry.kcal,
+                                                                protein: yEntry.protein,
+                                                                carbs: yEntry.carbs,
+                                                                fat: yEntry.fat
+                                                            });
+                                                        }
+                                                    };
+
                                                     return (
                                                         <div key={yEntry.id} className="flex justify-between items-center w-full px-3 py-2 bg-white/40 rounded-lg text-left border border-white">
                                                             <div className="flex items-center gap-2 w-1/2 overflow-hidden">
                                                                 <span className="font-sans text-[9px] font-medium opacity-40 bg-black/5 px-1.5 py-0.5 rounded-md shrink-0">
                                                                     {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </span>
+                                                                <button
+                                                                    onClick={handleFavToggle}
+                                                                    className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
+                                                                    title={isFav ? "Remove from Favorites" : "Save as Favorite"}
+                                                                >
+                                                                    <Star size={12} className={isFav ? "fill-amber-400" : ""} />
+                                                                </button>
                                                                 <span className="font-sans font-semibold text-xs leading-tight text-brutal-black shrink-0 capitalize truncate">
                                                                     {yTitle}
                                                                 </span>
