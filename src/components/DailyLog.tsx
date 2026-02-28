@@ -375,30 +375,36 @@ const DailyLog = () => {
                     {historicalDays.map((day) => {
                         const isExpanded = expandedHistoryDate === day.dateStr;
                         return (
-                            <div key={day.dateStr} className="p-6 bg-brutal-black/5 rounded-3xl flex flex-col items-center justify-center text-center border border-brutal-black/5 transition-all">
-                                <h4 className="font-sans text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-4 text-brutal-black">{day.dateStr}</h4>
-                                <div className="flex items-center gap-4">
-                                    <span className={`font-data text-2xl ${day.kcal > targetKcal ? 'text-signal-red' : 'text-brutal-black'}`}>
-                                        {day.kcal} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetKcal} KCAL</span>
-                                    </span>
-                                    <div className="w-[1px] h-6 bg-brutal-black/10" />
-                                    <span className={`font-data text-2xl ${day.protein < targetProtein ? 'text-signal-red' : 'text-brutal-black'}`}>
-                                        {day.protein} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetProtein}G PRO</span>
-                                    </span>
+                            <div key={day.dateStr} className="p-3 bg-brutal-black/5 rounded-2xl flex flex-col items-center justify-center text-center border border-brutal-black/5 transition-all">
+                                <h4 className="font-sans text-[9px] font-semibold uppercase tracking-widest opacity-60 mb-2 text-brutal-black">{day.dateStr}</h4>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5">
+                                        {day.kcal > targetKcal && <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                        <span className="font-data text-lg text-brutal-black">
+                                            {day.kcal} <span className="font-sans text-[8px] uppercase opacity-50 text-brutal-black">/ {targetKcal} KCAL</span>
+                                        </span>
+                                    </div>
+                                    <div className="w-[1px] h-4 bg-brutal-black/10" />
+                                    <div className="flex items-center gap-1.5">
+                                        {day.protein < targetProtein && <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                        <span className="font-data text-lg text-brutal-black">
+                                            {day.protein} <span className="font-sans text-[8px] uppercase opacity-50 text-brutal-black">/ {targetProtein}G PRO</span>
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {day.entries && day.entries.length > 0 && (
-                                    <div className="w-full mt-6 flex flex-col items-center">
+                                    <div className="w-full mt-3 flex flex-col items-center">
                                         <button
                                             onClick={() => setExpandedHistoryDate(isExpanded ? null : day.dateStr)}
-                                            className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-brutal-black/50 hover:text-brutal-black transition-colors px-4 py-2 bg-brutal-black/5 rounded-full"
+                                            className="flex items-center gap-1 text-[9px] uppercase font-bold tracking-widest text-brutal-black/50 hover:text-brutal-black transition-colors px-3 py-1.5 bg-brutal-black/5 rounded-full"
                                         >
                                             {isExpanded ? 'Hide Details' : 'View Details'}
-                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                            {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="w-full mt-4 flex flex-col gap-2 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
+                                            <div className="w-full mt-3 flex flex-col gap-1.5 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
                                                 {day.entries.map((yEntry) => {
                                                     let yTitle = yEntry.name;
                                                     if (yEntry.name.includes('||')) {
@@ -410,24 +416,21 @@ const DailyLog = () => {
                                                         }
                                                     }
                                                     return (
-                                                        <div key={yEntry.id} className="flex justify-between items-center w-full px-4 py-3 bg-white/40 rounded-xl text-left border border-white">
-                                                            <div className="flex items-center gap-3 w-2/3 overflow-hidden">
-                                                                <span className="font-sans text-[10px] font-medium opacity-40 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
+                                                        <div key={yEntry.id} className="flex justify-between items-center w-full px-3 py-2 bg-white/40 rounded-lg text-left border border-white">
+                                                            <div className="flex items-center gap-2 w-1/2 overflow-hidden">
+                                                                <span className="font-sans text-[9px] font-medium opacity-40 bg-black/5 px-1.5 py-0.5 rounded-md shrink-0">
                                                                     {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </span>
-                                                                <span className="font-sans font-semibold text-sm leading-tight text-brutal-black shrink-0 capitalize truncate">
+                                                                <span className="font-sans font-semibold text-xs leading-tight text-brutal-black shrink-0 capitalize truncate">
                                                                     {yTitle}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex items-baseline gap-2 shrink-0">
-                                                                <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
-                                                                    <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                                    <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                                </div>
-                                                                <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
-                                                                    <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.protein}</span>
-                                                                    <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
-                                                                </div>
+                                                            <div className="flex items-center gap-1 shrink-0 bg-black/5 px-2 py-0.5 rounded-md border border-black/5">
+                                                                <span className="font-data text-xs font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                                <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                                <span className="text-brutal-black/20 mx-0.5">/</span>
+                                                                <span className="font-data text-xs font-bold leading-none text-brutal-black">{yEntry.protein}</span>
+                                                                <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
                                                             </div>
                                                         </div>
                                                     );
