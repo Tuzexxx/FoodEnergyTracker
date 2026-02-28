@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, X, Activity, Image as ImageIcon, Mic, Star, Edit2, Trash2, Check } from 'lucide-react';
+import { Camera, Send, X, Activity, Image as ImageIcon, Mic, Star, Edit2, Trash2 } from 'lucide-react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -11,11 +11,13 @@ const SmartLogging = () => {
     const [showFavorites, setShowFavorites] = useState(false);
     const [isFavEditMode, setIsFavEditMode] = useState(false);
     const [editingFav, setEditingFav] = useState<any>(null);
+    const [isFavAdjusting, setIsFavAdjusting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [interrogation, setInterrogation] = useState<any>(null);
     const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog } = useStore();
 
-    const isProcessing = processingLogs.length > 0;
+    // Only lock the SmartLogging UI if actively recording voice dictation
+    const isProcessing = processingLogs.some(log => log.type === 'voice');
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
@@ -308,7 +310,8 @@ const SmartLogging = () => {
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => setEditingFav(null)}
-                                                    className="px-4 py-2 rounded-full text-xs font-bold uppercase text-black/60 bg-black/5 hover:bg-black/10 transition-all"
+                                                    className="px-3 py-2 rounded-xl text-[10px] font-bold uppercase bg-black/5 hover:bg-black/10 transition-all active:scale-95"
+                                                    disabled={isFavAdjusting}
                                                 >
                                                     Cancel
                                                 </button>
@@ -318,9 +321,35 @@ const SmartLogging = () => {
                                                         updateFavorite(originalName, toSave);
                                                         setEditingFav(null);
                                                     }}
-                                                    className="flex items-center gap-1 px-4 py-2 rounded-full text-xs font-bold uppercase bg-indigo-500 text-white shadow-md shadow-indigo-500/20 hover:bg-indigo-600 transition-all active:scale-95"
+                                                    className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50"
+                                                    disabled={isFavAdjusting}
                                                 >
-                                                    <Check size={14} /> Save
+                                                    Save
+                                                </button>
+                                                <button
+                                                    title="Recalculate Macros"
+                                                    onClick={async () => {
+                                                        setIsFavAdjusting(true);
+                                                        const aiRes: any = await getAiResponse(editingFav.name);
+                                                        setIsFavAdjusting(false);
+                                                        if (aiRes.type === 'success' && aiRes.data) {
+                                                            const { originalName } = editingFav;
+                                                            updateFavorite(originalName, {
+                                                                name: aiRes.data.name || editingFav.name,
+                                                                kcal: aiRes.data.kcal,
+                                                                protein: aiRes.data.protein,
+                                                                carbs: aiRes.data.carbs,
+                                                                fat: aiRes.data.fat
+                                                            });
+                                                            setEditingFav(null);
+                                                        } else {
+                                                            alert("AI could not adjust. Please edit manually.");
+                                                        }
+                                                    }}
+                                                    disabled={isFavAdjusting}
+                                                    className="px-3 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1"
+                                                >
+                                                    {isFavAdjusting ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} Auto-Adjust
                                                 </button>
                                             </div>
                                         </div>

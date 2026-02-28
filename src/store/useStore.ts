@@ -42,6 +42,7 @@ interface AppState {
     consumedProtein: number;
     yesterdayKcal: number;
     yesterdayProtein: number;
+    yesterdayLog: FoodEntry[];
     dailyLog: FoodEntry[];
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
@@ -96,7 +97,8 @@ export const useStore = create<AppState>()(
                     .select('*')
                     .eq('user_id', session.user.id)
                     .gte('timestamp', startOfYesterday.getTime())
-                    .lt('timestamp', startOfDay.getTime());
+                    .lt('timestamp', startOfDay.getTime())
+                    .order('timestamp', { ascending: false });
 
                 if (profileData) {
                     set({
@@ -116,11 +118,21 @@ export const useStore = create<AppState>()(
                 if (yesterdayEntries) {
                     let yKcal = 0;
                     let yProtein = 0;
-                    yesterdayEntries.forEach(e => {
+                    const parsedYesterday = yesterdayEntries.map(e => {
                         yKcal += Number(e.kcal);
                         yProtein += Number(e.protein);
+                        return {
+                            id: e.id,
+                            name: e.name,
+                            kcal: Number(e.kcal),
+                            protein: Number(e.protein),
+                            carbs: Number(e.carbs),
+                            fat: Number(e.fat),
+                            timestamp: Number(e.timestamp),
+                            requiresReview: e.requires_review
+                        };
                     });
-                    set({ yesterdayKcal: yKcal, yesterdayProtein: yProtein });
+                    set({ yesterdayKcal: yKcal, yesterdayProtein: yProtein, yesterdayLog: parsedYesterday });
                 }
 
                 if (entries) {
@@ -156,6 +168,7 @@ export const useStore = create<AppState>()(
             consumedProtein: 0,
             yesterdayKcal: 0,
             yesterdayProtein: 0,
+            yesterdayLog: [],
             dailyLog: [],
             favorites: [],
             processingLogs: [],

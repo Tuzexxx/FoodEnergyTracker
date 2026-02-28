@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send } from 'lucide-react';
+import { Edit2, Check, X, Trash2, Star, Activity, MessageSquare, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, processingLogs } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, yesterdayKcal, yesterdayProtein, yesterdayLog, targetKcal, targetProtein, processingLogs } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
+    const [showYesterdayDetails, setShowYesterdayDetails] = useState(false);
 
     // Brainstorm chat states
     const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
@@ -291,6 +292,15 @@ const DailyLog = () => {
                                                         </div>
 
                                                         <div className="flex gap-2 shrink-0">
+                                                            {entry.requiresReview && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); updateEntry(entry.id, { requiresReview: false }); }}
+                                                                    className="px-3 py-1.5 transition-colors rounded-full shadow-sm flex items-center justify-center border bg-green-100 text-green-700 border-green-300 hover:bg-green-200 text-[10px] uppercase font-bold tracking-widest gap-1"
+                                                                    title="Approve AI Estimation"
+                                                                >
+                                                                    <Check size={14} strokeWidth={3} /> OK
+                                                                </button>
+                                                            )}
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -361,7 +371,7 @@ const DailyLog = () => {
 
             {/* Yesterday 's Summary */}
             {(yesterdayKcal > 0 || yesterdayProtein > 0) && (
-                <div className="mt-8 p-6 bg-brutal-black/5 rounded-3xl flex flex-col items-center justify-center text-center border border-brutal-black/5">
+                <div className="mt-8 p-6 bg-brutal-black/5 rounded-3xl flex flex-col items-center justify-center text-center border border-brutal-black/5 transition-all">
                     <h4 className="font-sans text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-4 text-brutal-black">Yesterday's Summary</h4>
                     <div className="flex items-center gap-4">
                         <span className={`font-data text-2xl ${yesterdayKcal > targetKcal ? 'text-signal-red' : 'text-brutal-black'}`}>
@@ -372,6 +382,50 @@ const DailyLog = () => {
                             {yesterdayProtein} <span className="font-sans text-[10px] uppercase opacity-50 text-brutal-black">/ {targetProtein}G PRO</span>
                         </span>
                     </div>
+
+                    {yesterdayLog && yesterdayLog.length > 0 && (
+                        <div className="w-full mt-6 flex flex-col items-center">
+                            <button
+                                onClick={() => setShowYesterdayDetails(!showYesterdayDetails)}
+                                className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-brutal-black/50 hover:text-brutal-black transition-colors px-4 py-2 bg-brutal-black/5 rounded-full"
+                            >
+                                {showYesterdayDetails ? 'Hide Details' : 'View Details'}
+                                {showYesterdayDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+
+                            {showYesterdayDetails && (
+                                <div className="w-full mt-4 flex flex-col gap-2 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
+                                    {yesterdayLog.map((yEntry) => {
+                                        let yTitle = yEntry.name;
+                                        if (yEntry.name.includes('||')) {
+                                            yTitle = yEntry.name.split('||')[0];
+                                        } else {
+                                            const words = yEntry.name.trim().split(/\s+/);
+                                            if (words.length > 1) {
+                                                yTitle = words[0];
+                                            }
+                                        }
+                                        return (
+                                            <div key={yEntry.id} className="flex justify-between items-center w-full px-4 py-3 bg-white/40 rounded-xl text-left border border-white">
+                                                <div className="flex items-center gap-3 w-2/3 overflow-hidden">
+                                                    <span className="font-sans text-[10px] font-medium opacity-40 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
+                                                        {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    <span className="font-sans font-semibold text-sm leading-tight text-brutal-black shrink-0 capitalize truncate">
+                                                        {yTitle}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-baseline gap-1 shrink-0">
+                                                    <span className="font-data text-lg font-bold tracking-tighter leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                    <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
