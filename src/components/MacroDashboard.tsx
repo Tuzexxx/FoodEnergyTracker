@@ -52,14 +52,6 @@ const MacroDashboard = () => {
                 />
             </div>
 
-            {/* Floating % Badges over the edge */}
-            <div className="absolute -top-3 -right-2 bg-signal-red text-white text-[12px] font-bold font-sans tracking-widest px-3 py-1 rounded-full shadow-[0_4px_10px_rgba(255,51,51,0.4)] border-[3px] border-black z-20 rotate-3 flex gap-1.5 items-baseline">
-                <span className="opacity-70 text-[9px] uppercase font-bold">Kcal</span> {Math.round(kcalPercent)}%
-            </div>
-            <div className="absolute bottom-4 -right-2 bg-white text-black text-[12px] font-bold font-sans tracking-widest px-3 py-1 rounded-full shadow-[0_4px_10px_rgba(255,255,255,0.2)] border-[3px] border-black z-20 -rotate-3 flex gap-1.5 items-baseline">
-                <span className="opacity-50 text-[9px] uppercase font-bold">Pro</span> {Math.round(proteinPercent)}%
-            </div>
-
             <div className="relative z-10 p-6 flex flex-col justify-between h-56">
                 <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse" />

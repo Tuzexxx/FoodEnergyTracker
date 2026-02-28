@@ -398,7 +398,7 @@ const DailyLog = () => {
                                     {yesterdayLog.map((yEntry) => {
                                         let yTitle = yEntry.name;
                                         if (yEntry.name.includes('||')) {
-                                            yTitle = yEntry.name.split('||')[0];
+                                            yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
                                         } else {
                                             const words = yEntry.name.trim().split(/\s+/);
                                             if (words.length > 1) {
@@ -415,9 +415,15 @@ const DailyLog = () => {
                                                         {yTitle}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-baseline gap-1 shrink-0">
-                                                    <span className="font-data text-lg font-bold tracking-tighter leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                    <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
+                                                <div className="flex items-baseline gap-2 shrink-0">
+                                                    <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
+                                                        <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                        <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                    </div>
+                                                    <div className="flex items-baseline gap-1 bg-black/5 px-2 py-0.5 rounded-lg border border-black/5">
+                                                        <span className="font-data text-sm font-bold tracking-tighter leading-none text-brutal-black">{yEntry.protein}</span>
+                                                        <span className="text-[9px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
