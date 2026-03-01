@@ -220,9 +220,9 @@ const DailyLog = () => {
 
                                             {/* Collapsed 1-row view */}
                                             {expandedId !== entry.id && (
-                                                <div className="flex items-center justify-between w-full gap-2">
-                                                    <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-1.5 px-1 min-h-[40px] w-5">
-                                                        <span className="font-sans text-[9px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                                                <div className="flex items-center justify-between w-full gap-4">
+                                                    <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
+                                                        <span className="font-sans text-[10px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                                                             {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
@@ -438,9 +438,7 @@ const DailyLog = () => {
                                                             yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
                                                         } else {
                                                             const words = yEntry.name.trim().split(/\s+/);
-                                                            if (words.length > 1) {
-                                                                yTitle = words[0];
-                                                            }
+                                                            yTitle = words.slice(0, 2).join(' ');
                                                         }
                                                         let yNameForFav = yEntry.name;
                                                         if (yEntry.name.includes('||')) {
