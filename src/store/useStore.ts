@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
+import { EXERCISE_BONUS_KCAL } from '../utils/calorieFormula';
+
+export { EXERCISE_BONUS_KCAL };
 
 export interface FoodEntry {
     id: string;
@@ -64,6 +67,8 @@ interface AppState {
     processingLogs: ProcessingLog[];
     addProcessingLog: (log: ProcessingLog) => void;
     removeProcessingLog: (id: string) => void;
+    exerciseDay: boolean;
+    toggleExerciseDay: () => void;
 }
 
 export const useStore = create<AppState>()(
@@ -199,6 +204,9 @@ export const useStore = create<AppState>()(
             dailyLog: [],
             favorites: [],
             processingLogs: [],
+            exerciseDay: false,
+
+            toggleExerciseDay: () => set((state) => ({ exerciseDay: !state.exerciseDay })),
 
             addProcessingLog: (log) => set((state) => ({ processingLogs: [log, ...state.processingLogs] })),
             removeProcessingLog: (id) => set((state) => ({ processingLogs: state.processingLogs.filter(l => l.id !== id) })),
@@ -316,7 +324,8 @@ export const useStore = create<AppState>()(
                 yesterdayProtein: state.consumedProtein,
                 consumedKcal: 0,
                 consumedProtein: 0,
-                dailyLog: []
+                dailyLog: [],
+                exerciseDay: false,
             })),
 
             resetAll: () => set(() => ({

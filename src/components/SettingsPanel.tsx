@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { X, Save, RefreshCw, LogOut } from 'lucide-react';
 import { supabase } from '../utils/supabase';
+import { calculateTargets } from '../utils/calorieFormula';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const { profile, resetAll, calibrateUser, resetDaily, session, isGuest } = useStore();
@@ -32,19 +33,13 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const handleSave = () => {
         if (!profile) return;
 
-        let calorieMultiplier = 24;
-        let proteinMultiplier = 1.8;
-
-        if (goal.includes('SHRED')) {
-            calorieMultiplier = 20;
-            proteinMultiplier = 2.0;
-        } else if (goal.includes('TITAN')) {
-            calorieMultiplier = 28;
-            proteinMultiplier = 1.6;
-        }
-
-        const targetKcal = Math.round(Number(weight) * calorieMultiplier);
-        const targetProtein = Math.round(Number(weight) * proteinMultiplier);
+        const { targetKcal, targetProtein } = calculateTargets({
+            weight: Number(weight),
+            height: Number(height),
+            age: Number(age),
+            gender: profile.gender,
+            goal,
+        });
 
         calibrateUser(
             { ...profile, weight: Number(weight), height: Number(height), age: Number(age), goal },

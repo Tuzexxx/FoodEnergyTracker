@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useStore } from '../store/useStore';
+import { AlertCircle, CheckCircle2, Flame } from 'lucide-react';
+import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
 
 const MacroDashboard = () => {
-    const { targetKcal, consumedKcal, targetProtein, consumedProtein } = useStore();
+    const { targetKcal, consumedKcal, targetProtein, consumedProtein, exerciseDay, toggleExerciseDay } = useStore();
+
+    const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
 
     const kcalRef = useRef(null);
     const proteinRef = useRef(null);
@@ -13,10 +15,10 @@ const MacroDashboard = () => {
     const proteinBarRef = useRef(null);
     const proteinOverflowBarRef = useRef(null);
 
-    const isOverCalories = consumedKcal > targetKcal;
-    const isExactCalories = consumedKcal === targetKcal && consumedKcal > 0;
+    const isOverCalories = consumedKcal > effectiveKcal;
+    const isExactCalories = consumedKcal === effectiveKcal && consumedKcal > 0;
 
-    const kcalRawPercent = (consumedKcal / targetKcal) * 100;
+    const kcalRawPercent = (consumedKcal / effectiveKcal) * 100;
     const proteinRawPercent = (consumedProtein / targetProtein) * 100;
 
     const kcalPercent = Math.min(kcalRawPercent, 100);
@@ -94,6 +96,19 @@ const MacroDashboard = () => {
                     Macro Tracker
                 </h2>
 
+                {/* Exercise Day toggle */}
+                <button
+                    onClick={toggleExerciseDay}
+                    title={exerciseDay ? `Exercise day active (+${EXERCISE_BONUS_KCAL} kcal)` : 'Mark as exercise day'}
+                    className={`absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
+                            ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
+                            : 'bg-off-white/10 text-off-white/50 hover:bg-off-white/20'
+                        }`}
+                >
+                    <Flame size={12} />
+                    {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : 'GYM'}
+                </button>
+
                 <div className="flex flex-col gap-4 items-end mt-auto w-full">
                     {/* Calories Section */}
                     <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right mb-2">
@@ -105,7 +120,7 @@ const MacroDashboard = () => {
                         >
                             0
                         </span>
-                        <span className="font-sans text-xs uppercase tracking-widest text-signal-red whitespace-nowrap">/ {targetKcal} KCAL</span>
+                        <span className="font-sans text-xs uppercase tracking-widest text-signal-red whitespace-nowrap">/ {effectiveKcal} KCAL</span>
                     </div>
 
                     {/* Protein Section */}

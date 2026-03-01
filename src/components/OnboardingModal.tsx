@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { ArrowRight } from 'lucide-react';
+import { calculateTargets } from '../utils/calorieFormula';
 
 const steps = [
     { id: 'gender', question: 'Identify primary physical blueprint:', options: ['MALE', 'FEMALE'] },
@@ -50,20 +51,13 @@ const OnboardingModal = () => {
     };
 
     const finishCalibration = (data: any) => {
-        // Simple mock macro calculation based on goal
-        let calorieMultiplier = 24; // Base BMR mock (Maintain/Recomp)
-        let proteinMultiplier = 1.8; // Maintain protein
-
-        if (data.goal.includes('SHRED')) {
-            calorieMultiplier = 20;
-            proteinMultiplier = 2.0;
-        } else if (data.goal.includes('TITAN')) {
-            calorieMultiplier = 28;
-            proteinMultiplier = 1.6; // Less protein needed per kg in surplus
-        }
-
-        const targetKcal = Math.round(Number(data.weight) * calorieMultiplier);
-        const targetProtein = Math.round(Number(data.weight) * proteinMultiplier);
+        const { targetKcal, targetProtein } = calculateTargets({
+            weight: Number(data.weight),
+            height: Number(data.height),
+            age: Number(data.age),
+            gender: data.gender,
+            goal: data.goal,
+        });
 
         calibrateUser(
             {
