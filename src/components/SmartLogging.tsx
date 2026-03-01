@@ -281,7 +281,7 @@ const SmartLogging = () => {
                                                 value={editingFav.name}
                                                 onChange={(e) => setEditingFav({ ...editingFav, name: e.target.value })}
                                                 className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-sans outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-black/30"
-                                                placeholder="Name (e.g., Salad||300g)"
+                                                placeholder="Name (e.g., *Salad* 300g)"
                                             />
                                             <div className="flex gap-2">
                                                 <div className="flex-1 flex flex-col">
@@ -392,7 +392,7 @@ const SmartLogging = () => {
                                             ) : (
                                                 <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
                                             )}
-                                            <span className="font-bold truncate">{fav.name.split('||')[0]}</span>
+                                            <span className="font-bold truncate">{fav.name.match(/^\*([^*]+)\*/)?.[1] ?? fav.name.split('||')[0]}</span>
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
