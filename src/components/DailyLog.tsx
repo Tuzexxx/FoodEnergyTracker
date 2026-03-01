@@ -163,9 +163,11 @@ const DailyLog = () => {
                             displayDetails = parts.slice(1).join('||');
                         } else {
                             const words = entry.name.trim().split(/\s+/);
-                            if (words.length > 1) {
-                                displayTitle = words[0];
-                                displayDetails = words.slice(1).join(' ');
+                            if (words.length > 2) {
+                                displayTitle = words.slice(0, 2).join(' ');
+                                displayDetails = words.slice(2).join(' ');
+                            } else if (words.length === 2) {
+                                displayTitle = words.join(' ');
                             }
                         }
 
@@ -408,8 +410,8 @@ const DailyLog = () => {
                                         <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
                                         <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
                                             <div className="relative">
+                                                {day.kcal > targetKcal && <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
                                                 <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
-                                                {day.kcal > targetKcal && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
                                             </div>
                                             <span className="w-5 shrink-0" />
                                             <div className="relative">
