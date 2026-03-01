@@ -221,8 +221,8 @@ const DailyLog = () => {
                                             {/* Collapsed 1-row view */}
                                             {expandedId !== entry.id && (
                                                 <div className="flex items-center justify-between w-full gap-2">
-                                                    <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center p-1.5 min-w-[28px]">
-                                                        <span className="font-sans text-[9px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ transform: 'rotate(-90deg)' }}>
+                                                    <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-1.5 px-1 min-h-[40px] w-5">
+                                                        <span className="font-sans text-[9px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                                                             {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
