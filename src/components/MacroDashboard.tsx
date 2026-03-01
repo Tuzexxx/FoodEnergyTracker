@@ -82,16 +82,17 @@ const MacroDashboard = () => {
                             <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none">0</span>
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
                         </div>
-                        {/* Protein progress bar */}
-                        <div className="w-full h-[3px] bg-off-white/10 rounded-full overflow-hidden">
-                            <div
-                                ref={proteinBarRef}
-                                className="h-full bg-off-white/50 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: '0%' }}
-                            />
-                        </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Protein progress bar - full width at bottom */}
+            <div className="absolute bottom-0 left-0 w-full h-[3px] bg-off-white/10">
+                <div
+                    ref={proteinBarRef}
+                    className="h-full bg-off-white/50 transition-all duration-1000 ease-out"
+                    style={{ width: '0%' }}
+                />
             </div>
 
             {/* Brutalist structural accent */}
