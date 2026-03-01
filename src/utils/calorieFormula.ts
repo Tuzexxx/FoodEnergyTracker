@@ -63,6 +63,14 @@ const BASELINE_PAL = 1.375;
 /** Kcal added when user marks today as an exercise day */
 export const EXERCISE_BONUS_KCAL = 400;
 
+/**
+ * Extra protein target added on exercise days.
+ * Rationale: A typical resistance/cardio session increases muscle protein
+ * synthesis. ~25 g extra protein covers the additional MPS stimulus
+ * (approx 0.3 g/kg for an 80 kg person — Morton et al. 2017).
+ */
+export const EXERCISE_BONUS_PROTEIN = 25;
+
 interface CalibrateInput {
     weight: number; // kg
     height: number; // cm

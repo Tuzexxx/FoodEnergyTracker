@@ -2,9 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
-import { EXERCISE_BONUS_KCAL } from '../utils/calorieFormula';
+import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../utils/calorieFormula';
 
-export { EXERCISE_BONUS_KCAL };
+export { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN };
 
 export interface FoodEntry {
     id: string;

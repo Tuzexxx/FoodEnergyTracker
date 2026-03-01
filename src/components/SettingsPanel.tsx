@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
-import { X, Save, RefreshCw, LogOut } from 'lucide-react';
+import { X, Save, RefreshCw, LogOut, Info } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { calculateTargets } from '../utils/calorieFormula';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
-    const { profile, resetAll, calibrateUser, resetDaily, session, isGuest } = useStore();
+    const { profile, targetKcal, targetProtein, resetAll, calibrateUser, resetDaily, session, isGuest } = useStore();
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
     const [height, setHeight] = useState(profile?.height?.toString() || '');
     const [age, setAge] = useState(profile?.age?.toString() || '');
     const [goal, setGoal] = useState(profile?.goal || 'RECOMP (Maintain/Muscle)');
+    const [customKcal, setCustomKcal] = useState('');
+    const [customProtein, setCustomProtein] = useState('');
+    const [showInfo, setShowInfo] = useState(false);
 
     const panelRef = useRef(null);
 
@@ -33,7 +36,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const handleSave = () => {
         if (!profile) return;
 
-        const { targetKcal, targetProtein } = calculateTargets({
+        const calculated = calculateTargets({
             weight: Number(weight),
             height: Number(height),
             age: Number(age),
@@ -41,10 +44,14 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             goal,
         });
 
+        // Use custom override if provided, otherwise use calculated
+        const finalKcal = customKcal ? Number(customKcal) : calculated.targetKcal;
+        const finalProtein = customProtein ? Number(customProtein) : calculated.targetProtein;
+
         calibrateUser(
             { ...profile, weight: Number(weight), height: Number(height), age: Number(age), goal },
-            targetKcal,
-            targetProtein
+            finalKcal,
+            finalProtein
         );
         handleClose();
     };
@@ -121,6 +128,42 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
+                    {/* Custom override */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-3">
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60">Custom Daily Targets</label>
+                            <button onClick={() => setShowInfo(v => !v)} className="opacity-30 hover:opacity-70 transition-opacity">
+                                <Info size={13} />
+                            </button>
+                        </div>
+                        {showInfo && (
+                            <p className="font-sans text-[10px] opacity-50 leading-relaxed mb-3 border-l-2 border-brutal-black/10 pl-3">
+                                Formula: Mifflin-St Jeor BMR × 1.375 (light activity) × goal modifier. Leave blank to use auto-calculated values.
+                            </p>
+                        )}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Kcal / day</label>
+                                <input
+                                    type="number"
+                                    placeholder={`auto: ${targetKcal}`}
+                                    value={customKcal}
+                                    onChange={(e) => setCustomKcal(e.target.value)}
+                                    className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
+                                />
+                            </div>
+                            <div>
+                                <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Protein (g) / day</label>
+                                <input
+                                    type="number"
+                                    placeholder={`auto: ${targetProtein}`}
+                                    value={customProtein}
+                                    onChange={(e) => setCustomProtein(e.target.value)}
+                                    className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
+                                />
+                            </div>
+                        </div>
+                    </div>
                     <div className="mt-auto flex flex-col gap-4">
                         <button
                             onClick={handleSave}
