@@ -10,10 +10,11 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
     const [height, setHeight] = useState(profile?.height?.toString() || '');
     const [age, setAge] = useState(profile?.age?.toString() || '');
+    const [gender, setGender] = useState(profile?.gender || 'MALE');
     const [goal, setGoal] = useState(profile?.goal || 'RECOMP (Maintain/Muscle)');
     const [customKcal, setCustomKcal] = useState('');
     const [customProtein, setCustomProtein] = useState('');
-    const [showInfo, setShowInfo] = useState(false);
+    const [showCustom, setShowCustom] = useState(false);
 
     const panelRef = useRef(null);
 
@@ -40,7 +41,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             weight: Number(weight),
             height: Number(height),
             age: Number(age),
-            gender: profile.gender,
+            gender,
             goal,
         });
 
@@ -49,7 +50,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
         const finalProtein = customProtein ? Number(customProtein) : calculated.targetProtein;
 
         calibrateUser(
-            { ...profile, weight: Number(weight), height: Number(height), age: Number(age), goal },
+            { ...profile, weight: Number(weight), height: Number(height), age: Number(age), gender, goal },
             finalKcal,
             finalProtein
         );
@@ -113,6 +114,23 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         />
                     </div>
 
+                    {/* Gender */}
+                    <div>
+                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Biological Sex</label>
+                        <div className="flex gap-2">
+                            {['MALE', 'FEMALE'].map(g => (
+                                <button
+                                    key={g}
+                                    onClick={() => setGender(g)}
+                                    className={`flex-1 py-2 text-xs font-sans tracking-widest border transition-all ${gender === g ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'
+                                        }`}
+                                >
+                                    {g}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-4">Primary Objective</label>
                         <div className="flex flex-col gap-2">
@@ -128,41 +146,44 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
-                    {/* Custom override */}
+                    {/* Custom override — collapsed by default */}
                     <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <label className="font-sans text-xs uppercase tracking-widest opacity-60">Custom Daily Targets</label>
-                            <button onClick={() => setShowInfo(v => !v)} className="opacity-30 hover:opacity-70 transition-opacity">
-                                <Info size={13} />
-                            </button>
-                        </div>
-                        {showInfo && (
-                            <p className="font-sans text-[10px] opacity-50 leading-relaxed mb-3 border-l-2 border-brutal-black/10 pl-3">
-                                Formula: Mifflin-St Jeor BMR × 1.375 (light activity) × goal modifier. Leave blank to use auto-calculated values.
-                            </p>
+                        <button
+                            onClick={() => setShowCustom(v => !v)}
+                            className="flex items-center justify-between w-full mb-2"
+                        >
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 pointer-events-none">Custom Daily Targets</label>
+                            <Info size={13} className={`transition-opacity ${showCustom ? 'opacity-60' : 'opacity-30'}`} />
+                        </button>
+                        {showCustom && (
+                            <>
+                                <p className="font-sans text-[10px] opacity-50 leading-relaxed mb-3 border-l-2 border-brutal-black/10 pl-3">
+                                    Override the formula. Leave blank to use Mifflin-St Jeor auto values.
+                                </p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Kcal / day</label>
+                                        <input
+                                            type="number"
+                                            placeholder={`auto: ${targetKcal}`}
+                                            value={customKcal}
+                                            onChange={(e) => setCustomKcal(e.target.value)}
+                                            className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Protein (g) / day</label>
+                                        <input
+                                            type="number"
+                                            placeholder={`auto: ${targetProtein}`}
+                                            value={customProtein}
+                                            onChange={(e) => setCustomProtein(e.target.value)}
+                                            className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                            </>
                         )}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Kcal / day</label>
-                                <input
-                                    type="number"
-                                    placeholder={`auto: ${targetKcal}`}
-                                    value={customKcal}
-                                    onChange={(e) => setCustomKcal(e.target.value)}
-                                    className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
-                                />
-                            </div>
-                            <div>
-                                <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Protein (g) / day</label>
-                                <input
-                                    type="number"
-                                    placeholder={`auto: ${targetProtein}`}
-                                    value={customProtein}
-                                    onChange={(e) => setCustomProtein(e.target.value)}
-                                    className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
-                                />
-                            </div>
-                        </div>
                     </div>
                     <div className="mt-auto flex flex-col gap-4">
                         <button
