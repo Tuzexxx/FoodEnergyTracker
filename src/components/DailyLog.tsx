@@ -223,7 +223,7 @@ const DailyLog = () => {
                                                 <div className="flex items-center justify-between w-full gap-4">
                                                     <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
                                                         <span className="font-sans text-[10px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                                                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
@@ -491,30 +491,21 @@ const DailyLog = () => {
                                         </div>
                                     )}
                                 </div>
-                                {/* Progress Bars Container at Bottom */}
-                                <div className="absolute bottom-0 left-0 w-full flex flex-col gap-[1px] bg-brutal-black/5 rounded-b-2xl overflow-hidden pointer-events-none">
-                                    {/* Kcal bar */}
-                                    <div className="relative w-full h-[2px] bg-signal-red/10">
-                                        <div
-                                            className="h-full bg-signal-red/30 transition-all duration-500"
-                                            style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
-                                        />
-                                        <div
-                                            className="absolute inset-0 bg-signal-red/60 transition-all duration-500"
-                                            style={{ width: `${Math.max(0, Math.min((day.kcal / targetKcal) * 100 - 100, 100))}%` }}
-                                        />
-                                    </div>
-                                    {/* Protein bar */}
-                                    <div className="relative w-full h-[2px] bg-brutal-black/5">
-                                        <div
-                                            className="h-full bg-brutal-black/20 transition-all duration-500"
-                                            style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }}
-                                        />
-                                        <div
-                                            className="absolute inset-0 bg-brutal-black/40 transition-all duration-500 shadow-[0_0_8px_rgba(0,0,0,0.1)]"
-                                            style={{ width: `${Math.max(0, Math.min((day.protein / targetProtein) * 100 - 100, 100))}%` }}
-                                        />
-                                    </div>
+                                {/* Full-height kcal background fill — same style as main widget */}
+                                <div
+                                    className="absolute inset-y-0 left-0 bg-signal-red/15 pointer-events-none rounded-2xl transition-all duration-500"
+                                    style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
+                                />
+                                {/* Kcal overflow — restarts from left, more intense */}
+                                <div
+                                    className="absolute inset-y-0 left-0 bg-signal-red/35 pointer-events-none rounded-2xl transition-all duration-500"
+                                    style={{ width: `${Math.max(0, Math.min((day.kcal / targetKcal) * 100 - 100, 100))}%` }}
+                                />
+                                {/* Protein progress bar — thin at bottom */}
+                                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-brutal-black/5 rounded-b-2xl overflow-hidden pointer-events-none">
+                                    <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
+                                    {/* Protein overflow bar */}
+                                    <div className="absolute inset-0 bg-brutal-black/40 transition-all duration-500" style={{ width: `${Math.max(0, Math.min((day.protein / targetProtein) * 100 - 100, 100))}%` }} />
                                 </div>
                             </div>
                         );
