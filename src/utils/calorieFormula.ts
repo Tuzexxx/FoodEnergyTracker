@@ -46,15 +46,11 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * PROTEIN target — adjusted by goal intent
  * ─────────────────────────────────────────────────────────────────────────────
- *   RECOMP : 2.4 g/kg  (HIGHEST — build muscle AND lose fat simultaneously;
- *                        no surplus to spare protein, needs protein for both
- *                        muscle protein synthesis and anti-catabolism)
- *   SHRED  : 2.2 g/kg  (HIGH — caloric deficit risks muscle breakdown;
- *                        protein acts as preservation insurance)
- *   TITAN  : 1.8 g/kg  (MODERATE — caloric surplus spares protein's energy
- *                        role; still sufficient for hypertrophy)
+ *   SHRED  : 2.0 g/kg  (slightly higher to protect muscle in a caloric deficit)
+ *   RECOMP : 1.8 g/kg  (sweet spot for building muscle while burning fat)
+ *   TITAN  : 1.6 g/kg  (plenty of protein; caloric surplus handles energy demands)
  *
- *   Sources: Helms et al. (2014) JISSN; Barakat et al. (2020) Strength & Cond.
+ *   Sources: Helms et al. (2014) JISSN; Morton et al. (2017) BJSM.
  */
 
 /**
@@ -126,14 +122,14 @@ export function calculateTargets({ weight, height, age, gender, goal, activityLe
 
     // Step 3: Goal modifier
     let kcalModifier = 1.0;    // RECOMP default
-    let proteinPerKg = 2.4;    // RECOMP: highest — build + preserve simultaneously
+    let proteinPerKg = 1.8;    // RECOMP: sweet spot for building muscle while burning fat
 
     if (goal.includes('SHRED')) {
         kcalModifier = 0.80;
-        proteinPerKg = 2.2;    // High: prevent catabolism in deficit
+        proteinPerKg = 2.0;    // Slightly higher to protect muscle in a caloric deficit
     } else if (goal.includes('TITAN')) {
         kcalModifier = 1.15;
-        proteinPerKg = 1.8;    // Moderate: surplus spares protein's energy role
+        proteinPerKg = 1.6;    // Caloric surplus handles energy demands
     }
 
     return {
