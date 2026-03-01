@@ -371,7 +371,18 @@ const DailyLog = () => {
 
             {/* Historical Summaries */}
             {historicalDays && historicalDays.length > 0 && (
-                <div className="mt-4 flex flex-col gap-2">
+                <div className="mt-4 flex flex-col gap-1.5">
+                    {/* Header row */}
+                    <div className="px-3 py-1.5 flex items-center gap-2 opacity-50">
+                        <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black shrink-0 w-8">Day</span>
+                        <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black shrink-0 flex-1">Date</span>
+                        <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black text-right w-12">Kcal /{targetKcal}</span>
+                            <span className="w-5" />
+                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black text-right w-12">Pro /{targetProtein}g</span>
+                        </div>
+                        <span className="w-8 shrink-0" />
+                    </div>
                     {historicalDays.map((day) => {
                         const isExpanded = expandedHistoryDate === day.dateStr;
                         const dayAbbr = (() => {
@@ -387,13 +398,17 @@ const DailyLog = () => {
                             <div key={day.dateStr} className="px-3 py-2 bg-brutal-black/5 rounded-2xl flex items-center justify-between border border-brutal-black/5 transition-all w-full relative">
                                 <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                                     <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
-                                    <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0">{shortDate}</span>
-                                    <div className="flex items-center ml-auto shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                        <span className={`font-data text-xs font-bold text-right w-10 ${day.kcal > targetKcal ? 'text-red-500' : 'text-brutal-black'}`}>{day.kcal}</span>
-                                        <span className="font-sans text-[8px] opacity-40 text-brutal-black w-10">/{targetKcal}</span>
-                                        <span className="text-brutal-black/15 text-[10px] mx-0.5">│</span>
-                                        <span className={`font-data text-xs font-bold text-right w-10 ${day.protein < targetProtein ? 'text-red-500' : 'text-brutal-black'}`}>{day.protein}g</span>
-                                        <span className="font-sans text-[8px] opacity-40 text-brutal-black w-10">/{targetProtein}g</span>
+                                    <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
+                                    <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                        <div className="relative">
+                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
+                                            {day.kcal > targetKcal && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                        </div>
+                                        <span className="w-5 shrink-0" />
+                                        <div className="relative">
+                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
+                                            {day.protein < targetProtein && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                        </div>
                                     </div>
                                 </div>
                                 {day.entries && day.entries.length > 0 && (
