@@ -44,11 +44,17 @@
  *   or mixed cardio) for a 70-90 kg individual.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * PROTEIN target (Lemon, 2000 — sports nutrition guidelines)
+ * PROTEIN target — adjusted by goal intent
  * ─────────────────────────────────────────────────────────────────────────────
- *   SHRED  : 2.0 g/kg  (preserve muscle while in deficit)
- *   RECOMP : 1.8 g/kg  (muscle maintenance/light growth)
- *   TITAN  : 1.6 g/kg  (sufficient for hypertrophy in surplus)
+ *   RECOMP : 2.4 g/kg  (HIGHEST — build muscle AND lose fat simultaneously;
+ *                        no surplus to spare protein, needs protein for both
+ *                        muscle protein synthesis and anti-catabolism)
+ *   SHRED  : 2.2 g/kg  (HIGH — caloric deficit risks muscle breakdown;
+ *                        protein acts as preservation insurance)
+ *   TITAN  : 1.8 g/kg  (MODERATE — caloric surplus spares protein's energy
+ *                        role; still sufficient for hypertrophy)
+ *
+ *   Sources: Helms et al. (2014) JISSN; Barakat et al. (2020) Strength & Cond.
  */
 
 /** Baseline PAL (Light activity: daily walking only, no formal exercise) */
@@ -84,14 +90,14 @@ export function calculateTargets({ weight, height, age, gender, goal }: Calibrat
 
     // Step 3: Goal modifier
     let kcalModifier = 1.0;    // RECOMP default
-    let proteinPerKg = 1.8;
+    let proteinPerKg = 2.4;    // RECOMP: highest — build + preserve simultaneously
 
     if (goal.includes('SHRED')) {
         kcalModifier = 0.80;
-        proteinPerKg = 2.0;
+        proteinPerKg = 2.2;    // High: prevent catabolism in deficit
     } else if (goal.includes('TITAN')) {
         kcalModifier = 1.15;
-        proteinPerKg = 1.6;
+        proteinPerKg = 1.8;    // Moderate: surplus spares protein's energy role
     }
 
     return {
