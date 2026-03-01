@@ -491,14 +491,14 @@ const DailyLog = () => {
                                         </div>
                                     )}
                                 </div>
-                                {/* Progress bars */}
-                                <div className="flex flex-col gap-[1px] w-full px-0">
-                                    <div className="w-full h-[2px] bg-signal-red/10">
-                                        <div className="h-full bg-signal-red/40 transition-all duration-500" style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }} />
-                                    </div>
-                                    <div className="w-full h-[2px] bg-brutal-black/5">
-                                        <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
-                                    </div>
+                                {/* Kcal background fill — same as main widget but muted */}
+                                <div
+                                    className="absolute inset-y-0 left-0 bg-signal-red/10 pointer-events-none rounded-2xl transition-all duration-500"
+                                    style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
+                                />
+                                {/* Protein progress bar — thin at bottom like main widget */}
+                                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-brutal-black/5 rounded-b-2xl overflow-hidden">
+                                    <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
                                 </div>
                             </div>
                         );
