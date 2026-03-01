@@ -30,6 +30,7 @@ interface UserProfile {
     age: number;
     gender: string;
     goal: string;
+    activityLevel: string;
 }
 
 export interface ProcessingLog {
@@ -116,7 +117,8 @@ export const useStore = create<AppState>()(
                             weight: profileData.weight,
                             age: profileData.age,
                             gender: profileData.gender,
-                            goal: profileData.goal
+                            goal: profileData.goal,
+                            activityLevel: profileData.activity_level || 'LIGHT',
                         },
                         targetKcal: profileData.target_kcal,
                         targetProtein: profileData.target_protein

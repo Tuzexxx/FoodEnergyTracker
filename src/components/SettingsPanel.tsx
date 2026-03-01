@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { X, Save, RefreshCw, LogOut, Info } from 'lucide-react';
 import { supabase } from '../utils/supabase';
-import { calculateTargets } from '../utils/calorieFormula';
+import { calculateTargets, ACTIVITY_LEVELS } from '../utils/calorieFormula';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const { profile, targetKcal, targetProtein, resetAll, calibrateUser, resetDaily, session, isGuest } = useStore();
@@ -11,6 +11,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const [height, setHeight] = useState(profile?.height?.toString() || '');
     const [age, setAge] = useState(profile?.age?.toString() || '');
     const [gender, setGender] = useState(profile?.gender || 'MALE');
+    const [activityLevel, setActivityLevel] = useState(profile?.activityLevel || 'LIGHT');
     const [goal, setGoal] = useState(profile?.goal || 'RECOMP (Maintain/Muscle)');
     const [customKcal, setCustomKcal] = useState('');
     const [customProtein, setCustomProtein] = useState('');
@@ -43,6 +44,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             age: Number(age),
             gender,
             goal,
+            activityLevel,
         });
 
         // Use custom override if provided, otherwise use calculated
@@ -50,7 +52,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
         const finalProtein = customProtein ? Number(customProtein) : calculated.targetProtein;
 
         calibrateUser(
-            { ...profile, weight: Number(weight), height: Number(height), age: Number(age), gender, goal },
+            { ...profile, weight: Number(weight), height: Number(height), age: Number(age), gender, goal, activityLevel },
             finalKcal,
             finalProtein
         );
@@ -131,6 +133,25 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
+                    {/* Activity Level */}
+                    <div>
+                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Baseline Activity</label>
+                        <div className="flex flex-col gap-2">
+                            {ACTIVITY_LEVELS.map(a => (
+                                <button
+                                    key={a.value}
+                                    onClick={() => setActivityLevel(a.value)}
+                                    className={`py-2 px-3 text-left border transition-all flex justify-between items-center ${activityLevel === a.value ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'
+                                        }`}
+                                >
+                                    <span className="font-sans text-xs tracking-widest">{a.label}</span>
+                                    <span className={`font-data text-xs ${activityLevel === a.value ? 'opacity-60' : 'opacity-30'}`}>×{a.pal}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Primary Objective */}
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-4">Primary Objective</label>
                         <div className="flex flex-col gap-2">
@@ -224,8 +245,8 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         )}
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

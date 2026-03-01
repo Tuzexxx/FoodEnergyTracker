@@ -2,23 +2,23 @@ import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { ArrowRight, Info, X } from 'lucide-react';
-import { calculateTargets } from '../utils/calorieFormula';
+import { calculateTargets, ACTIVITY_LEVELS } from '../utils/calorieFormula';
 
 const goalOptions = [
     {
         value: 'SHRED (Cut)',
         intent: 'Lose fat, preserve muscle',
-        description: 'Puts you in a −20% caloric deficit. High protein (2.2g/kg) acts as insurance against muscle loss while your body burns fat.',
+        description: 'Caloric deficit (−20%). High protein (2.2g/kg) protects muscle during fat loss.',
     },
     {
         value: 'RECOMP (Maintain/Muscle)',
         intent: 'Build muscle & lose fat simultaneously',
-        description: 'Maintenance calories. Requires the highest protein (2.4g/kg) because your body must simultaneously build new muscle and prevent breakdown — the hardest goal.',
+        description: 'Maintenance calories. Highest protein (2.4g/kg) — your body must build and preserve at once.',
     },
     {
         value: 'TITAN (Bulk)',
         intent: 'Maximize muscle mass',
-        description: 'A +15% caloric surplus gives your body extra energy for growth. Moderate protein (1.8g/kg) — the surplus carbs/fat spare protein\'s energy role.',
+        description: 'A +15% caloric surplus. Moderate protein (1.8g/kg) — the surplus carbs/fat spare protein\'s role.',
     },
 ];
 
@@ -27,8 +27,12 @@ const infoText = `Formula: Mifflin-St Jeor BMR × PAL × Goal Modifier
 BMR (male):   10×weight + 6.25×height − 5×age + 5
 BMR (female): 10×weight + 6.25×height − 5×age − 161
 
-PAL baseline: ×1.375 (light activity — daily walking)
-Exercise day: +400 kcal / +25 g protein added manually.
+PAL tiers:
+  Daily Walker  : ×1.375
+  Gym 3× / week : ×1.55
+  Gym Freak     : ×1.725
+
+Exercise day bonus: +400 kcal / +25 g protein added manually.
 
 Goal modifiers:
   SHRED  — ×0.80 kcal | 2.2 g/kg protein
@@ -43,6 +47,7 @@ const steps = [
     { id: 'age', question: 'Enter operational age (years):', type: 'number', placeholder: 'e.g. 28' },
     { id: 'height', question: 'Enter vertical dimension (cm):', type: 'number', placeholder: 'e.g. 180' },
     { id: 'weight', question: 'Enter exact mass (kg):', type: 'number', placeholder: 'e.g. 75' },
+    { id: 'activityLevel', question: 'Select baseline activity level:' },
     { id: 'goal', question: 'Select primary objective:' },
 ];
 
@@ -91,6 +96,7 @@ const OnboardingModal = () => {
             age: Number(data.age),
             gender: data.gender,
             goal: data.goal,
+            activityLevel: data.activityLevel,
         });
 
         calibrateUser(
@@ -99,7 +105,8 @@ const OnboardingModal = () => {
                 age: Number(data.age),
                 height: Number(data.height),
                 weight: Number(data.weight),
-                goal: data.goal
+                goal: data.goal,
+                activityLevel: data.activityLevel,
             },
             targetKcal,
             targetProtein
@@ -108,6 +115,7 @@ const OnboardingModal = () => {
 
     const step = steps[currentStep];
     const isGoalStep = step.id === 'goal';
+    const isActivityStep = step.id === 'activityLevel';
 
     return (
         <div className="fixed inset-0 z-50 bg-paper/95 backdrop-blur-xl flex flex-col items-center justify-center p-6">
@@ -116,7 +124,7 @@ const OnboardingModal = () => {
                     SEQ {currentStep + 1} / {steps.length}
                 </div>
 
-                {/* Info icon — always visible */}
+                {/* Info icon */}
                 <button
                     onClick={() => setShowInfo(true)}
                     className="absolute -top-12 right-0 p-1 opacity-30 hover:opacity-70 transition-opacity"
@@ -130,7 +138,22 @@ const OnboardingModal = () => {
                 </h2>
 
                 <div ref={inputRef} className="flex flex-col gap-3">
-                    {isGoalStep ? (
+                    {isActivityStep ? (
+                        ACTIVITY_LEVELS.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => handleNext(opt.value)}
+                                className="brutal-card p-4 text-left hover:bg-brutal-black hover:text-off-white transition-colors duration-300 group flex flex-col gap-1"
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span className="font-sans text-lg tracking-wide">{opt.label}</span>
+                                    <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" size={18} />
+                                </div>
+                                <span className="font-sans text-[11px] opacity-40 group-hover:opacity-60 leading-snug">{opt.description}</span>
+                                <span className="font-data text-xs opacity-30 group-hover:opacity-50 mt-0.5">PAL ×{opt.pal}</span>
+                            </button>
+                        ))
+                    ) : isGoalStep ? (
                         goalOptions.map(opt => (
                             <button
                                 key={opt.value}

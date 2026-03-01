@@ -18,13 +18,13 @@
  * STEP 2 — Physical Activity Level (PAL) multiplier
  * ─────────────────────────────────────────────────────────────────────────────
  *   Sedentary (desk job, no exercise)    : × 1.2
- *   Light     (daily walking ~30 min)    : × 1.375  ← BASELINE USED HERE
- *   Moderate  (gym 3-5×/wk)             : × 1.55
- *   Active    (hard training 6-7×/wk)   : × 1.725
+ *   Light     (daily walking ~30 min)    : × 1.375  ← LIGHT baseline
+ *   Moderate  (gym 3-5×/wk)             : × 1.55   ← MODERATE baseline
+ *   Active    (hard training 6-7×/wk)   : × 1.725  ← ACTIVE baseline
  *   Very Active (physical job + gym)     : × 1.9
  *
- *   We use 1.375 (Light) as the no-exercise baseline.
- *   Exercise days are handled separately via the +EXERCISE_BONUS_KCAL button.
+ *   The user selects one of three tiers (LIGHT / MODERATE / ACTIVE).
+ *   Exercise days add a further +400 kcal / +25 g protein on top.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * STEP 3 — Goal modifier (applied after PAL)
@@ -57,8 +57,35 @@
  *   Sources: Helms et al. (2014) JISSN; Barakat et al. (2020) Strength & Cond.
  */
 
-/** Baseline PAL (Light activity: daily walking only, no formal exercise) */
-const BASELINE_PAL = 1.375;
+/**
+ * Activity level options available to the user.
+ * PAL = Physical Activity Level multiplier applied to BMR.
+ */
+export const ACTIVITY_LEVELS = [
+    {
+        value: 'LIGHT',
+        label: 'Daily Walker',
+        description: 'Desk job or light work, some walking — no formal training',
+        pal: 1.375,
+    },
+    {
+        value: 'MODERATE',
+        label: 'Gym 3× / week',
+        description: 'Regular gym or sport sessions 3-4 times per week',
+        pal: 1.55,
+    },
+    {
+        value: 'ACTIVE',
+        label: 'Gym Freak',
+        description: 'Hard training 6-7×/week or a physically demanding job + gym',
+        pal: 1.725,
+    },
+];
+
+/** Return the PAL multiplier for a given activity level value string */
+export function getPAL(activityLevel: string): number {
+    return ACTIVITY_LEVELS.find(a => a.value === activityLevel)?.pal ?? 1.375;
+}
 
 /** Kcal added when user marks today as an exercise day */
 export const EXERCISE_BONUS_KCAL = 400;
@@ -72,11 +99,12 @@ export const EXERCISE_BONUS_KCAL = 400;
 export const EXERCISE_BONUS_PROTEIN = 25;
 
 interface CalibrateInput {
-    weight: number; // kg
-    height: number; // cm
-    age: number;    // years
-    gender: string; // 'MALE' | 'FEMALE'
-    goal: string;   // 'SHRED...' | 'RECOMP...' | 'TITAN...'
+    weight: number;        // kg
+    height: number;        // cm
+    age: number;           // years
+    gender: string;        // 'MALE' | 'FEMALE'
+    goal: string;          // 'SHRED...' | 'RECOMP...' | 'TITAN...'
+    activityLevel: string; // 'LIGHT' | 'MODERATE' | 'ACTIVE'
 }
 
 interface CalibrateResult {
@@ -87,14 +115,14 @@ interface CalibrateResult {
 /**
  * Calculate daily kcal and protein targets using Mifflin-St Jeor + PAL.
  */
-export function calculateTargets({ weight, height, age, gender, goal }: CalibrateInput): CalibrateResult {
+export function calculateTargets({ weight, height, age, gender, goal, activityLevel }: CalibrateInput): CalibrateResult {
     // Step 1: BMR
     const bmr = gender === 'MALE'
         ? (10 * weight) + (6.25 * height) - (5 * age) + 5
         : (10 * weight) + (6.25 * height) - (5 * age) - 161;
 
-    // Step 2: TDEE at light activity baseline
-    const tdee = bmr * BASELINE_PAL;
+    // Step 2: TDEE using selected activity PAL
+    const tdee = bmr * getPAL(activityLevel);
 
     // Step 3: Goal modifier
     let kcalModifier = 1.0;    // RECOMP default
