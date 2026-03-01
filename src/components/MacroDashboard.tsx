@@ -4,7 +4,9 @@ import { AlertCircle, CheckCircle2, Flame } from 'lucide-react';
 import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
 
 const MacroDashboard = () => {
-    const { targetKcal, consumedKcal, targetProtein, consumedProtein, exerciseDay, toggleExerciseDay } = useStore();
+    const { targetKcal, consumedKcal, targetProtein, consumedProtein, exerciseDay, toggleExerciseDay, profile } = useStore();
+
+    const isLightActivity = profile?.activityLevel === 'LIGHT' || !profile?.activityLevel;
 
     const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
     const effectiveProtein = targetProtein; // protein target unchanged on exercise days
@@ -97,18 +99,20 @@ const MacroDashboard = () => {
                     Macro Tracker
                 </h2>
 
-                {/* Exercise Day toggle */}
-                <button
-                    onClick={toggleExerciseDay}
-                    title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal` : 'Mark as exercise day'}
-                    className={`absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
-                        ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
-                        : 'bg-off-white/10 text-off-white/50 hover:bg-off-white/20'
-                        }`}
-                >
-                    <Flame size={12} />
-                    {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : 'GYM'}
-                </button>
+                {/* Exercise Day toggle — only shown for Daily Walker (energy not already baked into PAL) */}
+                {isLightActivity && (
+                    <button
+                        onClick={toggleExerciseDay}
+                        title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal` : 'Mark as exercise day'}
+                        className={`absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
+                            ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
+                            : 'bg-off-white/10 text-off-white/50 hover:bg-off-white/20'
+                            }`}
+                    >
+                        <Flame size={12} />
+                        {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : 'GYM'}
+                    </button>
+                )}
 
                 <div className="flex flex-col gap-4 items-end mt-auto w-full">
                     {/* Calories Section */}
