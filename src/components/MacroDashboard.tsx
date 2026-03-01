@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { AlertCircle, CheckCircle2, Flame } from 'lucide-react';
-import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
+import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
 
 const MacroDashboard = () => {
     const { targetKcal, consumedKcal, targetProtein, consumedProtein, exerciseDay, toggleExerciseDay } = useStore();
 
     const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
-    const effectiveProtein = targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
+    const effectiveProtein = targetProtein; // protein target unchanged on exercise days
 
     const kcalRef = useRef(null);
     const proteinRef = useRef(null);
@@ -100,14 +100,14 @@ const MacroDashboard = () => {
                 {/* Exercise Day toggle */}
                 <button
                     onClick={toggleExerciseDay}
-                    title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal / +${EXERCISE_BONUS_PROTEIN}g protein` : 'Mark as exercise day'}
+                    title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal` : 'Mark as exercise day'}
                     className={`absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
                         ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
                         : 'bg-off-white/10 text-off-white/50 hover:bg-off-white/20'
                         }`}
                 >
                     <Flame size={12} />
-                    {exerciseDay ? `+${EXERCISE_BONUS_KCAL} / +${EXERCISE_BONUS_PROTEIN}g` : 'GYM'}
+                    {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : 'GYM'}
                 </button>
 
                 <div className="flex flex-col gap-4 items-end mt-auto w-full">
