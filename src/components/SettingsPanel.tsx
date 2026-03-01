@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
-import { X, Save, RefreshCw, LogOut, Info } from 'lucide-react';
+import { X, Save, RefreshCw, LogOut, Info, ChevronDown } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { calculateTargets, ACTIVITY_LEVELS } from '../utils/calorieFormula';
 
@@ -16,6 +16,8 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const [customKcal, setCustomKcal] = useState('');
     const [customProtein, setCustomProtein] = useState('');
     const [showCustom, setShowCustom] = useState(false);
+    const [showActivity, setShowActivity] = useState(false);
+    const [showGoal, setShowGoal] = useState(false);
 
     const panelRef = useRef(null);
 
@@ -75,8 +77,8 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
-            <div ref={panelRef} className="w-full max-w-sm h-full bg-paper shadow-2xl flex flex-col pt-12">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm" onClick={handleClose}>
+            <div ref={panelRef} className="w-full max-w-sm h-full bg-paper shadow-2xl flex flex-col pt-12" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b-2 border-brutal-black/10">
                     <h2 className="font-drama text-2xl tracking-wide">System Config</h2>
                     <button onClick={handleClose} className="p-2 hover:bg-brutal-black/5 rounded-full transition-colors">
@@ -133,38 +135,64 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
-                    {/* Activity Level */}
+                    {/* Activity Level — collapsible */}
                     <div>
-                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Baseline Activity</label>
-                        <div className="flex flex-col gap-2">
-                            {ACTIVITY_LEVELS.map(a => (
-                                <button
-                                    key={a.value}
-                                    onClick={() => setActivityLevel(a.value)}
-                                    className={`py-2 px-3 text-left border transition-all flex justify-between items-center ${activityLevel === a.value ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'
-                                        }`}
-                                >
-                                    <span className="font-sans text-xs tracking-widest">{a.label}</span>
-                                    <span className={`font-data text-xs ${activityLevel === a.value ? 'opacity-60' : 'opacity-30'}`}>×{a.pal}</span>
-                                </button>
-                            ))}
-                        </div>
+                        <button
+                            onClick={() => setShowActivity(v => !v)}
+                            className="flex items-center justify-between w-full py-1 group hover:opacity-80 transition-opacity"
+                        >
+                            <span className="font-sans text-xs uppercase tracking-widest opacity-60">Baseline Activity</span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-sans text-xs opacity-40 group-hover:opacity-60 transition-opacity">
+                                    {ACTIVITY_LEVELS.find(a => a.value === activityLevel)?.label}
+                                </span>
+                                <ChevronDown size={14} className={`opacity-40 transition-all duration-200 ${showActivity ? 'rotate-180 opacity-60' : ''}`} />
+                            </div>
+                        </button>
+                        {showActivity && (
+                            <div className="flex flex-col gap-2 mt-3">
+                                {ACTIVITY_LEVELS.map(a => (
+                                    <button
+                                        key={a.value}
+                                        onClick={() => setActivityLevel(a.value)}
+                                        className={`py-2 px-3 text-left border transition-all flex justify-between items-center ${activityLevel === a.value ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'
+                                            }`}
+                                    >
+                                        <span className="font-sans text-xs tracking-widest">{a.label}</span>
+                                        <span className={`font-data text-xs ${activityLevel === a.value ? 'opacity-60' : 'opacity-30'}`}>×{a.pal}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Primary Objective */}
+                    {/* Primary Objective — collapsible */}
                     <div>
-                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-4">Primary Objective</label>
-                        <div className="flex flex-col gap-2">
-                            {['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
-                                <button
-                                    key={g}
-                                    onClick={() => setGoal(g)}
-                                    className={`py-3 text-xs font-sans tracking-widest border transition-all ${goal === g ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'}`}
-                                >
-                                    {g}
-                                </button>
-                            ))}
-                        </div>
+                        <button
+                            onClick={() => setShowGoal(v => !v)}
+                            className="flex items-center justify-between w-full py-1 group hover:opacity-80 transition-opacity"
+                        >
+                            <span className="font-sans text-xs uppercase tracking-widest opacity-60">Primary Objective</span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-sans text-xs opacity-40 group-hover:opacity-60 transition-opacity">
+                                    {goal.split(' ')[0]}
+                                </span>
+                                <ChevronDown size={14} className={`opacity-40 transition-all duration-200 ${showGoal ? 'rotate-180 opacity-60' : ''}`} />
+                            </div>
+                        </button>
+                        {showGoal && (
+                            <div className="flex flex-col gap-2 mt-3">
+                                {['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
+                                    <button
+                                        key={g}
+                                        onClick={() => setGoal(g)}
+                                        className={`py-3 text-xs font-sans tracking-widest border transition-all ${goal === g ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'}`}
+                                    >
+                                        {g}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Custom override — collapsed by default */}
