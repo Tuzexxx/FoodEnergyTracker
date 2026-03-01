@@ -220,7 +220,7 @@ const DailyLog = () => {
 
                                             {/* Collapsed 1-row view */}
                                             {expandedId !== entry.id && (
-                                                <div className="flex items-center justify-between w-full h-8">
+                                                <div className="flex items-center justify-between w-full">
                                                     <div className="flex items-center gap-3 w-3/4 pr-4 overflow-hidden">
                                                         <span className="font-sans text-[11px] font-medium opacity-50 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
                                                             {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -236,9 +236,15 @@ const DailyLog = () => {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-baseline gap-1 shrink-0">
-                                                        <span className="font-data text-2xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
-                                                        <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
+                                                    <div className="flex flex-col items-end shrink-0">
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className="font-data text-2xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
+                                                            <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
+                                                        </div>
+                                                        <div className="flex items-baseline gap-1 mt-0.5">
+                                                            <span className="font-data text-[11px] font-bold tracking-tighter leading-none text-brutal-black/50">{entry.protein}g</span>
+                                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/25 font-sans">Pro</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

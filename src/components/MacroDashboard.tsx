@@ -8,9 +8,14 @@ const MacroDashboard = () => {
 
     const kcalRef = useRef(null);
     const proteinRef = useRef(null);
+    const kcalBarRef = useRef(null);
+    const proteinBarRef = useRef(null);
 
     const isOverCalories = consumedKcal > targetKcal;
     const isExactCalories = consumedKcal === targetKcal && consumedKcal > 0;
+
+    const kcalPercent = Math.min((consumedKcal / targetKcal) * 100, 100);
+    const proteinPercent = Math.min((consumedProtein / targetProtein) * 100, 100);
 
     useEffect(() => {
         // Number counter animation
@@ -27,10 +32,30 @@ const MacroDashboard = () => {
             snap: { innerHTML: 1 },
             ease: 'power3.out'
         });
-    }, [consumedKcal, consumedProtein]);
+
+        // Progress bar animations
+        gsap.to(kcalBarRef.current, {
+            width: `${kcalPercent}%`,
+            duration: 1.5,
+            ease: 'power4.out'
+        });
+
+        gsap.to(proteinBarRef.current, {
+            width: `${proteinPercent}%`,
+            duration: 1.5,
+            ease: 'power4.out'
+        });
+    }, [consumedKcal, consumedProtein, kcalPercent, proteinPercent]);
 
     return (
         <div className="brutal-card w-full shadow-2xl relative bg-black text-off-white group overflow-hidden">
+            {/* Red kcal progress fill */}
+            <div
+                ref={kcalBarRef}
+                className="absolute inset-y-0 left-0 bg-signal-red/20 pointer-events-none"
+                style={{ width: '0%' }}
+            />
+
             <div className="relative z-10 p-6 flex flex-col justify-between h-56">
                 <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse" />
@@ -56,6 +81,14 @@ const MacroDashboard = () => {
                         <div className="flex justify-end w-full items-baseline gap-2 opacity-80 group-hover:scale-[1.02] transition-transform duration-500 origin-right delay-75 mb-2">
                             <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none">0</span>
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap">/ {targetProtein}G PROTEIN</span>
+                        </div>
+                        {/* Protein progress bar */}
+                        <div className="w-full h-[3px] bg-off-white/10 rounded-full overflow-hidden">
+                            <div
+                                ref={proteinBarRef}
+                                className="h-full bg-off-white/50 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: '0%' }}
+                            />
                         </div>
                     </div>
                 </div>
