@@ -86,28 +86,47 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                     </button>
                 </div>
 
-                <div className="p-6 flex flex-col gap-6 flex-1 overflow-y-auto">
+                <div className="p-6 flex flex-col gap-5 flex-1 overflow-y-auto">
+
+                    {/* Gender — first, toned down */}
+                    <div>
+                        <label className="font-sans text-[10px] uppercase tracking-widest opacity-40 block mb-1.5">Biological Sex</label>
+                        <div className="flex gap-2">
+                            {['MALE', 'FEMALE'].map(g => (
+                                <button
+                                    key={g}
+                                    onClick={() => setGender(g)}
+                                    className={`flex-1 py-1 text-[10px] font-sans tracking-widest border transition-all ${gender === g ? 'bg-brutal-black/80 text-off-white border-brutal-black/80' : 'border-brutal-black/15 opacity-50 hover:opacity-80'}`}
+                                >
+                                    {g}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Age + Height — toned down */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Age</label>
+                            <label className="font-sans text-[10px] uppercase tracking-widest opacity-40 block mb-1">Age</label>
                             <input
                                 type="number"
                                 value={age}
                                 onChange={(e) => setAge(e.target.value)}
-                                className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-xl transition-colors"
+                                className="w-full bg-transparent border-b border-brutal-black/15 focus:border-signal-red outline-none py-1 font-data text-sm opacity-70 focus:opacity-100 transition-all"
                             />
                         </div>
                         <div>
-                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Height (CM)</label>
+                            <label className="font-sans text-[10px] uppercase tracking-widest opacity-40 block mb-1">Height (CM)</label>
                             <input
                                 type="number"
                                 value={height}
                                 onChange={(e) => setHeight(e.target.value)}
-                                className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-xl transition-colors"
+                                className="w-full bg-transparent border-b border-brutal-black/15 focus:border-signal-red outline-none py-1 font-data text-sm opacity-70 focus:opacity-100 transition-all"
                             />
                         </div>
                     </div>
 
+                    {/* Weight — prominent, changes often */}
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Mass Update (KG)</label>
                         <input
@@ -116,23 +135,6 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             onChange={(e) => setWeight(e.target.value)}
                             className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-2 font-data text-3xl transition-colors"
                         />
-                    </div>
-
-                    {/* Gender */}
-                    <div>
-                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Biological Sex</label>
-                        <div className="flex gap-2">
-                            {['MALE', 'FEMALE'].map(g => (
-                                <button
-                                    key={g}
-                                    onClick={() => setGender(g)}
-                                    className={`flex-1 py-2 text-xs font-sans tracking-widest border transition-all ${gender === g ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'
-                                        }`}
-                                >
-                                    {g}
-                                </button>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Activity Level — collapsible */}
