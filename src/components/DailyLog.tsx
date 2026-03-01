@@ -374,20 +374,29 @@ const DailyLog = () => {
                 <div className="mt-4 flex flex-col gap-2">
                     {historicalDays.map((day) => {
                         const isExpanded = expandedHistoryDate === day.dateStr;
+                        const dayAbbr = (() => {
+                            if (day.dateStr === 'Yesterday') return 'Yesterday';
+                            if (day.entries && day.entries.length > 0) {
+                                const d = new Date(Number(day.entries[0].timestamp));
+                                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                return days[d.getDay()];
+                            }
+                            return '';
+                        })();
                         return (
                             <div key={day.dateStr} className="p-2 bg-brutal-black/5 rounded-2xl flex items-center justify-between border border-brutal-black/5 transition-all w-full relative">
                                 <div className="flex items-center gap-3">
-                                    <h4 className="font-sans text-[9px] font-semibold uppercase tracking-widest opacity-60 text-brutal-black shrink-0 w-20 text-left">{(() => { const d = new Date(day.dateStr + 'T00:00:00'); const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; return days[d.getDay()] + ' ' + day.dateStr; })()}</h4>
+                                    <h4 className="font-sans text-[9px] font-semibold uppercase tracking-widest opacity-60 text-brutal-black shrink-0 w-20 text-left">{dayAbbr} {day.dateStr !== 'Yesterday' ? day.dateStr : ''}</h4>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1">
-                                            {day.kcal > targetKcal && <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                        <div className="relative flex items-center gap-1">
+                                            {day.kcal > targetKcal && <span className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
                                             <span className="font-data text-sm font-bold text-brutal-black">
                                                 {day.kcal} <span className="font-sans text-[9px] uppercase font-semibold opacity-50 text-brutal-black">/ {targetKcal} Kcal</span>
                                             </span>
                                         </div>
                                         <div className="w-[1px] h-3 bg-brutal-black/10 mx-1" />
-                                        <div className="flex items-center gap-1">
-                                            {day.protein < targetProtein && <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                        <div className="relative flex items-center gap-1">
+                                            {day.protein < targetProtein && <span className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
                                             <span className="font-data text-sm font-bold text-brutal-black">
                                                 {day.protein} <span className="font-sans text-[9px] uppercase font-semibold opacity-50 text-brutal-black">/ {targetProtein}g Pro</span>
                                             </span>
