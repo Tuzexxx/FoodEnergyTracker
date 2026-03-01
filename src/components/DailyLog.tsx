@@ -400,7 +400,7 @@ const DailyLog = () => {
                         })();
                         const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
                         return (
-                            <div key={day.dateStr} className="bg-brutal-black/5 rounded-2xl border border-brutal-black/5 transition-all w-full relative overflow-hidden">
+                            <div key={day.dateStr} className="bg-brutal-black/5 rounded-2xl border border-brutal-black/5 transition-all w-full relative">
                                 <div className="px-3 py-2 flex items-center justify-between w-full">
                                     <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                                         <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
