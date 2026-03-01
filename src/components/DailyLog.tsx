@@ -221,9 +221,10 @@ const DailyLog = () => {
                                             {/* Collapsed 1-row view */}
                                             {expandedId !== entry.id && (
                                                 <div className="flex items-center justify-between w-full gap-2">
-                                                    <div className="font-sans text-[9px] font-bold opacity-40 bg-black/5 rounded-md shrink-0 flex flex-col items-center justify-center px-1 py-1 whitespace-nowrap leading-none gap-[1px] w-7" style={{ transform: 'rotate(180deg)' }}>
-                                                        <span>{new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', hour12: false }).split(':')[0]}</span>
-                                                        <span>{new Date(entry.timestamp).toLocaleTimeString([], { minute: '2-digit' }).padStart(2, '0')}</span>
+                                                    <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center p-1.5 min-w-[28px]">
+                                                        <span className="font-sans text-[9px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ transform: 'rotate(-90deg)' }}>
+                                                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
                                                         <span className="font-sans font-semibold text-base leading-tight text-brutal-black capitalize truncate">
