@@ -401,101 +401,113 @@ const DailyLog = () => {
                         })();
                         const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
                         return (
-                            <div key={day.dateStr} className="px-3 py-2 bg-brutal-black/5 rounded-2xl flex items-center justify-between border border-brutal-black/5 transition-all w-full relative">
-                                <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-                                    <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
-                                    <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
-                                    <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                        <div className="relative">
-                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
-                                            {day.kcal > targetKcal && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
-                                        </div>
-                                        <span className="w-5 shrink-0" />
-                                        <div className="relative">
-                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
-                                            {day.protein < targetProtein && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
-                                        </div>
-                                    </div>
-                                </div>
-                                {day.entries && day.entries.length > 0 && (
-                                    <button
-                                        onClick={() => setExpandedHistoryDate(isExpanded ? null : day.dateStr)}
-                                        className="p-1.5 rounded-full hover:bg-black/5 transition-colors text-brutal-black/50 shrink-0 ml-2"
-                                        title={isExpanded ? "Hide Details" : "View Details"}
-                                    >
-                                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                    </button>
-                                )}
-
-                                {day.entries && day.entries.length > 0 && isExpanded && (
-                                    <div className="absolute top-full left-0 w-full mt-1 flex flex-col items-center bg-white/40 rounded-xl p-2 z-10 border border-white/50 shadow-sm backdrop-blur-md">
-                                        <div className="w-full mt-3 flex flex-col items-center">
-                                            <div className="w-full mt-1 flex flex-col gap-1.5 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
-                                                {day.entries.map((yEntry) => {
-                                                    let yTitle = yEntry.name;
-                                                    if (yEntry.name.includes('||')) {
-                                                        yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
-                                                    } else {
-                                                        const words = yEntry.name.trim().split(/\s+/);
-                                                        if (words.length > 1) {
-                                                            yTitle = words[0];
-                                                        }
-                                                    }
-                                                    let yNameForFav = yEntry.name;
-                                                    if (yEntry.name.includes('||')) {
-                                                        yNameForFav = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
-                                                    }
-                                                    const isFav = favorites.some((f) => f.name === yNameForFav);
-
-                                                    const handleFavToggle = (e: React.MouseEvent) => {
-                                                        e.stopPropagation();
-                                                        if (isFav) {
-                                                            removeFavorite(yNameForFav);
-                                                        } else {
-                                                            addFavorite({
-                                                                name: yNameForFav,
-                                                                kcal: yEntry.kcal,
-                                                                protein: yEntry.protein,
-                                                                carbs: yEntry.carbs,
-                                                                fat: yEntry.fat
-                                                            });
-                                                        }
-                                                    };
-
-                                                    return (
-                                                        <div key={yEntry.id} className="flex items-center w-full px-2 py-1.5 bg-white/40 rounded-lg text-left border border-white gap-2">
-                                                            <span className="font-sans text-[8px] font-medium opacity-40 bg-black/5 px-1 rounded shrink-0">
-                                                                {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                            <button
-                                                                onClick={handleFavToggle}
-                                                                className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
-                                                                title={isFav ? "Remove from Favorites" : "Save as Favorite"}
-                                                            >
-                                                                <Star size={10} className={isFav ? "fill-amber-400" : ""} />
-                                                            </button>
-                                                            <span className="font-sans font-semibold text-[10px] leading-tight text-brutal-black flex-1 truncate capitalize">
-                                                                {yTitle}
-                                                            </span>
-                                                            <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5 ml-auto">
-                                                                <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                                <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                                <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
-                                                                <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
-                                                                <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                            <div key={day.dateStr} className="bg-brutal-black/5 rounded-2xl border border-brutal-black/5 transition-all w-full relative overflow-hidden">
+                                <div className="px-3 py-2 flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                                        <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
+                                        <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
+                                        <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                            <div className="relative">
+                                                <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
+                                                {day.kcal > targetKcal && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                            </div>
+                                            <span className="w-5 shrink-0" />
+                                            <div className="relative">
+                                                <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
+                                                {day.protein < targetProtein && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
                                             </div>
                                         </div>
                                     </div>
-                                )}
+                                    {day.entries && day.entries.length > 0 && (
+                                        <button
+                                            onClick={() => setExpandedHistoryDate(isExpanded ? null : day.dateStr)}
+                                            className="p-1.5 rounded-full hover:bg-black/5 transition-colors text-brutal-black/50 shrink-0 ml-2"
+                                            title={isExpanded ? "Hide Details" : "View Details"}
+                                        >
+                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                        </button>
+                                    )}
+
+                                    {day.entries && day.entries.length > 0 && isExpanded && (
+                                        <div className="absolute top-full left-0 w-full mt-1 flex flex-col items-center bg-white/40 rounded-xl p-2 z-10 border border-white/50 shadow-sm backdrop-blur-md">
+                                            <div className="w-full mt-3 flex flex-col items-center">
+                                                <div className="w-full mt-1 flex flex-col gap-1.5 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
+                                                    {day.entries.map((yEntry) => {
+                                                        let yTitle = yEntry.name;
+                                                        if (yEntry.name.includes('||')) {
+                                                            yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
+                                                        } else {
+                                                            const words = yEntry.name.trim().split(/\s+/);
+                                                            if (words.length > 1) {
+                                                                yTitle = words[0];
+                                                            }
+                                                        }
+                                                        let yNameForFav = yEntry.name;
+                                                        if (yEntry.name.includes('||')) {
+                                                            yNameForFav = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
+                                                        }
+                                                        const isFav = favorites.some((f) => f.name === yNameForFav);
+
+                                                        const handleFavToggle = (e: React.MouseEvent) => {
+                                                            e.stopPropagation();
+                                                            if (isFav) {
+                                                                removeFavorite(yNameForFav);
+                                                            } else {
+                                                                addFavorite({
+                                                                    name: yNameForFav,
+                                                                    kcal: yEntry.kcal,
+                                                                    protein: yEntry.protein,
+                                                                    carbs: yEntry.carbs,
+                                                                    fat: yEntry.fat
+                                                                });
+                                                            }
+                                                        };
+
+                                                        return (
+                                                            <div key={yEntry.id} className="flex items-center w-full px-2 py-1.5 bg-white/40 rounded-lg text-left border border-white gap-2">
+                                                                <span className="font-sans text-[8px] font-medium opacity-40 bg-black/5 px-1 rounded shrink-0">
+                                                                    {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                                <button
+                                                                    onClick={handleFavToggle}
+                                                                    className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
+                                                                    title={isFav ? "Remove from Favorites" : "Save as Favorite"}
+                                                                >
+                                                                    <Star size={10} className={isFav ? "fill-amber-400" : ""} />
+                                                                </button>
+                                                                <span className="font-sans font-semibold text-[10px] leading-tight text-brutal-black flex-1 truncate capitalize">
+                                                                    {yTitle}
+                                                                </span>
+                                                                <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5 ml-auto">
+                                                                    <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                                    <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                                    <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
+                                                                    <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
+                                                                    <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Progress bars */}
+                                <div className="flex flex-col gap-[1px] w-full px-0">
+                                    <div className="w-full h-[2px] bg-signal-red/10">
+                                        <div className="h-full bg-signal-red/40 transition-all duration-500" style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }} />
+                                    </div>
+                                    <div className="w-full h-[2px] bg-brutal-black/5">
+                                        <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
+                                    </div>
+                                </div>
                             </div>
                         );
                     })}
                 </div>
-            )}
+            )
+            }
         </div>
     );
 };

@@ -35,10 +35,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
         let calorieMultiplier = 24;
         let proteinMultiplier = 1.8;
 
-        if (goal.includes('SKINNY')) {
-            calorieMultiplier = 18;
-            proteinMultiplier = 2.2;
-        } else if (goal.includes('SHRED')) {
+        if (goal.includes('SHRED')) {
             calorieMultiplier = 20;
             proteinMultiplier = 2.0;
         } else if (goal.includes('TITAN')) {
@@ -117,7 +114,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                     <div>
                         <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-4">Primary Objective</label>
                         <div className="flex flex-col gap-2">
-                            {['SKINNY (Cut Aggressive)', 'SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
+                            {['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'].map(g => (
                                 <button
                                     key={g}
                                     onClick={() => setGoal(g)}

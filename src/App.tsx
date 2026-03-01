@@ -4,6 +4,7 @@ import { Settings } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
+import CalendarHeatmap from './components/CalendarHeatmap';
 import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
@@ -74,6 +75,7 @@ function App() {
                         )}
                         <MacroDashboard />
                         <DailyLog />
+                        <CalendarHeatmap />
                     </>
                 )}
             </main>

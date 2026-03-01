@@ -246,159 +246,166 @@ const SmartLogging = () => {
             {/* Photo Gallery Selection Input */}
             <input type="file" accept="image/*" className="hidden" ref={galleryInputRef} onChange={handleImageUpload} />
 
+            {/* Frosted Glass Backdrop */}
+            {showFavorites && favorites && favorites.length > 0 && (
+                <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-xl" onClick={() => { setShowFavorites(false); setIsFavEditMode(false); setEditingFav(null); }} />
+            )}
+
             {/* Favorites List - Floating above the pill */}
             {showFavorites && favorites && favorites.length > 0 && (
-                <div className="flex flex-col gap-2 pb-4 mb-2 px-2 w-full max-w-sm mx-auto items-center animate-in fade-in slide-in-from-bottom-2">
-                    {/* Edit Toggle Header */}
-                    <div className="flex justify-end w-full mb-1">
-                        <button
-                            onClick={() => {
-                                setIsFavEditMode(!isFavEditMode);
-                                setEditingFav(null);
-                            }}
-                            className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md transition-all ${isFavEditMode ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-black/5 text-brutal-black/50 hover:bg-black/10'}`}
-                        >
-                            <Edit2 size={12} /> {isFavEditMode ? 'Done' : 'Edit'}
-                        </button>
-                    </div>
+                <div className="flex flex-col gap-2 pb-4 mb-2 px-2 w-full max-w-sm mx-auto items-center animate-in fade-in slide-in-from-bottom-2 relative z-40">
+                    {/* Frosted Glass Panel */}
+                    <div className="w-full bg-white/40 backdrop-blur-2xl border border-white/50 rounded-3xl shadow-2xl p-4">
+                        {/* Edit Toggle Header */}
+                        <div className="flex justify-end w-full mb-3">
+                            <button
+                                onClick={() => {
+                                    setIsFavEditMode(!isFavEditMode);
+                                    setEditingFav(null);
+                                }}
+                                className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md transition-all ${isFavEditMode ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-black/5 text-brutal-black/50 hover:bg-black/10'}`}
+                            >
+                                <Edit2 size={12} /> {isFavEditMode ? 'Done' : 'Edit'}
+                            </button>
+                        </div>
 
-                    <div className="flex flex-wrap justify-center gap-2 w-full">
-                        {(favorites || []).map((fav, i) => {
-                            const isEditingThis = editingFav?.originalName === fav.name;
+                        <div className="flex flex-wrap justify-center gap-2 w-full">
+                            {(favorites || []).map((fav, i) => {
+                                const isEditingThis = editingFav?.originalName === fav.name;
 
-                            if (isEditingThis) {
-                                return (
-                                    <div key={`edit-${i}`} className="bg-white/95 backdrop-blur-lg flex flex-col gap-3 p-3 rounded-2xl w-full border border-indigo-200 shadow-xl z-50 animate-in zoom-in-95 data-[state=closed]:zoom-out-95 duration-200">
-                                        <input
-                                            type="text"
-                                            value={editingFav.name}
-                                            onChange={(e) => setEditingFav({ ...editingFav, name: e.target.value })}
-                                            className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-sans outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-black/30"
-                                            placeholder="Name (e.g., Salad||300g)"
-                                        />
-                                        <div className="flex gap-2">
-                                            <div className="flex-1 flex flex-col">
-                                                <label className="text-[10px] uppercase font-bold text-black/40 mb-1 tracking-wider">KCAL</label>
-                                                <input
-                                                    type="number"
-                                                    value={editingFav.kcal}
-                                                    onChange={(e) => setEditingFav({ ...editingFav, kcal: Number(e.target.value) })}
-                                                    className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-data text-signal-red outline-none focus:ring-2 focus:ring-signal-red"
-                                                />
-                                            </div>
-                                            <div className="flex-1 flex flex-col">
-                                                <label className="text-[10px] uppercase font-bold text-black/40 mb-1 tracking-wider">PROTEIN</label>
-                                                <input
-                                                    type="number"
-                                                    value={editingFav.protein}
-                                                    onChange={(e) => setEditingFav({ ...editingFav, protein: Number(e.target.value) })}
-                                                    className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-data text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-600"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between items-center mt-1 border-t border-black/5 pt-2">
-                                            <button
-                                                onClick={() => {
-                                                    removeFavorite(fav.name);
-                                                    setEditingFav(null);
-                                                    if (favorites.length === 1) setShowFavorites(false); // Close if last one deleted
-                                                }}
-                                                className="flex items-center justify-center w-10 h-10 rounded-full text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-all"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                if (isEditingThis) {
+                                    return (
+                                        <div key={`edit-${i}`} className="bg-white/60 backdrop-blur-2xl flex flex-col gap-3 p-3 rounded-2xl w-full border border-white/40 shadow-2xl z-50 animate-in zoom-in-95 data-[state=closed]:zoom-out-95 duration-200">
+                                            <input
+                                                type="text"
+                                                value={editingFav.name}
+                                                onChange={(e) => setEditingFav({ ...editingFav, name: e.target.value })}
+                                                className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-sans outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-black/30"
+                                                placeholder="Name (e.g., Salad||300g)"
+                                            />
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setEditingFav(null)}
-                                                    className="px-3 py-2 rounded-xl text-[10px] font-bold uppercase bg-black/5 hover:bg-black/10 transition-all active:scale-95"
-                                                    disabled={isFavAdjusting}
-                                                >
-                                                    Cancel
-                                                </button>
+                                                <div className="flex-1 flex flex-col">
+                                                    <label className="text-[10px] uppercase font-bold text-black/40 mb-1 tracking-wider">KCAL</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingFav.kcal}
+                                                        onChange={(e) => setEditingFav({ ...editingFav, kcal: Number(e.target.value) })}
+                                                        className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-data text-signal-red outline-none focus:ring-2 focus:ring-signal-red"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 flex flex-col">
+                                                    <label className="text-[10px] uppercase font-bold text-black/40 mb-1 tracking-wider">PROTEIN</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingFav.protein}
+                                                        onChange={(e) => setEditingFav({ ...editingFav, protein: Number(e.target.value) })}
+                                                        className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-data text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-600"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-1 border-t border-black/5 pt-2">
                                                 <button
                                                     onClick={() => {
-                                                        const { originalName, ...toSave } = editingFav;
-                                                        updateFavorite(originalName, toSave);
+                                                        removeFavorite(fav.name);
                                                         setEditingFav(null);
+                                                        if (favorites.length === 1) setShowFavorites(false);
                                                     }}
-                                                    className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50"
-                                                    disabled={isFavAdjusting}
+                                                    className="flex items-center justify-center w-10 h-10 rounded-full text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-all"
                                                 >
-                                                    Save
+                                                    <Trash2 size={16} />
                                                 </button>
-                                                <button
-                                                    title="Recalculate Macros"
-                                                    onClick={async () => {
-                                                        setIsFavAdjusting(true);
-                                                        const aiRes: any = await getAiResponse(editingFav.name);
-                                                        setIsFavAdjusting(false);
-                                                        if (aiRes.type === 'success' && aiRes.data) {
-                                                            const { originalName } = editingFav;
-                                                            updateFavorite(originalName, {
-                                                                name: aiRes.data.name || editingFav.name,
-                                                                kcal: aiRes.data.kcal,
-                                                                protein: aiRes.data.protein,
-                                                                carbs: aiRes.data.carbs,
-                                                                fat: aiRes.data.fat
-                                                            });
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setEditingFav(null)}
+                                                        className="px-3 py-2 rounded-xl text-[10px] font-bold uppercase bg-black/5 hover:bg-black/10 transition-all active:scale-95"
+                                                        disabled={isFavAdjusting}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const { originalName, ...toSave } = editingFav;
+                                                            updateFavorite(originalName, toSave);
                                                             setEditingFav(null);
-                                                        } else {
-                                                            alert("AI could not adjust. Please edit manually.");
-                                                        }
-                                                    }}
-                                                    disabled={isFavAdjusting}
-                                                    className="px-3 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1"
-                                                >
-                                                    {isFavAdjusting ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} Auto-Adjust
-                                                </button>
+                                                        }}
+                                                        className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50"
+                                                        disabled={isFavAdjusting}
+                                                    >
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        title="Recalculate Macros"
+                                                        onClick={async () => {
+                                                            setIsFavAdjusting(true);
+                                                            const aiRes: any = await getAiResponse(editingFav.name);
+                                                            setIsFavAdjusting(false);
+                                                            if (aiRes.type === 'success' && aiRes.data) {
+                                                                const { originalName } = editingFav;
+                                                                updateFavorite(originalName, {
+                                                                    name: aiRes.data.name || editingFav.name,
+                                                                    kcal: aiRes.data.kcal,
+                                                                    protein: aiRes.data.protein,
+                                                                    carbs: aiRes.data.carbs,
+                                                                    fat: aiRes.data.fat
+                                                                });
+                                                                setEditingFav(null);
+                                                            } else {
+                                                                alert("AI could not adjust. Please edit manually.");
+                                                            }
+                                                        }}
+                                                        disabled={isFavAdjusting}
+                                                        className="px-3 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1"
+                                                    >
+                                                        {isFavAdjusting ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} Auto-Adjust
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            }
+                                    );
+                                }
 
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        if (isFavEditMode) {
-                                            setEditingFav({ originalName: fav.name, ...fav });
-                                        } else {
-                                            // Instant direct inject, completely skipping AI
-                                            addEntry({
-                                                name: fav.name,
-                                                kcal: fav.kcal,
-                                                protein: fav.protein,
-                                                carbs: fav.carbs,
-                                                fat: fav.fat,
-                                                requiresReview: false
-                                            });
-                                            setShowFavorites(false);
-                                            playSound('targetHit'); // Distinct success sound
-                                        }
-                                    }}
-                                    className={`bg-white/80 backdrop-blur-md text-brutal-black px-3 py-2 rounded-full font-sans text-sm font-medium hover:bg-white transition-all flex items-center gap-2 w-max max-w-full border border-black/5 shadow-sm
-                                        ${isFavEditMode ? 'animate-pulse bg-indigo-50/90 border-indigo-200 shadow-indigo-200 group' : 'active:scale-95'}`}
-                                >
-                                    <div className="flex items-center gap-1.5 truncate min-w-0 pr-1">
-                                        {isFavEditMode ? (
-                                            <Edit2 size={14} className="text-indigo-500 shrink-0 group-hover:scale-110 transition-transform" />
-                                        ) : (
-                                            <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
-                                        )}
-                                        <span className="font-bold truncate">{fav.name.split('||')[0]}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
-                                            {fav.kcal} kcal
-                                        </span>
-                                        <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
-                                            {fav.protein}g prot
-                                        </span>
-                                    </div>
-                                </button>
-                            );
-                        })}
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            if (isFavEditMode) {
+                                                setEditingFav({ originalName: fav.name, ...fav });
+                                            } else {
+                                                addEntry({
+                                                    name: fav.name,
+                                                    kcal: fav.kcal,
+                                                    protein: fav.protein,
+                                                    carbs: fav.carbs,
+                                                    fat: fav.fat,
+                                                    requiresReview: false
+                                                });
+                                                setShowFavorites(false);
+                                                playSound('targetHit');
+                                            }
+                                        }}
+                                        className={`bg-white/80 backdrop-blur-md text-brutal-black px-3 py-2 rounded-full font-sans text-sm font-medium hover:bg-white transition-all flex items-center gap-2 w-max max-w-full border border-black/5 shadow-sm
+                                            ${isFavEditMode ? 'animate-pulse bg-indigo-50/90 border-indigo-200 shadow-indigo-200 group' : 'active:scale-95'}`}
+                                    >
+                                        <div className="flex items-center gap-1.5 truncate min-w-0 pr-1">
+                                            {isFavEditMode ? (
+                                                <Edit2 size={14} className="text-indigo-500 shrink-0 group-hover:scale-110 transition-transform" />
+                                            ) : (
+                                                <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
+                                            )}
+                                            <span className="font-bold truncate">{fav.name.split('||')[0]}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
+                                                {fav.kcal} kcal
+                                            </span>
+                                            <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
+                                                {fav.protein}g prot
+                                            </span>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             )}

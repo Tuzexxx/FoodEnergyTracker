@@ -86,8 +86,8 @@ const MacroDashboard = () => {
                 </div>
             </div>
 
-            {/* Protein progress bar - full width at bottom */}
-            <div className="absolute bottom-0 left-0 w-full h-[3px] bg-off-white/10">
+            {/* Protein progress bar */}
+            <div className="absolute bottom-6 left-0 w-full h-[3px] bg-off-white/10">
                 <div
                     ref={proteinBarRef}
                     className="h-full bg-off-white/50 transition-all duration-1000 ease-out"
@@ -95,9 +95,7 @@ const MacroDashboard = () => {
                 />
             </div>
 
-            {/* Brutalist structural accent */}
-            <div className="absolute top-0 right-6 w-[1px] h-12 bg-off-white/20" />
-            <div className="absolute bottom-6 left-0 w-12 h-[1px] bg-off-white/20" />
+
         </div>
     );
 };
