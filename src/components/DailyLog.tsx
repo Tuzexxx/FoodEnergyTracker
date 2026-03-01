@@ -224,12 +224,12 @@ const DailyLog = () => {
                                             {expandedId !== entry.id && (
                                                 <div className="flex items-center justify-between w-full gap-4">
                                                     <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
-                                                        <span className="font-sans text-[10px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                                                        <span className="font-sans text-[12px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                                                             {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
-                                                        <span className="font-sans font-semibold text-base leading-tight text-brutal-black capitalize truncate">
+                                                        <span className="font-sans font-semibold text-lg leading-tight text-brutal-black capitalize truncate">
                                                             {displayTitle}
                                                         </span>
                                                         {displayDetails && (
