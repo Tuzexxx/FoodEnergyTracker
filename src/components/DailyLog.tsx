@@ -415,15 +415,9 @@ const DailyLog = () => {
                                         <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
                                         <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
                                         <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                            <div className="relative">
-                                                {day.kcal > targetKcal && <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
-                                                <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
-                                            </div>
+                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
                                             <span className="w-5 shrink-0" />
-                                            <div className="relative">
-                                                <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
-                                                {day.protein < targetProtein && <span className="absolute -right-1.5 top-0 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
-                                            </div>
+                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
                                         </div>
                                     </div>
                                     {day.entries && day.entries.length > 0 && (
