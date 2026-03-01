@@ -385,22 +385,24 @@ const DailyLog = () => {
                         })();
                         return (
                             <div key={day.dateStr} className="p-2 bg-brutal-black/5 rounded-2xl flex items-center justify-between border border-brutal-black/5 transition-all w-full relative">
-                                <div className="flex items-center gap-3">
-                                    <h4 className="font-sans text-[9px] font-semibold uppercase tracking-widest opacity-60 text-brutal-black shrink-0 w-20 text-left">{dayAbbr} {day.dateStr !== 'Yesterday' ? day.dateStr : ''}</h4>
-                                    <div className="flex items-center gap-2">
-                                        <div className="relative flex items-center gap-1">
-                                            {day.kcal > targetKcal && <span className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
-                                            <span className="font-data text-sm font-bold text-brutal-black">
-                                                {day.kcal} <span className="font-sans text-[9px] uppercase font-semibold opacity-50 text-brutal-black">/ {targetKcal} Kcal</span>
-                                            </span>
+                                <div className="flex flex-col gap-0 min-w-0 flex-1">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/70 shrink-0">{dayAbbr}</span>
+                                        <div className="flex items-baseline gap-1">
+                                            <div className="relative flex items-baseline">
+                                                {day.kcal > targetKcal && <span className="absolute -left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                                <span className="font-data text-sm font-bold text-brutal-black">{day.kcal}</span>
+                                            </div>
+                                            <span className="text-brutal-black/20 text-[10px]">·</span>
+                                            <div className="relative flex items-baseline">
+                                                {day.protein < targetProtein && <span className="absolute -left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
+                                                <span className="font-data text-sm font-bold text-brutal-black">{day.protein}g</span>
+                                            </div>
                                         </div>
-                                        <div className="w-[1px] h-3 bg-brutal-black/10 mx-1" />
-                                        <div className="relative flex items-center gap-1">
-                                            {day.protein < targetProtein && <span className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse drop-shadow-[0_0_5px_rgba(255,51,51,0.8)]" />}
-                                            <span className="font-data text-sm font-bold text-brutal-black">
-                                                {day.protein} <span className="font-sans text-[9px] uppercase font-semibold opacity-50 text-brutal-black">/ {targetProtein}g Pro</span>
-                                            </span>
-                                        </div>
+                                    </div>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-sans text-[8px] uppercase tracking-wider opacity-40 text-brutal-black shrink-0">{day.dateStr !== 'Yesterday' ? day.dateStr : ''}</span>
+                                        <span className="font-sans text-[8px] uppercase font-semibold opacity-40 text-brutal-black">/{targetKcal} kcal · /{targetProtein}g pro</span>
                                     </div>
                                 </div>
                                 {day.entries && day.entries.length > 0 && (
