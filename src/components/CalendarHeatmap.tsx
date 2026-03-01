@@ -62,9 +62,9 @@ const CalendarHeatmap = () => {
         cells.push(
             <div
                 key={d}
-                className={`w-full aspect-square rounded-[4px] transition-all duration-300 ${isFuture
-                    ? 'bg-transparent'
-                    : getColor(d)
+                className={`w-full aspect-square rounded-[4px] transition-all duration-300 flex items-center justify-center ${isFuture
+                        ? 'bg-transparent'
+                        : getColor(d)
                     } ${isToday ? 'ring-1 ring-brutal-black/40 ring-offset-1' : ''}`}
                 title={
                     isFuture ? '' :
@@ -72,7 +72,9 @@ const CalendarHeatmap = () => {
                             ? `${dayMap.get(d)!.kcal} kcal / ${dayMap.get(d)!.protein}g protein`
                             : 'No data'
                 }
-            />
+            >
+                <span className={`font-sans text-[8px] font-bold ${isFuture ? 'opacity-15' : 'opacity-40'}`}>{d}</span>
+            </div>
         );
     }
 
