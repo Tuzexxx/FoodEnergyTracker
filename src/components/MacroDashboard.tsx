@@ -9,13 +9,21 @@ const MacroDashboard = () => {
     const kcalRef = useRef(null);
     const proteinRef = useRef(null);
     const kcalBarRef = useRef(null);
+    const kcalOverflowBarRef = useRef(null);
     const proteinBarRef = useRef(null);
+    const proteinOverflowBarRef = useRef(null);
 
     const isOverCalories = consumedKcal > targetKcal;
     const isExactCalories = consumedKcal === targetKcal && consumedKcal > 0;
 
-    const kcalPercent = Math.min((consumedKcal / targetKcal) * 100, 100);
-    const proteinPercent = Math.min((consumedProtein / targetProtein) * 100, 100);
+    const kcalRawPercent = (consumedKcal / targetKcal) * 100;
+    const proteinRawPercent = (consumedProtein / targetProtein) * 100;
+
+    const kcalPercent = Math.min(kcalRawPercent, 100);
+    const kcalOverflowPercent = Math.max(0, Math.min(kcalRawPercent - 100, 100));
+
+    const proteinPercent = Math.min(proteinRawPercent, 100);
+    const proteinOverflowPercent = Math.max(0, Math.min(proteinRawPercent - 100, 100));
 
     useEffect(() => {
         // Number counter animation
@@ -45,7 +53,25 @@ const MacroDashboard = () => {
             duration: 1.5,
             ease: 'power4.out'
         });
-    }, [consumedKcal, consumedProtein, kcalPercent, proteinPercent]);
+
+        if (kcalOverflowBarRef.current) {
+            gsap.to(kcalOverflowBarRef.current, {
+                width: `${kcalOverflowPercent}%`,
+                duration: 1.5,
+                delay: 0.2,
+                ease: 'power4.out'
+            });
+        }
+
+        if (proteinOverflowBarRef.current) {
+            gsap.to(proteinOverflowBarRef.current, {
+                width: `${proteinOverflowPercent}%`,
+                duration: 1.5,
+                delay: 0.2,
+                ease: 'power4.out'
+            });
+        }
+    }, [consumedKcal, consumedProtein, kcalPercent, proteinPercent, kcalOverflowPercent, proteinOverflowPercent]);
 
     return (
         <div className="brutal-card w-full shadow-2xl relative bg-black text-off-white group overflow-hidden">
@@ -53,6 +79,12 @@ const MacroDashboard = () => {
             <div
                 ref={kcalBarRef}
                 className="absolute inset-y-0 left-0 bg-signal-red/20 pointer-events-none"
+                style={{ width: '0%' }}
+            />
+            {/* Red kcal overflow fill */}
+            <div
+                ref={kcalOverflowBarRef}
+                className="absolute inset-y-0 left-0 bg-signal-red/40 pointer-events-none"
                 style={{ width: '0%' }}
             />
 
@@ -86,16 +118,21 @@ const MacroDashboard = () => {
                 </div>
             </div>
 
-            {/* Protein progress bar */}
+            {/* Protein progress bar background */}
             <div className="absolute bottom-6 left-0 w-full h-[3px] bg-off-white/10">
+                {/* Base Protein Bar */}
                 <div
                     ref={proteinBarRef}
                     className="h-full bg-off-white/50 transition-all duration-1000 ease-out"
                     style={{ width: '0%' }}
                 />
+                {/* Overflow Protein Bar */}
+                <div
+                    ref={proteinOverflowBarRef}
+                    className="absolute inset-0 bg-off-white transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                    style={{ width: '0%' }}
+                />
             </div>
-
-
         </div>
     );
 };

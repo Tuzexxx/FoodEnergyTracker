@@ -8,7 +8,7 @@ const steps = [
     { id: 'age', question: 'Enter operational age (years):', type: 'number', placeholder: 'e.g. 28' },
     { id: 'height', question: 'Enter vertical dimension (cm):', type: 'number', placeholder: 'e.g. 180' },
     { id: 'weight', question: 'Enter exact mass (kg):', type: 'number', placeholder: 'e.g. 75' },
-    { id: 'goal', question: 'Select primary objective:', options: ['SKINNY (Cut Aggressive)', 'SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'] }
+    { id: 'goal', question: 'Select primary objective:', options: ['SHRED (Cut)', 'RECOMP (Maintain/Muscle)', 'TITAN (Bulk)'] }
 ];
 
 const OnboardingModal = () => {
@@ -54,10 +54,7 @@ const OnboardingModal = () => {
         let calorieMultiplier = 24; // Base BMR mock (Maintain/Recomp)
         let proteinMultiplier = 1.8; // Maintain protein
 
-        if (data.goal.includes('SKINNY')) {
-            calorieMultiplier = 18;
-            proteinMultiplier = 2.2; // Higher protein to preserve muscle in aggressive deficit
-        } else if (data.goal.includes('SHRED')) {
+        if (data.goal.includes('SHRED')) {
             calorieMultiplier = 20;
             proteinMultiplier = 2.0;
         } else if (data.goal.includes('TITAN')) {
