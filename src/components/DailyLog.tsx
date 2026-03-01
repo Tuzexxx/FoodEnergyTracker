@@ -388,12 +388,12 @@ const DailyLog = () => {
                                 <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                                     <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
                                     <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0">{shortDate}</span>
-                                    <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                                        <span className={`font-data text-xs font-bold ${day.kcal > targetKcal ? 'text-red-500' : 'text-brutal-black'}`}>{day.kcal}</span>
-                                        <span className="font-sans text-[8px] opacity-40 text-brutal-black">/{targetKcal}</span>
-                                        <span className="text-brutal-black/15 text-[10px]">│</span>
-                                        <span className={`font-data text-xs font-bold ${day.protein < targetProtein ? 'text-red-500' : 'text-brutal-black'}`}>{day.protein}g</span>
-                                        <span className="font-sans text-[8px] opacity-40 text-brutal-black">/{targetProtein}g</span>
+                                    <div className="flex items-center ml-auto shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                        <span className={`font-data text-xs font-bold text-right w-10 ${day.kcal > targetKcal ? 'text-red-500' : 'text-brutal-black'}`}>{day.kcal}</span>
+                                        <span className="font-sans text-[8px] opacity-40 text-brutal-black w-10">/{targetKcal}</span>
+                                        <span className="text-brutal-black/15 text-[10px] mx-0.5">│</span>
+                                        <span className={`font-data text-xs font-bold text-right w-10 ${day.protein < targetProtein ? 'text-red-500' : 'text-brutal-black'}`}>{day.protein}g</span>
+                                        <span className="font-sans text-[8px] opacity-40 text-brutal-black w-10">/{targetProtein}g</span>
                                     </div>
                                 </div>
                                 {day.entries && day.entries.length > 0 && (
