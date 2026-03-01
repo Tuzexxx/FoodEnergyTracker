@@ -220,21 +220,19 @@ const DailyLog = () => {
 
                                             {/* Collapsed 1-row view */}
                                             {expandedId !== entry.id && (
-                                                <div className="flex items-center justify-between w-full">
-                                                    <div className="flex items-center gap-3 w-3/4 pr-4 overflow-hidden">
-                                                        <span className="font-sans text-[11px] font-medium opacity-50 bg-black/5 px-2 py-0.5 rounded-md shrink-0">
-                                                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                <div className="flex items-center justify-between w-full gap-2">
+                                                    <span className="font-sans text-[9px] font-medium opacity-40 bg-black/5 px-1.5 py-1 rounded-md shrink-0 writing-vertical" style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}>
+                                                        {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    <div className="flex flex-col min-w-0 flex-1">
+                                                        <span className="font-sans font-semibold text-base leading-tight text-brutal-black capitalize truncate">
+                                                            {displayTitle}
                                                         </span>
-                                                        <div className="flex items-baseline gap-2 truncate">
-                                                            <span className="font-sans font-semibold text-lg leading-tight text-brutal-black shrink-0 capitalize">
-                                                                {displayTitle}
+                                                        {displayDetails && (
+                                                            <span className="font-sans text-[11px] opacity-45 leading-snug truncate mt-0.5">
+                                                                {displayDetails}
                                                             </span>
-                                                            {displayDetails && (
-                                                                <span className="font-sans text-xs opacity-50 truncate">
-                                                                    {displayDetails}
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col items-end shrink-0">
                                                         <div className="flex items-baseline gap-1">

@@ -8,7 +8,8 @@ const CalendarHeatmap = () => {
     const month = now.getMonth();
     const today = now.getDate();
 
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    const firstDaySun = new Date(year, month, 1).getDay(); // 0=Sun
+    const firstDay = firstDaySun === 0 ? 6 : firstDaySun - 1; // Convert to Mon=0
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
@@ -28,7 +29,7 @@ const CalendarHeatmap = () => {
         }
     });
 
-    const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     const getColor = (dayNum: number): string => {
         const data = dayMap.get(dayNum);
@@ -62,8 +63,8 @@ const CalendarHeatmap = () => {
             <div
                 key={d}
                 className={`w-full aspect-square rounded-[4px] transition-all duration-300 ${isFuture
-                        ? 'bg-transparent'
-                        : getColor(d)
+                    ? 'bg-transparent'
+                    : getColor(d)
                     } ${isToday ? 'ring-1 ring-brutal-black/40 ring-offset-1' : ''}`}
                 title={
                     isFuture ? '' :
