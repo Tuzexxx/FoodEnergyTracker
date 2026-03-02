@@ -68,6 +68,7 @@ interface AppState {
     processingLogs: ProcessingLog[];
     addProcessingLog: (log: ProcessingLog) => void;
     removeProcessingLog: (id: string) => void;
+    clearProcessingLogs: () => void;
     exerciseDay: boolean;
     toggleExerciseDay: () => void;
 }
@@ -212,6 +213,7 @@ export const useStore = create<AppState>()(
 
             addProcessingLog: (log) => set((state) => ({ processingLogs: [log, ...state.processingLogs] })),
             removeProcessingLog: (id) => set((state) => ({ processingLogs: state.processingLogs.filter(l => l.id !== id) })),
+            clearProcessingLogs: () => set({ processingLogs: [] }),
 
             calibrateUser: async (profile: UserProfile, kcal: number, protein: number) => {
                 set(() => ({

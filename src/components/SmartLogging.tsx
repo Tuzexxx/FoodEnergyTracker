@@ -14,7 +14,7 @@ const SmartLogging = () => {
     const [isFavAdjusting, setIsFavAdjusting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [interrogation, setInterrogation] = useState<any>(null);
-    const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog } = useStore();
+    const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs } = useStore();
 
     // Only lock the SmartLogging UI if actively recording voice dictation
     const isProcessing = processingLogs.some(log => log.type === 'voice');
@@ -23,6 +23,12 @@ const SmartLogging = () => {
     const scannerRef = useRef(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
+
+    // Wipe any stale processing entries left over from a previous session (e.g. page closed mid-request)
+    useEffect(() => {
+        clearProcessingLogs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (isProcessing) {
@@ -92,16 +98,21 @@ const SmartLogging = () => {
         }
     };
 
-    const handleClarification = async (option: string) => {
-        // Dismiss current panel visually first
+    // Animate-out and dismiss the interrogation panel
+    const dismissInterrogation = () => {
         gsap.to(interrogatePanelRef.current, {
-            y: 100, opacity: 0, duration: 0.4, ease: 'power3.in',
+            y: 100, opacity: 0, duration: 0.3, ease: 'power3.in',
             onComplete: () => setInterrogation(null)
         });
+    };
+
+    const handleClarification = async (option: string) => {
+        const currentInterrogation = interrogation; // capture before dismissing
+        dismissInterrogation();
 
         const tempId = Math.random().toString(36).substring(7);
-        const resolvedInput = `${interrogation.originalInput} (${option})`;
-        const originalImage = interrogation.originalImage;
+        const resolvedInput = `${currentInterrogation.originalInput} (${option})`;
+        const originalImage = currentInterrogation.originalImage;
 
         addProcessingLog({
             id: tempId,
@@ -123,9 +134,9 @@ const SmartLogging = () => {
                 playSound('error');
                 setInterrogation({ ...response, originalInput: resolvedInput, originalImage });
             } else {
+                // Error path — just drop silently, don't leave any stuck UI
                 playSound('error');
-                console.error("Clarification unhappy path hit:", response);
-                alert("Telemetry connection failed or returned an unexpected format during interrogation.");
+                console.error('Clarification unhappy path:', response);
             }
         } catch (e) {
             console.error(e);
@@ -219,7 +230,7 @@ const SmartLogging = () => {
                             <h3 className="font-sans font-semibold text-xs tracking-wider uppercase opacity-90 flex items-center gap-2">
                                 <Activity size={12} className="animate-pulse" /> Interrogation Required
                             </h3>
-                            <button onClick={() => setInterrogation(null)} className="opacity-60 hover:opacity-100 transition-opacity p-1 bg-black/10 rounded-full">
+                            <button onClick={dismissInterrogation} className="opacity-60 hover:opacity-100 transition-opacity p-1 bg-black/10 rounded-full">
                                 <X size={14} />
                             </button>
                         </div>
