@@ -59,21 +59,27 @@
  */
 export const ACTIVITY_LEVELS = [
     {
+        value: 'SEDENTARY',
+        label: 'Desk Life',
+        description: 'Mostly sitting — little to no exercise',
+        pal: 1.2,
+    },
+    {
         value: 'LIGHT',
-        label: 'Daily Walker',
-        description: 'Desk job or light work, some walking — no formal training',
+        label: 'Walker',
+        description: 'Regular walking, light daily activity — no formal training',
         pal: 1.375,
     },
     {
         value: 'MODERATE',
-        label: 'Gym 3× / week',
-        description: 'Regular gym or sport sessions 3-4 times per week',
+        label: 'Grinder',
+        description: 'Gym or sport 3-4 times per week',
         pal: 1.55,
     },
     {
         value: 'ACTIVE',
-        label: 'Gym Freak',
-        description: 'Hard training 6-7×/week or a physically demanding job + gym',
+        label: 'Beast',
+        description: 'Hard training 6-7×/week or physically demanding job + gym',
         pal: 1.725,
     },
 ];

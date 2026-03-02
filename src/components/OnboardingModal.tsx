@@ -55,6 +55,7 @@ const OnboardingModal = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [showInfo, setShowInfo] = useState(false);
+    const [sliderIndex, setSliderIndex] = useState(1); // default: LIGHT
     const { calibrateUser } = useStore();
 
     const questionRef = useRef(null);
@@ -139,20 +140,56 @@ const OnboardingModal = () => {
 
                 <div ref={inputRef} className="flex flex-col gap-3">
                     {isActivityStep ? (
-                        ACTIVITY_LEVELS.map(opt => (
-                            <button
-                                key={opt.value}
-                                onClick={() => handleNext(opt.value)}
-                                className="brutal-card p-4 text-left hover:bg-brutal-black hover:text-off-white transition-colors duration-300 group flex flex-col gap-1"
-                            >
-                                <div className="flex justify-between items-center">
-                                    <span className="font-sans text-lg tracking-wide">{opt.label}</span>
-                                    <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" size={18} />
+                        <div className="flex flex-col gap-6">
+                            {/* Slider */}
+                            <div className="relative">
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={ACTIVITY_LEVELS.length - 1}
+                                    step={1}
+                                    value={sliderIndex}
+                                    onChange={e => setSliderIndex(Number(e.target.value))}
+                                    className="w-full h-1 appearance-none bg-brutal-black/15 rounded-full outline-none cursor-pointer
+                                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+                                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brutal-black
+                                        [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md
+                                        [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
+                                        [&::-moz-range-thumb]:bg-brutal-black [&::-moz-range-thumb]:border-0"
+                                />
+                                {/* tick labels */}
+                                <div className="flex justify-between mt-2">
+                                    {ACTIVITY_LEVELS.map((a, i) => (
+                                        <span
+                                            key={a.value}
+                                            className={`font-sans text-[9px] uppercase tracking-widest transition-opacity ${i === sliderIndex ? 'opacity-80 font-bold' : 'opacity-30'
+                                                }`}
+                                            style={{ width: `${100 / ACTIVITY_LEVELS.length}%`, textAlign: i === 0 ? 'left' : i === ACTIVITY_LEVELS.length - 1 ? 'right' : 'center' }}
+                                        >
+                                            {a.label}
+                                        </span>
+                                    ))}
                                 </div>
-                                <span className="font-sans text-[11px] opacity-40 group-hover:opacity-60 leading-snug">{opt.description}</span>
-                                <span className="font-data text-xs opacity-30 group-hover:opacity-50 mt-0.5">PAL ×{opt.pal}</span>
+                            </div>
+
+                            {/* Selected level details */}
+                            <div className="brutal-card p-4 flex flex-col gap-1">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-sans text-lg font-semibold tracking-wide">{ACTIVITY_LEVELS[sliderIndex].label}</span>
+                                    <span className="font-data text-sm opacity-40">PAL ×{ACTIVITY_LEVELS[sliderIndex].pal}</span>
+                                </div>
+                                <span className="font-sans text-[11px] opacity-50 leading-snug">{ACTIVITY_LEVELS[sliderIndex].description}</span>
+                            </div>
+
+                            {/* Confirm */}
+                            <button
+                                onClick={() => handleNext(ACTIVITY_LEVELS[sliderIndex].value)}
+                                className="w-full brutal-card p-4 flex justify-between items-center hover:bg-brutal-black hover:text-off-white transition-colors duration-300 group"
+                            >
+                                <span className="font-sans text-sm tracking-widest uppercase">Confirm</span>
+                                <ArrowRight className="opacity-40 group-hover:opacity-100 transition-opacity" size={20} />
                             </button>
-                        ))
+                        </div>
                     ) : isGoalStep ? (
                         goalOptions.map(opt => (
                             <button

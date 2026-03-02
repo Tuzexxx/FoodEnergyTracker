@@ -137,7 +137,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                         />
                     </div>
 
-                    {/* Activity Level — collapsible */}
+                    {/* Activity Level — collapsible with slider */}
                     <div>
                         <button
                             onClick={() => setShowActivity(v => !v)}
@@ -151,21 +151,43 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                 <ChevronDown size={14} className={`opacity-40 transition-all duration-200 ${showActivity ? 'rotate-180 opacity-60' : ''}`} />
                             </div>
                         </button>
-                        {showActivity && (
-                            <div className="flex flex-col gap-2 mt-3">
-                                {ACTIVITY_LEVELS.map(a => (
-                                    <button
-                                        key={a.value}
-                                        onClick={() => setActivityLevel(a.value)}
-                                        className={`py-2 px-3 text-left border transition-all flex justify-between items-center ${activityLevel === a.value ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'
-                                            }`}
-                                    >
-                                        <span className="font-sans text-xs tracking-widest">{a.label}</span>
-                                        <span className={`font-data text-xs ${activityLevel === a.value ? 'opacity-60' : 'opacity-30'}`}>×{a.pal}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        {showActivity && (() => {
+                            const idx = Math.max(0, ACTIVITY_LEVELS.findIndex(a => a.value === activityLevel));
+                            const current = ACTIVITY_LEVELS[idx];
+                            return (
+                                <div className="mt-3 flex flex-col gap-3">
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={ACTIVITY_LEVELS.length - 1}
+                                        step={1}
+                                        value={idx}
+                                        onChange={e => setActivityLevel(ACTIVITY_LEVELS[Number(e.target.value)].value)}
+                                        className="w-full h-1 appearance-none bg-brutal-black/15 rounded-full outline-none cursor-pointer
+                                            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+                                            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brutal-black
+                                            [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md
+                                            [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
+                                            [&::-moz-range-thumb]:bg-brutal-black [&::-moz-range-thumb]:border-0"
+                                    />
+                                    {/* tick labels */}
+                                    <div className="flex justify-between -mt-1">
+                                        {ACTIVITY_LEVELS.map((a, i) => (
+                                            <span
+                                                key={a.value}
+                                                className={`font-sans text-[9px] uppercase tracking-widest transition-opacity ${i === idx ? 'opacity-70 font-bold' : 'opacity-25'}`}
+                                                style={{ width: `${100 / ACTIVITY_LEVELS.length}%`, textAlign: i === 0 ? 'left' : i === ACTIVITY_LEVELS.length - 1 ? 'right' : 'center' }}
+                                            >
+                                                {a.label}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <p className="font-sans text-[10px] opacity-40 leading-relaxed border-l-2 border-brutal-black/10 pl-3">
+                                        <span className="font-bold opacity-80">PAL ×{current.pal}</span> — {current.description}
+                                    </p>
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Primary Objective — collapsible */}
