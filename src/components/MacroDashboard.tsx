@@ -6,7 +6,7 @@ import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
 const MacroDashboard = () => {
     const { targetKcal, consumedKcal, targetProtein, consumedProtein, exerciseDay, toggleExerciseDay, profile } = useStore();
 
-    const isLightActivity = profile?.activityLevel === 'LIGHT' || !profile?.activityLevel;
+    const showGymButton = !profile?.activityLevel || profile?.activityLevel === 'SEDENTARY' || profile?.activityLevel === 'LIGHT';
 
     const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
     const effectiveProtein = targetProtein; // protein target unchanged on exercise days
@@ -99,8 +99,8 @@ const MacroDashboard = () => {
                     Macro Tracker
                 </h2>
 
-                {/* Exercise Day toggle — only shown for Daily Walker (energy not already baked into PAL) */}
-                {isLightActivity && (
+                {/* Exercise Day toggle — only shown for Desk Life & Walker (energy not already baked into PAL) */}
+                {showGymButton && (
                     <button
                         onClick={toggleExerciseDay}
                         title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal` : 'Mark as exercise day'}
