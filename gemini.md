@@ -18,7 +18,28 @@ The application leverages **Gemini 2.5 Pro** via a Vercel Serverless Function (`
 The model is instructed to act as a **brutally efficient military/sci-fi telemetry module**.
 - **Standard Title Format**: `*SingleWordTitle* Original input or assumed serving WITH METRICS`.
 - **Metric Requirement**: All descriptions MUST include approx grams (g) or milliliters (ml).
-- **Brutalist Format**: Strict JSON output only; no conversational filler.
+- **Brutalist Format**: Strict JSON object output only; no conversational filler.
+
+---
+
+## 🧠 Core Skills & Intelligence
+
+The module is equipped with specialized logistical skills to ensure data integrity and user convenience:
+
+### 1. Multi-Modal Vision
+Can interpret pixel-data from food photos, identifying ingredients, cooked meals, and even nutrition labels. It cross-references visual cues with text input for maximum accuracy.
+
+### 2. Live Brand Retrieval
+The AI's most advanced skill. When a brand is mentioned, it halts standard estimation and performs a **Google Search** to pull manufacturer-provided data (Kcal, Macros).
+
+### 3. Contextual Interrogation
+The module knows when it's beat. Instead of guessing wildly on unparseable data, it triggers a red "Interrogation" UI, providing the user with context-aware buttons to resolve the ambiguity.
+
+### 4. Smart Recursive Calculation
+Using the **Mifflin-St Jeor** skill-set, the AI can automatically recalculate an entire food entry's macros if the user manually changes the weight or title, maintaining nutritional coherence.
+
+### 5. Multi-Lingual Fluency
+Natively understands and parses Czech and English inputs, translating them into the standardized English internal data format while preserving the user's original intent in the description.
 
 ---
 
