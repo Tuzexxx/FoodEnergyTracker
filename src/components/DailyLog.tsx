@@ -204,17 +204,17 @@ const DailyLog = () => {
                                                 <div><label className="text-[10px] uppercase opacity-50 block mb-1">Carb</label><input type="number" value={editForm.carbs} onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
                                                 <div><label className="text-[10px] uppercase opacity-50 block mb-1">Fat</label><input type="number" value={editForm.fat} onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })} className="w-full bg-black/5 p-2 rounded-xl outline-none font-data focus:bg-white" /></div>
                                             </div>
-                                            <div className="flex justify-between items-center mt-2 border-t border-black/5 pt-3">
-                                                <button onClick={() => handleDelete(entry.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1 text-xs font-sans font-medium">
+                                            <div className="flex flex-wrap justify-between items-center mt-2 border-t border-black/5 pt-3 gap-2">
+                                                <button onClick={() => handleDelete(entry.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider shrink-0">
                                                     <Trash2 size={16} /> Delete
                                                 </button>
-                                                <div className="flex gap-2 w-full justify-end">
-                                                    <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded-xl hover:bg-black/10 transition-colors"><X size={18} /></button>
-                                                    <button title="Save Name Only" onClick={() => saveEdit(entry.id, entry.timestamp, false)} disabled={isProcessing} className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50">
+                                                <div className="flex gap-1.5 flex-1 justify-end min-w-fit">
+                                                    <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded-xl hover:bg-black/10 transition-colors shrink-0"><X size={18} /></button>
+                                                    <button title="Save Name Only" onClick={() => saveEdit(entry.id, entry.timestamp, false)} disabled={isProcessing} className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0">
                                                         Save
                                                     </button>
-                                                    <button title="Recalculate Macros" onClick={() => saveEdit(entry.id, entry.timestamp, true)} disabled={isProcessing} className="px-3 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1">
-                                                        {isProcessing ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} Auto-Adjust
+                                                    <button title="Recalculate Macros" onClick={() => saveEdit(entry.id, entry.timestamp, true)} disabled={isProcessing} className="px-2.5 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0">
+                                                        {isProcessing ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} <span>Auto-Adjust</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -290,8 +290,8 @@ const DailyLog = () => {
                                                         </div>
                                                     )}
 
-                                                    <div className="flex justify-between items-center pt-3 border-t border-brutal-black/5 mt-1">
-                                                        <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-3 py-1.5 rounded-lg border border-black/5">
+                                                    <div className="flex flex-wrap justify-between items-center pt-3 border-t border-brutal-black/5 mt-1 gap-y-3">
+                                                        <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-2.5 py-1.5 rounded-lg border border-black/5 min-w-fit">
                                                             <span className="flex gap-1.5 items-center">
                                                                 <span className="opacity-50 text-[9px] uppercase">Pro</span><span className="text-brutal-black/80">{entry.protein}</span>
                                                             </span>
@@ -305,7 +305,7 @@ const DailyLog = () => {
                                                             </span>
                                                         </div>
 
-                                                        <div className="flex gap-2 shrink-0">
+                                                        <div className="flex gap-2 shrink-0 ml-auto">
                                                             {entry.requiresReview && (
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); updateEntry(entry.id, { requiresReview: false }); }}

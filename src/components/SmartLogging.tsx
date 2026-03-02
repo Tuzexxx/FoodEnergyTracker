@@ -314,21 +314,21 @@ const SmartLogging = () => {
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="flex justify-between items-center mt-1 border-t border-black/5 pt-2">
+                                            <div className="flex flex-wrap justify-between items-center mt-1 border-t border-black/5 pt-2 gap-2">
                                                 <button
                                                     onClick={() => {
                                                         removeFavorite(fav.name);
                                                         setEditingFav(null);
                                                         if (favorites.length === 1) setShowFavorites(false);
                                                     }}
-                                                    className="flex items-center justify-center w-10 h-10 rounded-full text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-all"
+                                                    className="flex items-center justify-center w-10 h-10 rounded-full text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-all shrink-0"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-1.5 flex-1 justify-end min-w-fit">
                                                     <button
                                                         onClick={() => setEditingFav(null)}
-                                                        className="px-3 py-2 rounded-xl text-[10px] font-bold uppercase bg-black/5 hover:bg-black/10 transition-all active:scale-95"
+                                                        className="px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase bg-black/5 hover:bg-black/10 transition-all active:scale-95 shrink-0"
                                                         disabled={isFavAdjusting}
                                                     >
                                                         Cancel
@@ -339,7 +339,7 @@ const SmartLogging = () => {
                                                             updateFavorite(originalName, toSave);
                                                             setEditingFav(null);
                                                         }}
-                                                        className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50"
+                                                        className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0"
                                                         disabled={isFavAdjusting}
                                                     >
                                                         Save
@@ -365,9 +365,9 @@ const SmartLogging = () => {
                                                             }
                                                         }}
                                                         disabled={isFavAdjusting}
-                                                        className="px-3 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1"
+                                                        className="px-2.5 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0"
                                                     >
-                                                        {isFavAdjusting ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} Auto-Adjust
+                                                        {isFavAdjusting ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} <span>Adjust</span>
                                                     </button>
                                                 </div>
                                             </div>
