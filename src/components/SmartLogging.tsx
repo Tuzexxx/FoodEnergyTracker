@@ -280,7 +280,7 @@ const SmartLogging = () => {
                             </button>
                         </div>
 
-                        <div className="flex flex-wrap justify-center gap-2 w-full">
+                        <div className="flex flex-col gap-2 w-full">
                             {(favorites || []).map((fav, i) => {
                                 const isEditingThis = editingFav?.originalName === fav.name;
 
@@ -400,8 +400,8 @@ const SmartLogging = () => {
                                                 playSound('targetHit');
                                             }
                                         }}
-                                        className={`bg-white/80 backdrop-blur-md text-brutal-black px-3 py-2 rounded-full font-sans text-sm font-medium hover:bg-white transition-all flex items-center gap-2 w-max max-w-full border border-black/5 shadow-sm
-                                            ${isFavEditMode ? 'animate-pulse bg-indigo-50/90 border-indigo-200 shadow-indigo-200 group' : 'active:scale-95'}`}
+                                        className={`bg-white/80 backdrop-blur-md text-brutal-black px-4 py-3 rounded-2xl font-sans text-sm font-medium hover:bg-white transition-all flex items-center justify-between gap-2 w-full border border-black/5 shadow-sm
+                                            ${isFavEditMode ? 'animate-pulse bg-indigo-50/90 border-indigo-200 shadow-indigo-200 group' : 'active:scale-[0.98]'}`}
                                     >
                                         <div className="flex items-center gap-1.5 truncate min-w-0 pr-1">
                                             {isFavEditMode ? (
