@@ -436,21 +436,21 @@ const DailyLog = () => {
                                                 <div className="w-full mt-1 flex flex-col gap-1.5 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
                                                     {day.entries.map((yEntry) => {
                                                         let yTitle = yEntry.name;
-                                                        const yStarMatch = yEntry.name.match(/^\*([^*]+)\*\s*(.*)$/);
+                                                        const yStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
                                                         if (yStarMatch) {
                                                             yTitle = yStarMatch[1];
                                                         } else if (yEntry.name.includes('||')) {
-                                                            yTitle = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
+                                                            yTitle = yEntry.name.split('||')[0].trim();
                                                         } else {
                                                             const words = yEntry.name.trim().split(/\s+/);
                                                             yTitle = words.slice(0, 2).join(' ');
                                                         }
                                                         let yNameForFav = yEntry.name;
-                                                        const yFavStarMatch = yEntry.name.match(/^\*([^*]+)\*\s*(.*)$/);
+                                                        const yFavStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
                                                         if (yFavStarMatch) {
-                                                            yNameForFav = yFavStarMatch[2] || yFavStarMatch[1];
+                                                            yNameForFav = yEntry.name; // Keep full name for fav consistency
                                                         } else if (yEntry.name.includes('||')) {
-                                                            yNameForFav = yEntry.name.split('||')[1] || yEntry.name.split('||')[0];
+                                                            yNameForFav = yEntry.name; // Keep full name
                                                         }
                                                         const isFav = favorites.some((f) => f.name === yNameForFav);
 

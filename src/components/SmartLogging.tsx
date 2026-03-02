@@ -292,7 +292,7 @@ const SmartLogging = () => {
                                                 value={editingFav.name}
                                                 onChange={(e) => setEditingFav({ ...editingFav, name: e.target.value })}
                                                 className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-sans outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-black/30"
-                                                placeholder="Name (e.g., *Salad* 300g)"
+                                                placeholder="Name (e.g., *Salad* with dressing)"
                                             />
                                             <div className="flex gap-2">
                                                 <div className="flex-1 flex flex-col">
@@ -380,7 +380,13 @@ const SmartLogging = () => {
                                         key={i}
                                         onClick={() => {
                                             if (isFavEditMode) {
-                                                setEditingFav({ originalName: fav.name, ...fav });
+                                                let editName = fav.name;
+                                                // Convert legacy || to *Title* for the edit input
+                                                if (fav.name.includes('||')) {
+                                                    const [title, ...rest] = fav.name.split('||');
+                                                    editName = `*${title.trim()}* ${rest.join(' ').trim()}`;
+                                                }
+                                                setEditingFav({ originalName: fav.name, ...fav, name: editName });
                                             } else {
                                                 addEntry({
                                                     name: fav.name,
@@ -403,7 +409,14 @@ const SmartLogging = () => {
                                             ) : (
                                                 <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
                                             )}
-                                            <span className="font-bold truncate">{fav.name.match(/^\*([^*]+)\*/)?.[1] ?? fav.name.split('||')[0]}</span>
+                                            <span className="font-bold truncate">
+                                                {(() => {
+                                                    const starMatch = fav.name.match(/^\*([^*]+)\*/);
+                                                    if (starMatch) return starMatch[1];
+                                                    if (fav.name.includes('||')) return fav.name.split('||')[0].trim();
+                                                    return fav.name;
+                                                })()}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
