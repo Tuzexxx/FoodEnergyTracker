@@ -15,6 +15,7 @@ const SmartLogging = () => {
     const [isFavAdjusting, setIsFavAdjusting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [interrogation, setInterrogation] = useState<any>(null);
+    const [telemetryError, setTelemetryError] = useState<string | null>(null);
     const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs } = useStore();
 
     // Only lock the SmartLogging UI if actively recording voice dictation
@@ -45,7 +46,8 @@ const SmartLogging = () => {
                 await removePending(id);
                 if (!isRetry) {
                     playSound('error');
-                    console.error('Unhappy path hit:', response);
+                    setTelemetryError(response.error || "Telemetry analysis failed. Please try again.");
+                    setTimeout(() => setTelemetryError(null), 5000);
                 }
             }
         } catch (error) {
@@ -323,6 +325,15 @@ const SmartLogging = () => {
                         </div>
 
                         <div className="flex flex-col gap-2 w-full">
+                            {telemetryError && (
+                                <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-3 rounded-2xl text-xs font-bold font-mono animate-in fade-in slide-in-from-top-2 flex items-center gap-2 mb-2">
+                                    <Activity size={14} className="animate-pulse" />
+                                    <span>{telemetryError}</span>
+                                    <button onClick={() => setTelemetryError(null)} className="ml-auto opacity-40 hover:opacity-100">
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
                             {(favorites || []).map((fav, i) => {
                                 const isEditingThis = editingFav?.originalName === fav.name;
 
