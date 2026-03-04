@@ -4,9 +4,9 @@ This document serves as the central intelligence log for the **Smart AI Macro Tr
 
 ---
 
-## 🛰️ AI Architecture (Gemini 1.5 Pro)
+## 🛰️ AI Architecture (Gemini 2.0 Flash)
 
-The application leverages **Gemini 1.5 Pro** via a Vercel Serverless Function (`/api/analyze.ts`) for high-precision food logging and image telemetry.
+The application leverages **Gemini 2.0 Flash** via a Vercel Serverless Function (`/api/analyze.ts`) for high-precision food logging and image telemetry.
 
 ### Core Capabilities
 - **Multi-Modal Analysis**: Processes both natural language (Czech/English) and photographic input.
