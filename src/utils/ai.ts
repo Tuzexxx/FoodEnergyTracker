@@ -14,8 +14,15 @@ export const getAiResponse = async (input: string, image?: string) => {
         clearTimeout(timeoutId);
 
         if (!res.ok) {
-            console.error("API Error", await res.text());
-            return { type: 'error' };
+            const errorText = await res.text();
+            console.error("API Error", errorText);
+            try {
+                const errorJson = JSON.parse(errorText);
+                return { type: 'error', error: errorJson.error || errorJson.message || `Server Error ${res.status}` };
+            } catch {
+                if (res.status === 504) return { type: 'error', error: 'Vercel Timeout (Model too slow, >10s)' };
+                return { type: 'error', error: `Server Error ${res.status}: ${errorText.substring(0, 100)}` };
+            }
         }
 
         return await res.json();
@@ -23,9 +30,9 @@ export const getAiResponse = async (input: string, image?: string) => {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') {
             console.warn("AI request timed out or was aborted (screen lock?)");
-            return { type: 'error', reason: 'aborted' };
+            return { type: 'error', error: 'Request timed out (60s)' };
         }
         console.error("Network Error", e);
-        return { type: 'error', reason: 'network' };
+        return { type: 'error', error: `Network Error: ${e.message || 'Failed to fetch'}` };
     }
 };
