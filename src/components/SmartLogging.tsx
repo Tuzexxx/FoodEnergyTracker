@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, Send, X, Activity, Image as ImageIcon, Mic, Star, Edit2, Trash2 } from 'lucide-react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
 import { getAiResponse } from '../utils/ai';
+import { savePending, removePending, getAllPending } from '../utils/pendingQueue';
 
 const SmartLogging = () => {
     const [input, setInput] = useState('');
@@ -24,11 +25,67 @@ const SmartLogging = () => {
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
-    // Wipe any stale processing entries left over from a previous session (e.g. page closed mid-request)
+    // --- Background Queue: process a single pending item ---
+    const processRequest = useCallback(async (id: string, prompt: string, image?: string, isRetry = false) => {
+        try {
+            const response: any = await getAiResponse(prompt, image || undefined);
+
+            if (response.type === 'success' && response.data) {
+                await removePending(id);
+                if (!isRetry) playSound('log');
+                addEntry(response.data);
+            } else if (response.type === 'clarification' && response.options) {
+                await removePending(id);
+                if (!isRetry) {
+                    playSound('error');
+                    setInterrogation({ ...response, originalInput: prompt, originalImage: image });
+                }
+            } else {
+                // Non-recoverable error — remove from queue to avoid infinite retries
+                await removePending(id);
+                if (!isRetry) {
+                    playSound('error');
+                    console.error('Unhappy path hit:', response);
+                }
+            }
+        } catch (error) {
+            // Recoverable error (network/abort) — leave in IndexedDB for retry
+            console.warn(`Request ${id} failed, will retry on resume`, error);
+            if (!isRetry) playSound('error');
+        } finally {
+            removeProcessingLog(id);
+        }
+    }, [addEntry, removeProcessingLog, setInterrogation]);
+
+    // --- Retry pending items when the app resumes (screen unlock / tab focus) ---
+    const retryPending = useCallback(async () => {
+        const pending = await getAllPending();
+        if (pending.length === 0) return;
+        console.log(`[PendingQueue] Retrying ${pending.length} item(s)`);
+
+        for (const item of pending) {
+            addProcessingLog({ id: item.id, text: item.input || 'Retrying...', type: item.image ? 'image' : 'text' });
+            processRequest(item.id, item.input, item.image, true);
+        }
+    }, [addProcessingLog, processRequest]);
+
+    // Wipe stale UI processing entries + retry any IndexedDB pending items on mount
     useEffect(() => {
         clearProcessingLogs();
+        retryPending();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Listen for visibility change to retry pending items when app resumes
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                retryPending();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [retryPending]);
 
     useEffect(() => {
         if (isProcessing) {
@@ -67,35 +124,20 @@ const SmartLogging = () => {
         setSelectedImage(null);
         setIsFocused(false);
 
-        // Add to global processing queue
+        const prompt = currentInput || (currentImage ? "Analyze this food image and estimate macros." : "Log this food.");
+
+        // 1. Persist to IndexedDB BEFORE sending — survives screen-lock
+        await savePending(tempId, prompt, currentImage || undefined);
+
+        // 2. Add to visual processing queue
         addProcessingLog({
             id: tempId,
             text: currentImage ? (currentInput || 'Analyzing image...') : currentInput,
             type: currentImage ? 'image' : 'text'
         });
 
-        // Background AI processing
-        try {
-            const prompt = currentInput || (currentImage ? "Analyze this food image and estimate macros." : "Log this food.");
-            const response: any = await getAiResponse(prompt, currentImage || undefined);
-
-            if (response.type === 'success' && response.data) {
-                playSound('log');
-                addEntry(response.data);
-            } else if (response.type === 'clarification' && response.options) {
-                playSound('error');
-                setInterrogation({ ...response, originalInput: prompt, originalImage: currentImage });
-            } else {
-                playSound('error');
-                console.error("Unhappy path hit:", response);
-                alert("Telemetry connection failed or returned an unexpected format.");
-            }
-        } catch (error) {
-            playSound('error');
-            console.error("Unhappy path hit:", error);
-        } finally {
-            removeProcessingLog(tempId);
-        }
+        // 3. Fire the request (processRequest handles success/failure/retry)
+        processRequest(tempId, prompt, currentImage || undefined);
     };
 
     // Animate-out and dismiss the interrogation panel
