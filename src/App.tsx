@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useStore } from './store/useStore';
-import { Settings } from 'lucide-react';
+import { Settings, PartyPopper } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
@@ -16,6 +16,7 @@ import { supabase } from './utils/supabase';
 function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [manualCelebrate, setManualCelebrate] = useState(false);
 
     const shouldCelebrate = useMemo(() => {
         if (!isCalibrated || targetKcal === 0 || targetProtein === 0) return false;
@@ -52,13 +53,22 @@ function App() {
                 <div className="flex items-center gap-4 text-brutal-black">
                     <PWAInstall />
                     {isCalibrated && (
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className="p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
-                            title="Settings"
-                        >
-                            <Settings size={18} strokeWidth={2} />
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setManualCelebrate(true)}
+                                className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
+                                title="Celebration"
+                            >
+                                <PartyPopper size={18} strokeWidth={2} />
+                            </button>
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
+                                title="Settings"
+                            >
+                                <Settings size={18} strokeWidth={2} />
+                            </button>
+                        </>
                     )}
                 </div>
             </nav>
@@ -99,6 +109,7 @@ function App() {
 
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
             {shouldCelebrate && <UnicornCelebration onDismiss={dismissCelebration} />}
+            {manualCelebrate && <UnicornCelebration onDismiss={() => setManualCelebrate(false)} />}
             <Analytics />
         </div>
     );
