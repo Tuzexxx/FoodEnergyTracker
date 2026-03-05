@@ -41,6 +41,9 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
     const lastTimeRef = useRef(0);
     const isSwipingRef = useRef(false);
     const starsRef = useRef<{ x: number; y: number; vx: number; vy: number; life: number; emoji: string; size: number }[]>([]);
+    const victoryRef = useRef(false);
+    const victoryTimeRef = useRef(0);
+    const rainbowRingsRef = useRef<{ radius: number; alpha: number; hue: number }[]>([]);
 
     const STAR_EMOJIS = ['⭐', '✨', '🌟', '💫', '⚡', '🌈'];
 
@@ -94,8 +97,108 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
 
         // Main game loop
         const loop = (now: number) => {
-            const dt = Math.min((now - lastTimeRef.current) / 16.67, 3); // normalize to ~60fps
+            const dt = Math.min((now - lastTimeRef.current) / 16.67, 3);
             lastTimeRef.current = now;
+
+            // Victory phase
+            if (victoryRef.current) {
+                victoryTimeRef.current += dt;
+                ctx.clearRect(0, 0, vw, vh);
+
+                // Expanding rainbow rings from center
+                const cx = vw / 2;
+                const cy = vh / 2;
+                rainbowRingsRef.current.forEach(ring => {
+                    ring.radius += 4 * dt;
+                    ring.alpha = Math.max(0, ring.alpha - 0.008 * dt);
+                });
+                // Spawn new rings
+                if (victoryTimeRef.current % 3 < dt) {
+                    rainbowRingsRef.current.push(
+                        { radius: 0, alpha: 0.7, hue: Math.random() * 360 }
+                    );
+                }
+                rainbowRingsRef.current = rainbowRingsRef.current.filter(r => r.alpha > 0.01);
+
+                // Draw rings
+                rainbowRingsRef.current.forEach(ring => {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, ring.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `hsla(${ring.hue}, 100%, 65%, ${ring.alpha})`;
+                    ctx.lineWidth = 6 + ring.radius * 0.02;
+                    ctx.shadowColor = `hsla(${ring.hue}, 100%, 65%, ${ring.alpha})`;
+                    ctx.shadowBlur = 30;
+                    ctx.stroke();
+                    ctx.restore();
+                });
+
+                // Full-screen rainbow gradient pulse
+                const pulseAlpha = Math.sin(victoryTimeRef.current * 0.5) * 0.15 + 0.1;
+                const rainbowGrad = ctx.createConicGradient(victoryTimeRef.current * 0.1, cx, cy);
+                rainbowGrad.addColorStop(0, `rgba(255,0,0,${pulseAlpha})`);
+                rainbowGrad.addColorStop(0.16, `rgba(255,165,0,${pulseAlpha})`);
+                rainbowGrad.addColorStop(0.33, `rgba(255,255,0,${pulseAlpha})`);
+                rainbowGrad.addColorStop(0.5, `rgba(0,255,0,${pulseAlpha})`);
+                rainbowGrad.addColorStop(0.66, `rgba(0,100,255,${pulseAlpha})`);
+                rainbowGrad.addColorStop(0.83, `rgba(150,0,255,${pulseAlpha})`);
+                rainbowGrad.addColorStop(1, `rgba(255,0,0,${pulseAlpha})`);
+                ctx.fillStyle = rainbowGrad;
+                ctx.fillRect(0, 0, vw, vh);
+
+                // Draw victory particles
+                starsRef.current = starsRef.current.filter(s => {
+                    s.x += s.vx * dt;
+                    s.y += s.vy * dt;
+                    s.vy += 0.08 * dt;
+                    s.life -= dt * 0.7;
+                    if (s.life <= 0) return false;
+                    const alpha = Math.max(0, s.life / 40);
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.font = `${s.size}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(s.emoji, s.x, s.y);
+                    ctx.restore();
+                    return true;
+                });
+
+                // PERFECT! text
+                const textScale = Math.min(1, victoryTimeRef.current / 8);
+                const bounce = 1 + Math.sin(victoryTimeRef.current * 0.8) * 0.05;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `bold ${56 * textScale * bounce}px system-ui, sans-serif`;
+                // Rainbow text
+                const txtGrad = ctx.createLinearGradient(cx - 120, cy, cx + 120, cy);
+                txtGrad.addColorStop(0, '#ff0000');
+                txtGrad.addColorStop(0.2, '#ff8800');
+                txtGrad.addColorStop(0.4, '#ffff00');
+                txtGrad.addColorStop(0.6, '#00ff00');
+                txtGrad.addColorStop(0.8, '#0088ff');
+                txtGrad.addColorStop(1, '#aa00ff');
+                ctx.fillStyle = txtGrad;
+                ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                ctx.shadowBlur = 25;
+                ctx.fillText('🌈 PERFECT! 🌈', cx, cy - 20);
+                ctx.font = 'bold 18px system-ui, sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.shadowBlur = 0;
+                ctx.fillText(`All ${UNICORN_COUNT} sliced!`, cx, cy + 30);
+                ctx.restore();
+
+                // Auto-dismiss after 2.5 seconds of victory
+                if (victoryTimeRef.current > 2.5 * 60 / 16.67) {
+                    // ~2.5 seconds worth of frames
+                    if (!dismissedRef.current) handleDismiss();
+                    return;
+                }
+
+                animFrameRef.current = requestAnimationFrame(loop);
+                return;
+            }
 
             // Timer
             timeLeftRef.current -= dt / 60;
@@ -311,8 +414,31 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
                     }
 
                     // Check win
-                    if (burstCountRef.current >= UNICORN_COUNT && !dismissedRef.current) {
-                        setTimeout(() => handleDismiss(), 500);
+                    if (burstCountRef.current >= UNICORN_COUNT && !victoryRef.current) {
+                        victoryRef.current = true;
+                        victoryTimeRef.current = 0;
+                        // Spawn massive rainbow particle explosion
+                        const cx = window.innerWidth / 2;
+                        const cy = window.innerHeight / 2;
+                        for (let i = 0; i < 60; i++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const speed = 3 + Math.random() * 8;
+                            starsRef.current.push({
+                                x: cx + (Math.random() - 0.5) * 100,
+                                y: cy + (Math.random() - 0.5) * 100,
+                                vx: Math.cos(angle) * speed,
+                                vy: Math.sin(angle) * speed - 3,
+                                life: 30 + Math.random() * 25,
+                                emoji: ['🌈', '⭐', '✨', '🦄', '💫', '🌟', '🎉', '🏆'][Math.floor(Math.random() * 8)],
+                                size: 20 + Math.random() * 28,
+                            });
+                        }
+                        // Spawn initial rainbow rings
+                        for (let i = 0; i < 6; i++) {
+                            rainbowRingsRef.current.push(
+                                { radius: i * 15, alpha: 0.8, hue: i * 60 }
+                            );
+                        }
                     }
                 }
             });
