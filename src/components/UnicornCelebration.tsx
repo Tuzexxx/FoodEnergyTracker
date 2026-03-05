@@ -189,8 +189,8 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
                 ctx.fillText(`All ${UNICORN_COUNT} sliced!`, cx, cy + 30);
                 ctx.restore();
 
-                // Auto-dismiss after 2.5 seconds of victory
-                if (victoryTimeRef.current > 2.5 * 60 / 16.67) {
+                // Auto-dismiss after 3.5 seconds of victory
+                if (victoryTimeRef.current > 210) {
                     // ~2.5 seconds worth of frames
                     if (!dismissedRef.current) handleDismiss();
                     return;
