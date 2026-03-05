@@ -71,6 +71,8 @@ interface AppState {
     clearProcessingLogs: () => void;
     exerciseDay: boolean;
     toggleExerciseDay: () => void;
+    celebrationDismissedDate: string | null;
+    dismissCelebration: () => void;
 }
 
 export const useStore = create<AppState>()(
@@ -210,6 +212,9 @@ export const useStore = create<AppState>()(
             exerciseDay: false,
 
             toggleExerciseDay: () => set((state) => ({ exerciseDay: !state.exerciseDay })),
+
+            celebrationDismissedDate: null,
+            dismissCelebration: () => set({ celebrationDismissedDate: new Date().toDateString() }),
 
             addProcessingLog: (log) => set((state) => ({ processingLogs: [log, ...state.processingLogs] })),
             removeProcessingLog: (id) => set((state) => ({ processingLogs: state.processingLogs.filter(l => l.id !== id) })),
@@ -360,11 +365,13 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'macro-tracker-storage', // Keep local storage as a fallback/offline buffer
-            version: 1, // Added version tracking
+            version: 2, // Added celebration tracking
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {
-                    // if the stored value is in version 0, we add favorites
                     persistedState.favorites = [];
+                }
+                if (version < 2 && persistedState) {
+                    persistedState.celebrationDismissedDate = null;
                 }
                 return (persistedState as AppState) || {} as AppState;
             }

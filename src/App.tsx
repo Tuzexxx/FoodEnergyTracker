@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useStore } from './store/useStore';
 import { Settings } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
@@ -9,12 +9,20 @@ import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
 import AuthScreen from './components/AuthScreen';
+import UnicornCelebration from './components/UnicornCelebration';
 import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './utils/supabase';
 
 function App() {
-    const { isCalibrated, session, setSession, isGuest, setGuestMode } = useStore();
+    const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    const shouldCelebrate = useMemo(() => {
+        if (!isCalibrated || targetKcal === 0 || targetProtein === 0) return false;
+        if (yesterdayKcal < targetKcal || yesterdayProtein < targetProtein) return false;
+        const todayStr = new Date().toDateString();
+        return celebrationDismissedDate !== todayStr;
+    }, [isCalibrated, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate]);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -90,6 +98,7 @@ function App() {
             )}
 
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
+            {shouldCelebrate && <UnicornCelebration onDismiss={dismissCelebration} />}
             <Analytics />
         </div>
     );
