@@ -27,18 +27,22 @@ interface UnicornCelebrationProps {
 }
 
 const UNICORN_COUNT = 10;
+const TIME_LIMIT = 10; // seconds
 const STAR_EMOJIS = ['⭐', '✨', '🌟', '💫', '⚡'];
 
 const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
     const [unicorns, setUnicorns] = useState<Unicorn[]>([]);
     const [stars, setStars] = useState<Star[]>([]);
     const [burstCount, setBurstCount] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
     const overlayRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<HTMLDivElement>(null);
     const unicornRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const animationFrameRef = useRef<number>(0);
     const unicornsRef = useRef<Unicorn[]>([]);
     const starIdCounter = useRef(0);
+    const dismissedRef = useRef(false);
+    const burstCountRef = useRef(0);
 
     // Initialize unicorns
     useEffect(() => {
@@ -46,9 +50,9 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
         const vh = window.innerHeight;
         const initial: Unicorn[] = Array.from({ length: UNICORN_COUNT }, (_, i) => ({
             id: i,
-            x: Math.random() * (vw - 60) + 30,
-            y: Math.random() * (vh - 200) + 120,
-            size: 36 + Math.random() * 24,
+            x: Math.random() * (vw - 80) + 40,
+            y: Math.random() * (vh - 280) + 160,
+            size: 40 + Math.random() * 20,
             speed: 0.8 + Math.random() * 1.2,
             angle: Math.random() * Math.PI * 2,
             hue: Math.random() * 360,
@@ -65,6 +69,55 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
         );
     }, []);
 
+    // Countdown timer
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    if (!dismissedRef.current) {
+                        dismissedRef.current = true;
+                        handleDismiss();
+                    }
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Prevent ALL scroll/touch default behavior on the overlay
+    useEffect(() => {
+        const el = overlayRef.current;
+        if (!el) return;
+
+        const prevent = (e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+        };
+
+        el.addEventListener('touchstart', prevent, { passive: false });
+        el.addEventListener('touchmove', prevent, { passive: false });
+        el.addEventListener('touchend', prevent, { passive: false });
+        el.addEventListener('wheel', prevent, { passive: false });
+
+        // Also lock body scroll
+        const originalOverflow = document.body.style.overflow;
+        const originalTouchAction = document.body.style.touchAction;
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+
+        return () => {
+            el.removeEventListener('touchstart', prevent);
+            el.removeEventListener('touchmove', prevent);
+            el.removeEventListener('touchend', prevent);
+            el.removeEventListener('wheel', prevent);
+            document.body.style.overflow = originalOverflow;
+            document.body.style.touchAction = originalTouchAction;
+        };
+    }, []);
+
     // Animation loop — float unicorns around
     useEffect(() => {
         const vw = window.innerWidth;
@@ -79,13 +132,13 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
                 let newAngle = u.angle + (Math.random() - 0.5) * 0.1;
 
                 // Bounce off edges
-                if (nx < 20 || nx > vw - 20) {
+                if (nx < 30 || nx > vw - 30) {
                     newAngle = Math.PI - newAngle;
-                    nx = Math.max(20, Math.min(vw - 20, nx));
+                    nx = Math.max(30, Math.min(vw - 30, nx));
                 }
-                if (ny < 80 || ny > vh - 80) {
+                if (ny < 120 || ny > vh - 80) {
                     newAngle = -newAngle;
-                    ny = Math.max(80, Math.min(vh - 80, ny));
+                    ny = Math.max(120, Math.min(vh - 80, ny));
                 }
 
                 return { ...u, x: nx, y: ny, angle: newAngle };
@@ -135,7 +188,7 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
         }));
         setStars(prev => [...prev, ...newStars]);
 
-        // Animate stars flying out (after a tick so DOM is ready)
+        // Animate stars flying out
         requestAnimationFrame(() => {
             newStars.forEach(star => {
                 const starEl = document.getElementById(`star-${star.id}`);
@@ -158,63 +211,98 @@ const UnicornCelebration = ({ onDismiss }: UnicornCelebrationProps) => {
             });
         });
 
-        playSound('targetHit');
-        const newBurstCount = burstCount + 1;
-        setBurstCount(newBurstCount);
+        try { playSound('targetHit'); } catch { }
+
+        burstCountRef.current += 1;
+        setBurstCount(burstCountRef.current);
 
         // Check if all unicorns are burst
-        if (newBurstCount >= UNICORN_COUNT) {
-            setTimeout(() => handleDismiss(), 800);
+        if (burstCountRef.current >= UNICORN_COUNT && !dismissedRef.current) {
+            dismissedRef.current = true;
+            setTimeout(() => handleDismiss(), 600);
         }
-    }, [burstCount]);
+    }, []);
 
     const handleDismiss = useCallback(() => {
-        gsap.to(overlayRef.current, {
-            opacity: 0, duration: 0.4, ease: 'power2.in',
-            onComplete: onDismiss
-        });
+        if (overlayRef.current) {
+            gsap.to(overlayRef.current, {
+                opacity: 0, duration: 0.4, ease: 'power2.in',
+                onComplete: onDismiss
+            });
+        } else {
+            onDismiss();
+        }
     }, [onDismiss]);
 
-    // Touch/pointer handler
-    const handlePointerDown = useCallback((e: React.PointerEvent) => {
-        const px = e.clientX;
-        const py = e.clientY;
-        const hitRadius = 40;
-
+    // Hit-test at a point — check all alive unicorns
+    const hitTestAt = useCallback((px: number, py: number) => {
         for (const u of unicornsRef.current) {
             if (!u.alive) continue;
             const dx = px - u.x;
             const dy = py - u.y;
-            if (Math.sqrt(dx * dx + dy * dy) < hitRadius + u.size / 2) {
+            if (Math.sqrt(dx * dx + dy * dy) < 45 + u.size / 2) {
                 burstUnicorn(u.id);
-                break;
+                return;
             }
         }
     }, [burstUnicorn]);
 
+    // Pointer handlers — both down AND move for swipe support
+    const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hitTestAt(e.clientX, e.clientY);
+    }, [hitTestAt]);
+
+    const handlePointerMove = useCallback((e: React.PointerEvent) => {
+        // Only burst on move if a button is pressed (finger/mouse down)
+        if (e.buttons > 0 || e.pointerType === 'touch') {
+            e.preventDefault();
+            hitTestAt(e.clientX, e.clientY);
+        }
+    }, [hitTestAt]);
+
+    const timerPercent = (timeLeft / TIME_LIMIT) * 100;
+
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-start"
-            style={{ background: 'radial-gradient(ellipse at center, rgba(88,28,135,0.95) 0%, rgba(15,23,42,0.97) 100%)' }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-start select-none"
+            style={{
+                background: 'radial-gradient(ellipse at center, rgba(88,28,135,0.95) 0%, rgba(15,23,42,0.97) 100%)',
+                touchAction: 'none',
+                overscrollBehavior: 'none',
+            }}
             onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
         >
             {/* Skip button */}
             <button
-                onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
+                onClick={(e) => { e.stopPropagation(); if (!dismissedRef.current) { dismissedRef.current = true; handleDismiss(); } }}
                 className="absolute top-5 right-5 z-[110] bg-white/10 backdrop-blur-md text-white/70 hover:text-white hover:bg-white/20 rounded-full p-2.5 transition-all active:scale-90"
             >
                 <X size={20} />
             </button>
 
+            {/* Timer bar */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/10 z-[110]">
+                <div
+                    className="h-full transition-all duration-1000 ease-linear rounded-r-full"
+                    style={{
+                        width: `${timerPercent}%`,
+                        background: timerPercent > 30 ? 'linear-gradient(90deg, #a855f7, #ec4899)' : '#ef4444',
+                    }}
+                />
+            </div>
+
             {/* Heading */}
-            <div ref={headingRef} className="mt-20 text-center pointer-events-none select-none">
+            <div ref={headingRef} className="mt-16 text-center pointer-events-none select-none">
                 <div className="text-6xl mb-3">🏆</div>
                 <h2 className="text-3xl font-drama tracking-wider text-white drop-shadow-lg">
                     GOALS CRUSHED!
                 </h2>
-                <p className="text-white/50 font-sans text-sm mt-2 tracking-wide uppercase">
-                    Yesterday was a perfect day — pop the unicorns!
+                <p className="text-white/50 font-sans text-xs mt-2 tracking-wide uppercase">
+                    Swipe to pop the unicorns! {timeLeft}s left
                 </p>
                 <div className="mt-3 bg-white/10 backdrop-blur-md rounded-full px-4 py-1.5 inline-block">
                     <span className="text-white/80 font-data text-sm font-bold">
