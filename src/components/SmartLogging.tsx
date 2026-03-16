@@ -324,7 +324,7 @@ const SmartLogging = () => {
                             </button>
                         </div>
 
-                        <div className="flex flex-col gap-2 w-full">
+                        <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
                             {telemetryError && (
                                 <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-3 rounded-2xl text-xs font-bold font-mono animate-in fade-in slide-in-from-top-2 flex items-center gap-2 mb-2">
                                     <Activity size={14} className="animate-pulse" />
