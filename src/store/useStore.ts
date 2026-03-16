@@ -71,6 +71,8 @@ interface AppState {
     clearProcessingLogs: () => void;
     exerciseDay: boolean;
     toggleExerciseDay: () => void;
+    celebrationDismissedDate: string | null;
+    dismissCelebration: () => void;
 }
 
 export const useStore = create<AppState>()(
@@ -102,6 +104,11 @@ export const useStore = create<AppState>()(
                     .eq('user_id', session.user.id)
                     .gte('timestamp', startOfDay.getTime())
                     .order('timestamp', { ascending: false });
+
+                // Fetch favorites
+                const { data: favoritesData } = await supabase.from('favorites')
+                    .select('*')
+                    .eq('user_id', session.user.id);
 
                 // Fetch all historical entries before today
                 const { data: historicalEntries } = await supabase.from('food_entries')
@@ -193,6 +200,17 @@ export const useStore = create<AppState>()(
                         dailyLog: parsedEntries
                     });
                 }
+
+                if (favoritesData) {
+                    const parsedFavorites = favoritesData.map(f => ({
+                        name: f.name,
+                        kcal: Math.round(Number(f.kcal)),
+                        protein: Math.round(Number(f.protein)),
+                        carbs: Math.round(Number(f.carbs)),
+                        fat: Math.round(Number(f.fat))
+                    }));
+                    set({ favorites: parsedFavorites });
+                }
             },
 
             isCalibrated: false,
@@ -210,6 +228,9 @@ export const useStore = create<AppState>()(
             exerciseDay: false,
 
             toggleExerciseDay: () => set((state) => ({ exerciseDay: !state.exerciseDay })),
+
+            celebrationDismissedDate: null,
+            dismissCelebration: () => set({ celebrationDismissedDate: new Date().toDateString() }),
 
             addProcessingLog: (log) => set((state) => ({ processingLogs: [log, ...state.processingLogs] })),
             removeProcessingLog: (id) => set((state) => ({ processingLogs: state.processingLogs.filter(l => l.id !== id) })),
@@ -343,28 +364,76 @@ export const useStore = create<AppState>()(
                 dailyLog: []
             })),
 
-            addFavorite: (entry) => set((state) => ({
-                favorites: [...(state.favorites || []).filter(f => f.name !== entry.name), entry]
-            })),
+            addFavorite: async (entry) => {
+                set((state) => ({
+                    favorites: [...(state.favorites || []).filter(f => f.name !== entry.name), entry]
+                }));
 
-            removeFavorite: (name) => set((state) => ({
-                favorites: (state.favorites || []).filter(f => f.name !== name)
-            })),
+                const { session } = get();
+                if (session?.user) {
+                    const { error } = await supabase.from('favorites').upsert({
+                        user_id: session.user.id,
+                        name: entry.name,
+                        kcal: entry.kcal,
+                        protein: entry.protein,
+                        carbs: entry.carbs,
+                        fat: entry.fat,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,name' });
+                    if (error) console.error('Supabase Sync Error:', error.message);
+                }
+            },
 
-            updateFavorite: (oldName, updatedFav) => set((state) => {
-                const updatedList = (state.favorites || []).map(f =>
-                    f.name === oldName ? updatedFav : f
-                );
-                return { favorites: updatedList };
-            })
+            removeFavorite: async (name) => {
+                set((state) => ({
+                    favorites: (state.favorites || []).filter(f => f.name !== name)
+                }));
+
+                const { session } = get();
+                if (session?.user) {
+                    const { error } = await supabase.from('favorites').delete().eq('user_id', session.user.id).eq('name', name);
+                    if (error) console.error('Supabase Sync Error:', error.message);
+                }
+            },
+
+            updateFavorite: async (oldName, updatedFav) => {
+                set((state) => {
+                    const updatedList = (state.favorites || []).map(f =>
+                        f.name === oldName ? updatedFav : f
+                    );
+                    return { favorites: updatedList };
+                });
+
+                const { session } = get();
+                if (session?.user) {
+                    // We delete the old and insert/upsert new if the name changed, 
+                    // or just upsert if the name is the same.
+                    if (oldName !== updatedFav.name) {
+                        await supabase.from('favorites').delete().eq('user_id', session.user.id).eq('name', oldName);
+                    }
+                    
+                    const { error } = await supabase.from('favorites').upsert({
+                        user_id: session.user.id,
+                        name: updatedFav.name,
+                        kcal: updatedFav.kcal,
+                        protein: updatedFav.protein,
+                        carbs: updatedFav.carbs,
+                        fat: updatedFav.fat,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,name' });
+                    if (error) console.error('Supabase Sync Error:', error.message);
+                }
+            }
         }),
         {
             name: 'macro-tracker-storage', // Keep local storage as a fallback/offline buffer
-            version: 1, // Added version tracking
+            version: 2, // Added celebration tracking
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {
-                    // if the stored value is in version 0, we add favorites
                     persistedState.favorites = [];
+                }
+                if (version < 2 && persistedState) {
+                    persistedState.celebrationDismissedDate = null;
                 }
                 return (persistedState as AppState) || {} as AppState;
             }
