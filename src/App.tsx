@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useStore } from './store/useStore';
-import { Settings, PartyPopper } from 'lucide-react';
+import { Settings, Sparkles } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
@@ -9,7 +9,7 @@ import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
 import AuthScreen from './components/AuthScreen';
-import UnicornCelebration from './components/UnicornCelebration';
+import GlitterCelebration from './components/GlitterCelebration';
 import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './utils/supabase';
 
@@ -56,10 +56,10 @@ function App() {
                         <>
                             <button
                                 onClick={() => setManualCelebrate(true)}
-                                className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
-                                title="Celebration"
+                                className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
+                                title="Celebrate"
                             >
-                                <PartyPopper size={18} strokeWidth={2} />
+                                <Sparkles size={18} strokeWidth={2} />
                             </button>
                             <button
                                 onClick={() => setIsSettingsOpen(true)}
@@ -108,8 +108,8 @@ function App() {
             )}
 
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
-            {shouldCelebrate && <UnicornCelebration onDismiss={dismissCelebration} />}
-            {manualCelebrate && <UnicornCelebration onDismiss={() => setManualCelebrate(false)} />}
+            {shouldCelebrate && <GlitterCelebration onDismiss={dismissCelebration} />}
+            {manualCelebrate && <GlitterCelebration onDismiss={() => setManualCelebrate(false)} />}
             <Analytics />
         </div>
     );
