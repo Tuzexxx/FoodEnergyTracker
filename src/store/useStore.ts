@@ -203,7 +203,7 @@ export const useStore = create<AppState>()(
                     });
                 }
 
-                if (favoritesData) {
+                if (favoritesData && favoritesData.length > 0) {
                     const parsedFavorites = favoritesData.map(f => ({
                         name: f.name,
                         kcal: Math.round(Number(f.kcal)),

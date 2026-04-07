@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, Check, X, Trash2, Star, Activity, MessageSquare, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
@@ -129,18 +129,22 @@ const DailyLog = () => {
         if (!t || t.id !== id) { touchRef.current = null; return; }
         const offset = swipeOffsetRef.current;
         const THRESHOLD = 70;
+        let acted = false;
 
         if (offset < -THRESHOLD) {
             // Swiped LEFT → Delete
-            didSwipeRef.current = true;
+            acted = true;
             playSound('error');
-            if (confirm('Delete this entry?')) {
-                deleteEntry(id);
-                setExpandedId(null);
-            }
+            // Use setTimeout so the UI snaps back before confirm dialog blocks
+            setTimeout(() => {
+                if (confirm('Delete this entry?')) {
+                    deleteEntry(id);
+                    setExpandedId(null);
+                }
+            }, 50);
         } else if (offset > THRESHOLD) {
             // Swiped RIGHT → Toggle Favorite
-            didSwipeRef.current = true;
+            acted = true;
             const entry = dailyLog.find(e => e.id === id);
             if (entry) {
                 const isFav = (favorites || []).some(f => f.name === entry.name);
@@ -157,7 +161,10 @@ const DailyLog = () => {
         }
         touchRef.current = null;
         swipeOffsetRef.current = 0;
-        setTimeout(() => { didSwipeRef.current = false; }, 80);
+        if (acted) {
+            didSwipeRef.current = true;
+            setTimeout(() => { didSwipeRef.current = false; }, 120);
+        }
     };
 
     const handleBrainstorm = async (entry: FoodEntry, e: React.FormEvent) => {
@@ -258,7 +265,7 @@ const DailyLog = () => {
                                 <div className="relative overflow-hidden rounded-2xl">
                                     {/* Action backgrounds revealed on swipe */}
                                     <div className="absolute inset-0 flex pointer-events-none z-0">
-                                        <div className="flex-1 bg-gradient-to-r from-amber-500 to-amber-400 flex items-center pl-5 gap-2">
+                                        <div className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-400 flex items-center pl-5 gap-2">
                                             <Star size={18} className="text-white fill-white" />
                                             <span className="text-white text-xs font-bold uppercase tracking-wider font-sans">Favorite</span>
                                         </div>
@@ -381,7 +388,7 @@ const DailyLog = () => {
                                                         </div>
                                                     )}
 
-                                                    <div className="flex flex-wrap justify-between items-center pt-3 border-t border-brutal-black/5 mt-1 gap-y-3">
+                                                    <div className="flex flex-wrap justify-between items-center pt-3 border-t border-brutal-black/5 mt-1 gap-y-2">
                                                         <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-2.5 py-1.5 rounded-lg border border-black/5 min-w-fit">
                                                             <span className="flex gap-1.5 items-center">
                                                                 <span className="opacity-50 text-[9px] uppercase">Pro</span><span className="text-brutal-black/80">{entry.protein}</span>
@@ -396,22 +403,13 @@ const DailyLog = () => {
                                                             </span>
                                                         </div>
 
-                                                        <div className="flex gap-2 shrink-0 ml-auto">
-                                                            {entry.requiresReview && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); updateEntry(entry.id, { requiresReview: false }); }}
-                                                                    className="px-3 py-1.5 transition-colors rounded-full shadow-sm flex items-center justify-center border bg-green-100 text-green-700 border-green-300 hover:bg-green-200 text-[10px] uppercase font-bold tracking-widest gap-1"
-                                                                    title="Approve AI Estimation"
-                                                                >
-                                                                    <Check size={14} strokeWidth={3} /> OK
-                                                                </button>
-                                                            )}
+                                                        <div className="flex gap-1.5 shrink-0 ml-auto">
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
-                                                                className="p-2 transition-colors rounded-full shadow-sm border text-brutal-black/40 hover:text-red-500 bg-white hover:bg-red-50 border-black/5"
+                                                                className="p-1.5 transition-colors rounded-full border text-brutal-black/30 hover:text-red-500 bg-white hover:bg-red-50 border-black/5"
                                                                 title="Delete Entry"
                                                             >
-                                                                <Trash2 size={16} />
+                                                                <Trash2 size={14} />
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -421,23 +419,20 @@ const DailyLog = () => {
                                                                     if (isFav) removeFavorite(entry.name);
                                                                     else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
                                                                 }}
-                                                                className={`p-2 transition-colors rounded-full shadow-sm border ${(favorites || []).some(f => f.name === entry.name)
+                                                                className={`p-1.5 transition-colors rounded-full border ${(favorites || []).some(f => f.name === entry.name)
                                                                     ? 'bg-amber-50 text-amber-500 border-amber-200'
-                                                                    : 'text-brutal-black/40 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
+                                                                    : 'text-brutal-black/30 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
                                                                     }`}
                                                                 title="Favorite"
                                                             >
-                                                                <Star size={16} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
+                                                                <Star size={14} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
                                                             </button>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); startEdit(entry); }}
-                                                                className={`p-2 transition-colors rounded-full shadow-sm flex items-center justify-center border ${entry.requiresReview
-                                                                    ? 'bg-orange-100 text-orange-600 border-orange-200'
-                                                                    : 'text-brutal-black/40 hover:text-indigo-500 bg-white hover:bg-indigo-50 border-black/5'
-                                                                    }`}
+                                                                className="p-1.5 transition-colors rounded-full border text-brutal-black/30 hover:text-indigo-500 bg-white hover:bg-indigo-50 border-black/5"
                                                                 title="Edit Entry"
                                                             >
-                                                                <Edit2 size={16} />
+                                                                <Edit2 size={14} />
                                                             </button>
                                                         </div>
                                                     </div>
