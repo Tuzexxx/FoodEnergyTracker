@@ -67,24 +67,54 @@ CLARIFICATION FORMAT:
             }
         }
 
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        const MODELS = [
+            'gemini-3-flash-preview',        // Primary: Gemini 3 Flash (full)
+            'gemini-3.1-flash-lite-preview',  // Fallback 1: 3.1 Flash Lite
+            'gemini-2.5-flash-lite',          // Fallback 2: 2.5 Flash Lite (stable)
+        ];
+
+        const requestBody = JSON.stringify({
+            system_instruction: {
+                parts: [{ text: prompt }]
             },
-            body: JSON.stringify({
-                system_instruction: {
-                    parts: [{ text: prompt }]
-                },
-                contents: [{ parts }],
-                tools: [{ googleSearch: {} }]
-            })
+            contents: [{ parts }],
+            tools: [{ googleSearch: {} }]
         });
 
-        if (!geminiResponse.ok) {
-            const errorData = await geminiResponse.text();
-            console.error('Gemini API Error:', errorData);
-            return res.status(500).json({ error: 'Gemini API Error', type: 'error' });
+        let geminiResponse: Response | null = null;
+        let lastError = '';
+
+        for (const model of MODELS) {
+            console.log(`[analyze] Trying model: ${model}`);
+            const resp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: requestBody,
+                }
+            );
+
+            if (resp.ok) {
+                geminiResponse = resp;
+                break;
+            }
+
+            // Retryable errors: 503 (overloaded), 429 (rate-limit)
+            lastError = await resp.text();
+            console.warn(`[analyze] Model ${model} failed (${resp.status}):`, lastError);
+
+            if (resp.status === 503 || resp.status === 429) {
+                console.log(`[analyze] Retryable error, falling back to next model...`);
+                continue;
+            }
+
+            // Non-retryable error — stop immediately
+            return res.status(500).json({ error: `Gemini API Error (${resp.status}): ${lastError.substring(0, 200)}`, type: 'error' });
+        }
+
+        if (!geminiResponse) {
+            return res.status(503).json({ error: `All AI models unavailable. Last error: ${lastError.substring(0, 200)}`, type: 'error' });
         }
 
         const data = await geminiResponse.json();

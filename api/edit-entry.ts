@@ -45,26 +45,50 @@ SUCCESS FORMAT:
   }
 }`;
 
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        const MODELS = [
+            'gemini-3-flash-preview',
+            'gemini-3.1-flash-lite-preview',
+            'gemini-2.5-flash-lite',
+        ];
+
+        const requestBody = JSON.stringify({
+            system_instruction: {
+                parts: [{ text: "Output strictly JSON format." }]
             },
-            body: JSON.stringify({
-                system_instruction: {
-                    parts: [{ text: "Output strictly JSON format." }]
-                },
-                contents: [{
-                    parts: [{ text: prompt }]
-                }],
-                tools: [{ googleSearch: {} }]
-            })
+            contents: [{
+                parts: [{ text: prompt }]
+            }],
+            tools: [{ googleSearch: {} }]
         });
 
-        if (!geminiResponse.ok) {
-            const errorData = await geminiResponse.text();
-            console.error('Gemini API Error:', errorData);
-            return res.status(500).json({ error: 'Gemini API Error', type: 'error' });
+        let geminiResponse: Response | null = null;
+        let lastError = '';
+
+        for (const model of MODELS) {
+            const resp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: requestBody,
+                }
+            );
+
+            if (resp.ok) {
+                geminiResponse = resp;
+                break;
+            }
+
+            lastError = await resp.text();
+            console.warn(`[edit-entry] Model ${model} failed (${resp.status}):`, lastError);
+
+            if (resp.status === 503 || resp.status === 429) continue;
+
+            return res.status(500).json({ error: `Gemini API Error (${resp.status})`, type: 'error' });
+        }
+
+        if (!geminiResponse) {
+            return res.status(503).json({ error: 'All AI models unavailable', type: 'error' });
         }
 
         const data = await geminiResponse.json();

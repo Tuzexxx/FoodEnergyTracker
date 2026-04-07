@@ -47,7 +47,7 @@ const SmartLogging = () => {
                 if (!isRetry) {
                     playSound('error');
                     setTelemetryError(response.error || "Telemetry analysis failed. Please try again.");
-                    setTimeout(() => setTelemetryError(null), 5000);
+                    setTimeout(() => setTelemetryError(null), 10_000);
                 }
             }
         } catch (error) {
@@ -129,7 +129,11 @@ const SmartLogging = () => {
         const prompt = currentInput || (currentImage ? "Analyze this food image and estimate macros." : "Log this food.");
 
         // 1. Persist to IndexedDB BEFORE sending — survives screen-lock
-        await savePending(tempId, prompt, currentImage || undefined);
+        try {
+            await savePending(tempId, prompt, currentImage || undefined);
+        } catch (err) {
+            console.warn('IndexedDB save failed. Continuing without persistence.', err);
+        }
 
         // 2. Add to visual processing queue
         addProcessingLog({
@@ -325,15 +329,6 @@ const SmartLogging = () => {
                         </div>
 
                         <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
-                            {telemetryError && (
-                                <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-3 rounded-2xl text-xs font-bold font-mono animate-in fade-in slide-in-from-top-2 flex items-center gap-2 mb-2">
-                                    <Activity size={14} className="animate-pulse" />
-                                    <span>{telemetryError}</span>
-                                    <button onClick={() => setTelemetryError(null)} className="ml-auto opacity-40 hover:opacity-100">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            )}
                             {(favorites || []).map((fav, i) => {
                                 const isEditingThis = editingFav?.originalName === fav.name;
 
@@ -484,6 +479,16 @@ const SmartLogging = () => {
                             })}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {telemetryError && (
+                <div className="absolute bottom-[110%] w-full z-50 bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-600 p-3 rounded-2xl text-xs font-bold font-mono animate-in fade-in slide-in-from-bottom-2 flex items-center gap-2 mb-2 shadow-sm">
+                    <Activity size={14} className="animate-pulse shrink-0" />
+                    <span>{telemetryError}</span>
+                    <button onClick={() => setTelemetryError(null)} className="ml-auto opacity-40 hover:opacity-100 shrink-0">
+                        <X size={14} />
+                    </button>
                 </div>
             )}
 
