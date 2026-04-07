@@ -73,6 +73,8 @@ interface AppState {
     toggleExerciseDay: () => void;
     celebrationDismissedDate: string | null;
     dismissCelebration: () => void;
+    lastActiveDate: string | null;
+    checkDayRollover: () => void;
 }
 
 export const useStore = create<AppState>()(
@@ -231,6 +233,29 @@ export const useStore = create<AppState>()(
 
             celebrationDismissedDate: null,
             dismissCelebration: () => set({ celebrationDismissedDate: new Date().toDateString() }),
+
+            lastActiveDate: null,
+            checkDayRollover: () => {
+                const todayStr = new Date().toDateString();
+                const { lastActiveDate, consumedKcal, consumedProtein } = get();
+
+                if (lastActiveDate && lastActiveDate !== todayStr) {
+                    // Day changed — move consumed totals to "yesterday" and reset
+                    console.log(`[DayRollover] ${lastActiveDate} → ${todayStr}. Yesterday: ${consumedKcal} kcal, ${consumedProtein}g protein`);
+                    set({
+                        yesterdayKcal: consumedKcal,
+                        yesterdayProtein: consumedProtein,
+                        consumedKcal: 0,
+                        consumedProtein: 0,
+                        dailyLog: [],
+                        exerciseDay: false,
+                        lastActiveDate: todayStr,
+                    });
+                } else if (!lastActiveDate) {
+                    // First time — just record today
+                    set({ lastActiveDate: todayStr });
+                }
+            },
 
             addProcessingLog: (log) => set((state) => ({ processingLogs: [log, ...state.processingLogs] })),
             removeProcessingLog: (id) => set((state) => ({ processingLogs: state.processingLogs.filter(l => l.id !== id) })),
@@ -426,14 +451,17 @@ export const useStore = create<AppState>()(
             }
         }),
         {
-            name: 'macro-tracker-storage', // Keep local storage as a fallback/offline buffer
-            version: 2, // Added celebration tracking
+            name: 'macro-tracker-storage',
+            version: 3, // Added lastActiveDate for day-rollover
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {
                     persistedState.favorites = [];
                 }
                 if (version < 2 && persistedState) {
                     persistedState.celebrationDismissedDate = null;
+                }
+                if (version < 3 && persistedState) {
+                    persistedState.lastActiveDate = null;
                 }
                 return (persistedState as AppState) || {} as AppState;
             }
