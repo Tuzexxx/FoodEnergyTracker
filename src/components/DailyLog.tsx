@@ -263,15 +263,14 @@ const DailyLog = () => {
 
                                 {/* Swipe container */}
                                 <div className="relative overflow-hidden rounded-2xl">
-                                    {/* Action backgrounds revealed on swipe */}
-                                    <div className="absolute inset-0 flex pointer-events-none z-0">
-                                        <div className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-400 flex items-center pl-5 gap-2">
-                                            <Star size={18} className="text-white fill-white" />
-                                            <span className="text-white text-xs font-bold uppercase tracking-wider font-sans">Favorite</span>
+                                    {/* Subtle action hints at edges — revealed on swipe */}
+                                    <div className="absolute inset-0 pointer-events-none z-0 flex">
+                                        <div className="w-20 h-full bg-gradient-to-r from-emerald-500/15 to-transparent flex items-center pl-4">
+                                            <Star size={14} className="text-emerald-500/40" />
                                         </div>
-                                        <div className="flex-1 bg-gradient-to-l from-red-500 to-red-400 flex items-center justify-end pr-5 gap-2">
-                                            <span className="text-white text-xs font-bold uppercase tracking-wider font-sans">Delete</span>
-                                            <Trash2 size={18} className="text-white" />
+                                        <div className="flex-1" />
+                                        <div className="w-20 h-full bg-gradient-to-l from-red-500/15 to-transparent flex items-center justify-end pr-4">
+                                            <Trash2 size={14} className="text-red-500/40" />
                                         </div>
                                     </div>
 
