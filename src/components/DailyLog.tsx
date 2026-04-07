@@ -3,6 +3,7 @@ import { useStore, FoodEntry } from '../store/useStore';
 import { Edit2, Check, X, Trash2, Star, Activity, MessageSquare, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
+import { playSound } from '../utils/audio';
 
 const DailyLog = () => {
     const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, targetKcal, targetProtein, processingLogs } = useStore();
@@ -17,6 +18,12 @@ const DailyLog = () => {
     const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
     const [isChatting, setIsChatting] = useState<Record<string, boolean>>({});
     const [chatMessages, setChatMessages] = useState<Record<string, string>>({});
+
+    // Swipe gesture refs
+    const touchRef = useRef<{ id: string; startX: number; startY: number; locked: boolean | null } | null>(null);
+    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const swipeOffsetRef = useRef(0);
+    const didSwipeRef = useRef(false);
 
     useEffect(() => {
         if (!containerRef.current || dailyLog.length === 0) return;
@@ -85,7 +92,72 @@ const DailyLog = () => {
         if (confirm("Are you sure you want to delete this entry?")) {
             deleteEntry(id);
             setEditingId(null);
+            setExpandedId(null);
         }
+    };
+
+    // --- Swipe handlers for delete/favorite ---
+    const onCardTouchStart = (id: string, e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        touchRef.current = { id, startX: touch.clientX, startY: touch.clientY, locked: null };
+        swipeOffsetRef.current = 0;
+        const el = cardRefs.current[id];
+        if (el) el.style.transition = 'none';
+    };
+
+    const onCardTouchMove = (id: string, e: React.TouchEvent) => {
+        const t = touchRef.current;
+        if (!t || t.id !== id) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - t.startX;
+        const dy = touch.clientY - t.startY;
+        // Lock direction on first significant movement
+        if (t.locked === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+            t.locked = Math.abs(dx) > Math.abs(dy);
+            if (!t.locked) { touchRef.current = null; return; }
+        }
+        if (!t.locked) return;
+        e.preventDefault(); // prevent scroll while swiping horizontally
+        const dampened = dx * 0.5;
+        swipeOffsetRef.current = dampened;
+        const el = cardRefs.current[id];
+        if (el) el.style.transform = `translateX(${dampened}px)`;
+    };
+
+    const onCardTouchEnd = (id: string) => {
+        const t = touchRef.current;
+        if (!t || t.id !== id) { touchRef.current = null; return; }
+        const offset = swipeOffsetRef.current;
+        const THRESHOLD = 70;
+
+        if (offset < -THRESHOLD) {
+            // Swiped LEFT → Delete
+            didSwipeRef.current = true;
+            playSound('error');
+            if (confirm('Delete this entry?')) {
+                deleteEntry(id);
+                setExpandedId(null);
+            }
+        } else if (offset > THRESHOLD) {
+            // Swiped RIGHT → Toggle Favorite
+            didSwipeRef.current = true;
+            const entry = dailyLog.find(e => e.id === id);
+            if (entry) {
+                const isFav = (favorites || []).some(f => f.name === entry.name);
+                if (isFav) { removeFavorite(entry.name); playSound('click'); }
+                else { addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat }); playSound('targetHit'); }
+            }
+        }
+
+        // Snap back
+        const el = cardRefs.current[id];
+        if (el) {
+            el.style.transition = 'transform 0.3s cubic-bezier(.2,.8,.3,1)';
+            el.style.transform = 'translateX(0)';
+        }
+        touchRef.current = null;
+        swipeOffsetRef.current = 0;
+        setTimeout(() => { didSwipeRef.current = false; }, 80);
     };
 
     const handleBrainstorm = async (entry: FoodEntry, e: React.FormEvent) => {
@@ -182,14 +254,33 @@ const DailyLog = () => {
                                 {/* Timeline dot */}
                                 <div className="absolute -left-5 top-8 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/20 z-10" />
 
+                                {/* Swipe container */}
+                                <div className="relative overflow-hidden rounded-2xl">
+                                    {/* Action backgrounds revealed on swipe */}
+                                    <div className="absolute inset-0 flex pointer-events-none z-0">
+                                        <div className="flex-1 bg-gradient-to-r from-amber-500 to-amber-400 flex items-center pl-5 gap-2">
+                                            <Star size={18} className="text-white fill-white" />
+                                            <span className="text-white text-xs font-bold uppercase tracking-wider font-sans">Favorite</span>
+                                        </div>
+                                        <div className="flex-1 bg-gradient-to-l from-red-500 to-red-400 flex items-center justify-end pr-5 gap-2">
+                                            <span className="text-white text-xs font-bold uppercase tracking-wider font-sans">Delete</span>
+                                            <Trash2 size={18} className="text-white" />
+                                        </div>
+                                    </div>
+
                                 <div
-                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white/60 backdrop-blur-md shadow-sm border group relative cursor-pointer
+                                    ref={el => { cardRefs.current[entry.id] = el; }}
+                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white/60 backdrop-blur-md shadow-sm border group relative cursor-pointer z-10
                                 border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/80`}
                                     onClick={() => {
+                                        if (didSwipeRef.current) return;
                                         if (editingId !== entry.id) {
                                             setExpandedId(prev => prev === entry.id ? null : entry.id);
                                         }
                                     }}
+                                    onTouchStart={(e) => onCardTouchStart(entry.id, e)}
+                                    onTouchMove={(e) => onCardTouchMove(entry.id, e)}
+                                    onTouchEnd={() => onCardTouchEnd(entry.id)}
                                 >
                                     {editingId === entry.id ? (
                                         <div className="flex flex-col gap-3" onClick={e => e.stopPropagation()}>
@@ -316,6 +407,13 @@ const DailyLog = () => {
                                                                 </button>
                                                             )}
                                                             <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
+                                                                className="p-2 transition-colors rounded-full shadow-sm border text-brutal-black/40 hover:text-red-500 bg-white hover:bg-red-50 border-black/5"
+                                                                title="Delete Entry"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     const safeFavorites = favorites || [];
@@ -377,6 +475,7 @@ const DailyLog = () => {
                                         </div>
                                     )}
                                 </div>
+                                </div>{/* /swipe container */}
                             </div>
                         );
                     })}

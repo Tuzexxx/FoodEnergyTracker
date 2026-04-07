@@ -26,10 +26,11 @@ Carbs (g): ${entry.carbs}
 Fat (g): ${entry.fat}
 
 RULES:
-1. Modify the macros and/or name based on the user's instructions (e.g. if they say "I had half", cut all macros roughly in half. If they say "add 1 egg", add the macros of 1 egg).
-2. DO NOT output conversational text outside the JSON.
-3. Include a short, brutalist confirmation message in 'aiMessage' explaining what you changed (e.g. "Halved the portion. Macros updated.").
-4. Update the name to reflect the new state if appropriate (e.g. "Salad (Half portion)"). Keep the '||' separator logic.
+1. CRITICAL: The 'data' object in your response must contain the FINAL ABSOLUTE TOTAL macros AFTER your modification — NOT a delta or addition. Example: if the current entry is 300 kcal and the user says "I only had half", return kcal: 150 (not 450).
+2. Modify the macros and/or name based on the user's instructions (e.g. if they say "I had half", cut all macros roughly in half. If they say "add 1 egg", add the egg's macros to the current totals and return the new combined total).
+3. DO NOT output conversational text outside the JSON.
+4. Include a short, brutalist confirmation message in 'aiMessage' explaining what you changed (e.g. "Halved the portion. Macros updated.").
+5. Update the name to reflect the new state if appropriate (e.g. "Salad (Half portion)"). Keep the '*Title*' format.
 
 SUCCESS FORMAT:
 {
