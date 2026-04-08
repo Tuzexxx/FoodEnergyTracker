@@ -546,12 +546,12 @@ const DailyLog = () => {
                         const proteinHit = day.protein >= targetProtein;
 
                         const kcalPill = kcalHit 
-                            ? 'bg-green-400/20 text-green-900 border-green-400/30' 
-                            : kcalOver ? 'bg-signal-red/20 text-red-900 border-signal-red/20' : 'bg-white/50 border-transparent text-brutal-black';
+                            ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 
+                            : kcalOver ? 'bg-signal-red/5 text-red-900/70 border-signal-red/10' : 'bg-white/30 border-transparent text-brutal-black/70';
                             
                         const proPill = proteinHit 
-                            ? 'bg-green-400/20 text-green-900 border-green-400/30' 
-                            : 'bg-white/50 border-transparent text-brutal-black';
+                            ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 
+                            : 'bg-white/30 border-transparent text-brutal-black/70';
                         
                         return (
                             <div key={day.dateStr} className="relative w-full">

@@ -30,7 +30,7 @@ function App() {
 
     const shouldCelebrate = useMemo(() => {
         if (!isCalibrated || targetKcal === 0 || targetProtein === 0) return false;
-        if (yesterdayKcal < targetKcal || yesterdayProtein < targetProtein) return false;
+        if (yesterdayKcal > targetKcal || yesterdayProtein < targetProtein) return false;
         const todayStr = new Date().toDateString();
         return celebrationDismissedDate !== todayStr;
     }, [isCalibrated, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate]);
