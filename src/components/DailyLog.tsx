@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
@@ -12,6 +12,7 @@ const DailyLog = () => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
+    const [expandedHistoryPanel, setExpandedHistoryPanel] = useState<string | null>(null);
 
     // Brainstorm chat states
     const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
@@ -558,24 +559,9 @@ const DailyLog = () => {
                                 <div className={`absolute -left-5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 z-10 ${kcalHit && proteinHit ? 'bg-green-400 border-green-500/20' : kcalOver ? 'bg-signal-red border-signal-red/20' : 'bg-off-white border-brutal-black/10'}`} />
                                 
                                 <div 
-                                    onClick={() => setViewedHistoryDate(day.dateStr)}
-                                    className="relative p-3 rounded-2xl bg-black/5 hover:bg-black/10 transition-colors border border-transparent hover:border-black/5 flex items-center justify-between group cursor-pointer overflow-hidden"
+                                    onClick={() => setExpandedHistoryPanel(prev => prev === day.dateStr ? null : day.dateStr)}
+                                    className={`relative p-3 rounded-2xl bg-black/5 hover:bg-black/10 transition-colors border border-transparent hover:border-black/5 flex items-center justify-between group cursor-pointer overflow-hidden ${expandedHistoryPanel === day.dateStr ? 'bg-black/10 border-black/10' : ''}`}
                                 >
-                                    {/* Kcal background fill */}
-                                    <div
-                                        className="absolute inset-y-0 left-0 bg-signal-red/10 pointer-events-none transition-all duration-500"
-                                        style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
-                                    />
-                                    {/* Kcal overflow fill */}
-                                    <div
-                                        className="absolute inset-y-0 left-0 bg-signal-red/20 pointer-events-none transition-all duration-500"
-                                        style={{ width: `${Math.max(0, Math.min((day.kcal / targetKcal) * 100 - 100, 100))}%` }}
-                                    />
-                                    {/* Protein progress bar underneath */}
-                                    <div className="absolute bottom-0 left-0 w-full h-[3px] bg-brutal-black/5 pointer-events-none">
-                                        <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
-                                    </div>
-
                                     <div className="flex items-baseline gap-2 flex-1 min-w-0 relative z-10">
                                         <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
                                         <span className="font-sans text-[10px] uppercase tracking-wide opacity-50 text-brutal-black shrink-0 truncate">{shortDate}</span>
@@ -590,9 +576,74 @@ const DailyLog = () => {
                                             <span className="font-data text-sm font-bold">{day.protein}</span>
                                             <span className="text-[8px] uppercase font-semibold opacity-50 font-sans">Pro</span>
                                         </div>
-                                        <ChevronRight size={14} className="opacity-20 group-hover:opacity-60 transition-opacity transform group-hover:translate-x-1" />
+                                        {expandedHistoryPanel === day.dateStr ? (
+                                            <ChevronUp size={14} className="opacity-40" />
+                                        ) : (
+                                            <ChevronDown size={14} className="opacity-20 group-hover:opacity-60 transition-opacity transform group-hover:translate-y-0.5" />
+                                        )}
                                     </div>
                                 </div>
+                                
+                                {/* Expanded entries layout */}
+                                {expandedHistoryPanel === day.dateStr && day.entries && day.entries.length > 0 && (
+                                    <div className="mt-2 pl-4 border-l-2 border-black/5 flex flex-col gap-1.5 py-1">
+                                        {day.entries.map((yEntry) => {
+                                            let yTitle = yEntry.name;
+                                            const yStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
+                                            if (yStarMatch) {
+                                                yTitle = yStarMatch[1];
+                                            } else if (yEntry.name.includes('||')) {
+                                                yTitle = yEntry.name.split('||')[0].trim();
+                                            } else {
+                                                const words = yEntry.name.trim().split(/\s+/);
+                                                yTitle = words.slice(0, 2).join(' ');
+                                            }
+                                            
+                                            // Handle favorite check
+                                            let yNameForFav = yEntry.name;
+                                            if (yStarMatch || yEntry.name.includes('||')) {
+                                                yNameForFav = yEntry.name;
+                                            }
+                                            const safeFavorites = favorites || [];
+                                            const isFav = safeFavorites.some((f) => f.name === yNameForFav);
+
+                                            return (
+                                                <div key={yEntry.id} className="flex items-center justify-between w-full px-3 py-2 bg-white/40 rounded-xl text-left border border-white gap-2 group/entry hover:bg-white/60 transition-colors">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className="font-sans text-[9px] font-medium opacity-40 bg-black/5 px-1.5 py-0.5 rounded shrink-0 tabular-nums">
+                                                            {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                        <span className="font-sans font-semibold text-[11px] leading-tight text-brutal-black truncate capitalize">
+                                                            {yTitle}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5">
+                                                            <span className="font-data text-[11px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                            <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                            <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
+                                                            <span className="font-data text-[11px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
+                                                            <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (isFav) removeFavorite(yNameForFav);
+                                                                else addFavorite({ name: yNameForFav, kcal: yEntry.kcal, protein: yEntry.protein, carbs: yEntry.carbs, fat: yEntry.fat });
+                                                                playSound(isFav ? 'click' : 'targetHit');
+                                                            }}
+                                                            className={`p-1 rounded-full transition-colors ${isFav ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'text-brutal-black/20 hover:text-amber-500 hover:bg-black/5'}`}
+                                                            title={isFav ? "Remove from Favorites" : "Save as Favorite"}
+                                                        >
+                                                            <Star size={12} fill={isFav ? 'currentColor' : 'none'} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
