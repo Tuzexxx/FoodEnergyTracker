@@ -68,9 +68,9 @@ CLARIFICATION FORMAT:
         }
 
         const MODELS = [
-            'gemini-3-flash-preview',        // Primary: Gemini 3 Flash (full)
-            'gemini-3.1-flash-lite-preview',  // Fallback 1: 3.1 Flash Lite
-            'gemini-2.5-flash-lite',          // Fallback 2: 2.5 Flash Lite (stable)
+            'gemini-3.1-flash-lite-preview',  // Primary: user-preferred
+            'gemini-3-flash-preview',          // Fallback 1
+            'gemini-2.5-flash-lite',           // Fallback 2: stable
         ];
 
         const requestBody = JSON.stringify({
