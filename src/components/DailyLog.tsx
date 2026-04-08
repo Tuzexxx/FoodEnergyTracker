@@ -22,6 +22,8 @@ const DailyLog = () => {
     // Swipe gesture refs
     const touchRef = useRef<{ id: string; startX: number; startY: number; locked: boolean | null } | null>(null);
     const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const actionLeftRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const actionRightRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const swipeOffsetRef = useRef(0);
     const didSwipeRef = useRef(false);
 
@@ -111,17 +113,32 @@ const DailyLog = () => {
         const touch = e.touches[0];
         const dx = touch.clientX - t.startX;
         const dy = touch.clientY - t.startY;
-        // Lock direction on first significant movement
         if (t.locked === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
             t.locked = Math.abs(dx) > Math.abs(dy);
             if (!t.locked) { touchRef.current = null; return; }
         }
         if (!t.locked) return;
-        e.preventDefault(); // prevent scroll while swiping horizontally
+        e.preventDefault();
         const dampened = dx * 0.5;
         swipeOffsetRef.current = dampened;
         const el = cardRefs.current[id];
         if (el) el.style.transform = `translateX(${dampened}px)`;
+
+        // Progressive icon reveal — scale & opacity grow toward threshold
+        const THRESHOLD = 70;
+        const progress = Math.min(Math.abs(dampened) / THRESHOLD, 1);
+        const scale = 0.5 + progress * 0.7; // 0.5 → 1.2
+        const opacity = 0.3 + progress * 0.7; // 0.3 → 1.0
+
+        const leftEl = actionLeftRefs.current[id];
+        const rightEl = actionRightRefs.current[id];
+        if (dampened > 0 && leftEl) {
+            leftEl.style.transform = `scale(${scale})`;
+            leftEl.style.opacity = `${opacity}`;
+        } else if (dampened < 0 && rightEl) {
+            rightEl.style.transform = `scale(${scale})`;
+            rightEl.style.opacity = `${opacity}`;
+        }
     };
 
     const onCardTouchEnd = (id: string) => {
@@ -153,12 +170,17 @@ const DailyLog = () => {
             }
         }
 
-        // Snap back
+        // Snap back card
         const el = cardRefs.current[id];
         if (el) {
             el.style.transition = 'transform 0.3s cubic-bezier(.2,.8,.3,1)';
             el.style.transform = 'translateX(0)';
         }
+        // Reset action icons
+        const leftEl = actionLeftRefs.current[id];
+        const rightEl = actionRightRefs.current[id];
+        if (leftEl) { leftEl.style.transition = 'all 0.3s ease'; leftEl.style.transform = 'scale(0.5)'; leftEl.style.opacity = '0'; }
+        if (rightEl) { rightEl.style.transition = 'all 0.3s ease'; rightEl.style.transform = 'scale(0.5)'; rightEl.style.opacity = '0'; }
         touchRef.current = null;
         swipeOffsetRef.current = 0;
         if (acted) {
@@ -263,26 +285,23 @@ const DailyLog = () => {
 
                                 {/* Swipe container */}
                                 <div className="relative overflow-hidden rounded-2xl">
-                                    {/* Action areas — hidden behind the card, revealed on swipe */}
+                                    {/* Action areas — fully hidden at rest, revealed on swipe */}
                                     <div className="absolute inset-0 pointer-events-none z-0 flex">
-                                        <div className="flex-1 bg-emerald-500 flex items-center pl-5 gap-2">
-                                            <Star size={16} className="text-white fill-white" />
-                                            <span className="text-white text-[10px] font-bold uppercase tracking-wider font-sans">Fav</span>
+                                        <div className="flex-1 bg-emerald-500 flex items-center pl-5">
+                                            <div ref={el => { actionLeftRefs.current[entry.id] = el; }} className="flex items-center gap-2" style={{ transform: 'scale(0.5)', opacity: 0, transition: 'none' }}>
+                                                <Star size={20} className="text-white fill-white" />
+                                            </div>
                                         </div>
-                                        <div className="flex-1 bg-red-500 flex items-center justify-end pr-5 gap-2">
-                                            <span className="text-white text-[10px] font-bold uppercase tracking-wider font-sans">Delete</span>
-                                            <Trash2 size={16} className="text-white" />
+                                        <div className="flex-1 bg-red-500 flex items-center justify-end pr-5">
+                                            <div ref={el => { actionRightRefs.current[entry.id] = el; }} className="flex items-center gap-2" style={{ transform: 'scale(0.5)', opacity: 0, transition: 'none' }}>
+                                                <Trash2 size={20} className="text-white" />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Edge pill indicators — always visible as subtle affordance */}
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-emerald-400/50 z-20" />
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-red-400/50 z-20" />
-
                                 <div
                                     ref={el => { cardRefs.current[entry.id] = el; }}
-                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white backdrop-blur-md shadow-sm border group relative cursor-pointer z-10
-                                border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/95`}
+                                    className={`log-card p-4 rounded-2xl bg-white shadow-sm border border-white/80 group relative cursor-pointer z-10`}
                                     onClick={() => {
                                         if (didSwipeRef.current) return;
                                         if (editingId !== entry.id) {
