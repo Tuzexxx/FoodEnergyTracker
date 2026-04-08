@@ -263,21 +263,26 @@ const DailyLog = () => {
 
                                 {/* Swipe container */}
                                 <div className="relative overflow-hidden rounded-2xl">
-                                    {/* Subtle action hints at edges — revealed on swipe */}
+                                    {/* Action areas — hidden behind the card, revealed on swipe */}
                                     <div className="absolute inset-0 pointer-events-none z-0 flex">
-                                        <div className="w-20 h-full bg-gradient-to-r from-emerald-500/15 to-transparent flex items-center pl-4">
-                                            <Star size={14} className="text-emerald-500/40" />
+                                        <div className="flex-1 bg-emerald-500 flex items-center pl-5 gap-2">
+                                            <Star size={16} className="text-white fill-white" />
+                                            <span className="text-white text-[10px] font-bold uppercase tracking-wider font-sans">Fav</span>
                                         </div>
-                                        <div className="flex-1" />
-                                        <div className="w-20 h-full bg-gradient-to-l from-red-500/15 to-transparent flex items-center justify-end pr-4">
-                                            <Trash2 size={14} className="text-red-500/40" />
+                                        <div className="flex-1 bg-red-500 flex items-center justify-end pr-5 gap-2">
+                                            <span className="text-white text-[10px] font-bold uppercase tracking-wider font-sans">Delete</span>
+                                            <Trash2 size={16} className="text-white" />
                                         </div>
                                     </div>
 
+                                    {/* Edge pill indicators — always visible as subtle affordance */}
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-emerald-400/50 z-20" />
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-red-400/50 z-20" />
+
                                 <div
                                     ref={el => { cardRefs.current[entry.id] = el; }}
-                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white/60 backdrop-blur-md shadow-sm border group relative cursor-pointer z-10
-                                border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/80`}
+                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white backdrop-blur-md shadow-sm border group relative cursor-pointer z-10
+                                border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/95`}
                                     onClick={() => {
                                         if (didSwipeRef.current) return;
                                         if (editingId !== entry.id) {
