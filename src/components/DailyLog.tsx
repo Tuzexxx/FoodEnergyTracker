@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, targetKcal, targetProtein, processingLogs } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
-    const [expandedHistoryDate, setExpandedHistoryDate] = useState<string | null>(null);
 
     // Brainstorm chat states
     const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
@@ -221,27 +220,46 @@ const DailyLog = () => {
         }
     };
 
+    const activeHistoryDay = viewedHistoryDate ? historicalDays?.find(d => d.dateStr === viewedHistoryDate) : null;
+    const entriesToDisplay = activeHistoryDay ? activeHistoryDay.entries : dailyLog;
+    const headerTitle = activeHistoryDay ? `History — ${viewedHistoryDate}` : 'Timeline';
+
     return (
         <div ref={containerRef} className="flex flex-col gap-4 mt-8 pb-32">
             {/* Sticky Timeline Header */}
-            <div className="sticky top-16 z-30 -mx-4 px-4 py-3 bg-off-white/80 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm mb-4">
-                <h3 className="font-sans text-xs uppercase tracking-[0.2em] opacity-50 flex items-center justify-between">
-                    <span>Timeline</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
+            <div className={`sticky top-16 z-30 -mx-4 px-4 py-3 bg-off-white/80 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm mb-4 transition-colors ${activeHistoryDay ? 'bg-amber-50/90 border-amber-200/50' : ''}`}>
+                <h3 className={`font-sans text-xs uppercase tracking-[0.2em] flex items-center justify-between ${activeHistoryDay ? 'opacity-80 text-amber-900 font-bold' : 'opacity-50'}`}>
+                    <div className="flex items-center gap-2">
+                        {activeHistoryDay && (
+                            <button onClick={() => setViewedHistoryDate(null)} className="p-1 hover:bg-black/5 rounded-full -ml-2 -my-1 transition-colors relative z-40">
+                                <ChevronLeft size={16} />
+                            </button>
+                        )}
+                        <span>{headerTitle}</span>
+                    </div>
+                    {activeHistoryDay ? (
+                        <div className="flex items-center gap-2 text-[10px] tabular-nums tracking-wider opacity-60">
+                            <span>{activeHistoryDay.kcal} kcal</span>
+                            <span>•</span>
+                            <span>{activeHistoryDay.protein}g</span>
+                        </div>
+                    ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
+                    )}
                 </h3>
             </div>
 
-            {dailyLog.length === 0 ? (
+            {entriesToDisplay.length === 0 ? (
                 <div className="p-8 border-dashed border-brutal-black/20 rounded-2xl bg-black/5 text-center">
-                    <p className="font-sans text-sm tracking-widest opacity-60">No entries yet.</p>
+                    <p className="font-sans text-sm tracking-widest opacity-60">{activeHistoryDay ? "No entries for this day." : "No entries yet."}</p>
                 </div>
             ) : (
                 <div className="relative flex flex-col gap-4 z-10 pl-4">
                     {/* Vertical Timeline Guide */}
                     <div className="absolute left-0 top-6 bottom-6 w-[1px] bg-brutal-black/10 border-l border-dashed border-brutal-black/20 -z-10" />
 
-                    {/* Pending API Requests */}
-                    {processingLogs.map((log) => (
+                    {/* Pending API Requests - Only show on Today's timeline */}
+                    {!activeHistoryDay && processingLogs.map((log) => (
                         <div key={log.id} className="relative w-full opacity-60 pointer-events-none">
                             <div className="absolute -left-5 top-8 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/20 z-10 animate-pulse" />
                             <div className="log-card p-4 rounded-2xl bg-white/40 border border-white border-dashed flex items-center justify-between">
@@ -254,7 +272,7 @@ const DailyLog = () => {
                         </div>
                     ))}
 
-                    {dailyLog.map((entry) => {
+                    {entriesToDisplay.map((entry) => {
                         let displayTitle = entry.name;
                         let displayDetails = '';
 
@@ -500,144 +518,6 @@ const DailyLog = () => {
                 </div>
             )}
 
-            {/* Historical Summaries */}
-            {historicalDays && historicalDays.length > 0 && (
-                <div className="mt-4 flex flex-col gap-1.5">
-                    {/* Header row */}
-                    <div className="px-3 py-1.5 flex items-center gap-2 opacity-50">
-                        <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black shrink-0 w-8">Day</span>
-                        <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black shrink-0 flex-1">Date</span>
-                        <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black text-right w-12">Kcal /{targetKcal}</span>
-                            <span className="w-5" />
-                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black text-right w-12">Pro /{targetProtein}g</span>
-                        </div>
-                        <span className="w-8 shrink-0" />
-                    </div>
-                    {historicalDays.map((day) => {
-                        const isExpanded = expandedHistoryDate === day.dateStr;
-                        const dayAbbr = (() => {
-                            if (day.dateStr === 'Yesterday') return 'Yest';
-                            if (day.entries && day.entries.length > 0) {
-                                const d = new Date(Number(day.entries[0].timestamp));
-                                return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
-                            }
-                            return '';
-                        })();
-                        const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
-                        return (
-                            <div key={day.dateStr} className="bg-brutal-black/5 rounded-2xl border border-brutal-black/5 transition-all w-full relative">
-                                <div className="px-3 py-2 flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-                                        <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
-                                        <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
-                                        <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
-                                            <span className="w-5 shrink-0" />
-                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
-                                        </div>
-                                    </div>
-                                    {day.entries && day.entries.length > 0 && (
-                                        <button
-                                            onClick={() => setExpandedHistoryDate(isExpanded ? null : day.dateStr)}
-                                            className="p-1.5 rounded-full hover:bg-black/5 transition-colors text-brutal-black/50 shrink-0 ml-2"
-                                            title={isExpanded ? "Hide Details" : "View Details"}
-                                        >
-                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                        </button>
-                                    )}
-
-                                    {day.entries && day.entries.length > 0 && isExpanded && (
-                                        <div className="absolute top-full left-0 w-full mt-1 flex flex-col items-center bg-white/40 rounded-xl p-2 z-10 border border-white/50 shadow-sm backdrop-blur-md">
-                                            <div className="w-full mt-3 flex flex-col items-center">
-                                                <div className="w-full mt-1 flex flex-col gap-1.5 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
-                                                    {day.entries.map((yEntry) => {
-                                                        let yTitle = yEntry.name;
-                                                        const yStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
-                                                        if (yStarMatch) {
-                                                            yTitle = yStarMatch[1];
-                                                        } else if (yEntry.name.includes('||')) {
-                                                            yTitle = yEntry.name.split('||')[0].trim();
-                                                        } else {
-                                                            const words = yEntry.name.trim().split(/\s+/);
-                                                            yTitle = words.slice(0, 2).join(' ');
-                                                        }
-                                                        let yNameForFav = yEntry.name;
-                                                        const yFavStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
-                                                        if (yFavStarMatch) {
-                                                            yNameForFav = yEntry.name; // Keep full name for fav consistency
-                                                        } else if (yEntry.name.includes('||')) {
-                                                            yNameForFav = yEntry.name; // Keep full name
-                                                        }
-                                                        const isFav = favorites.some((f) => f.name === yNameForFav);
-
-                                                        const handleFavToggle = (e: React.MouseEvent) => {
-                                                            e.stopPropagation();
-                                                            if (isFav) {
-                                                                removeFavorite(yNameForFav);
-                                                            } else {
-                                                                addFavorite({
-                                                                    name: yNameForFav,
-                                                                    kcal: yEntry.kcal,
-                                                                    protein: yEntry.protein,
-                                                                    carbs: yEntry.carbs,
-                                                                    fat: yEntry.fat
-                                                                });
-                                                            }
-                                                        };
-
-                                                        return (
-                                                            <div key={yEntry.id} className="flex items-center w-full px-2 py-1.5 bg-white/40 rounded-lg text-left border border-white gap-2">
-                                                                <span className="font-sans text-[8px] font-medium opacity-40 bg-black/5 px-1 rounded shrink-0">
-                                                                    {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
-                                                                <button
-                                                                    onClick={handleFavToggle}
-                                                                    className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
-                                                                    title={isFav ? "Remove from Favorites" : "Save as Favorite"}
-                                                                >
-                                                                    <Star size={10} className={isFav ? "fill-amber-400" : ""} />
-                                                                </button>
-                                                                <span className="font-sans font-semibold text-[10px] leading-tight text-brutal-black flex-1 truncate capitalize">
-                                                                    {yTitle}
-                                                                </span>
-                                                                <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5 ml-auto">
-                                                                    <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                                    <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                                    <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
-                                                                    <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
-                                                                    <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                {/* Full-height kcal background fill — same style as main widget */}
-                                <div
-                                    className="absolute inset-y-0 left-0 bg-signal-red/15 pointer-events-none rounded-2xl transition-all duration-500"
-                                    style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
-                                />
-                                {/* Kcal overflow — restarts from left, more intense */}
-                                <div
-                                    className="absolute inset-y-0 left-0 bg-signal-red/35 pointer-events-none rounded-2xl transition-all duration-500"
-                                    style={{ width: `${Math.max(0, Math.min((day.kcal / targetKcal) * 100 - 100, 100))}%` }}
-                                />
-                                {/* Protein progress bar — thin at bottom */}
-                                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-brutal-black/5 rounded-b-2xl overflow-hidden pointer-events-none">
-                                    <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
-                                    {/* Protein overflow bar */}
-                                    <div className="absolute inset-0 bg-brutal-black/40 transition-all duration-500" style={{ width: `${Math.max(0, Math.min((day.protein / targetProtein) * 100 - 100, 100))}%` }} />
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )
-            }
         </div>
     );
 };

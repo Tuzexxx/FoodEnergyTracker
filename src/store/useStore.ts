@@ -75,12 +75,16 @@ interface AppState {
     dismissCelebration: () => void;
     lastActiveDate: string | null;
     checkDayRollover: () => void;
+    viewedHistoryDate: string | null;
+    setViewedHistoryDate: (date: string | null) => void;
 }
 
 export const useStore = create<AppState>()(
     persist(
         (set, get) => ({
             session: null,
+            viewedHistoryDate: null,
+            setViewedHistoryDate: (date) => set({ viewedHistoryDate: date }),
             setSession: (session) => {
                 set({ session, isGuest: false });
                 if (session) {
@@ -317,53 +321,120 @@ export const useStore = create<AppState>()(
             },
 
             updateEntry: async (id, updatedData) => {
+                let targetDayKey: string | null = null;
+                let oldEntry: FoodEntry | null = null;
+
                 set((state) => {
-                    const oldEntry = state.dailyLog.find(e => e.id === id);
-                    if (!oldEntry) return state;
+                    // First check today
+                    oldEntry = state.dailyLog.find(e => e.id === id) || null;
+                    if (oldEntry) {
+                        targetDayKey = 'today';
+                        const kcalDiff = (updatedData.kcal ?? oldEntry.kcal) - oldEntry.kcal;
+                        const proteinDiff = (updatedData.protein ?? oldEntry.protein) - oldEntry.protein;
 
-                    const kcalDiff = (updatedData.kcal ?? oldEntry.kcal) - oldEntry.kcal;
-                    const proteinDiff = (updatedData.protein ?? oldEntry.protein) - oldEntry.protein;
+                        return {
+                            consumedKcal: Math.max(0, Math.round(state.consumedKcal + kcalDiff)),
+                            consumedProtein: Math.max(0, Math.round(state.consumedProtein + proteinDiff)),
+                            dailyLog: state.dailyLog.map(entry =>
+                                entry.id === id ? { ...entry, ...updatedData } : entry
+                            )
+                        };
+                    }
 
-                    return {
-                        consumedKcal: Math.max(0, Math.round(state.consumedKcal + kcalDiff)),
-                        consumedProtein: Math.max(0, Math.round(state.consumedProtein + proteinDiff)),
-                        dailyLog: state.dailyLog.map(entry =>
-                            entry.id === id ? { ...entry, ...updatedData } : entry
-                        )
-                    };
+                    // If not today, check historicalDays
+                    for (const historyDay of state.historicalDays || []) {
+                        const histEntry = historyDay.entries?.find(e => e.id === id);
+                        if (histEntry) {
+                            oldEntry = histEntry;
+                            targetDayKey = historyDay.dateStr;
+                            break;
+                        }
+                    }
+
+                    if (targetDayKey && targetDayKey !== 'today' && oldEntry) {
+                        const kcalDiff = (updatedData.kcal ?? (oldEntry as FoodEntry).kcal) - (oldEntry as FoodEntry).kcal;
+                        const proteinDiff = (updatedData.protein ?? (oldEntry as FoodEntry).protein) - (oldEntry as FoodEntry).protein;
+                        
+                        return {
+                            historicalDays: state.historicalDays?.map(day => {
+                                if (day.dateStr === targetDayKey) {
+                                    return {
+                                        ...day,
+                                        kcal: Math.max(0, Math.round(day.kcal + kcalDiff)),
+                                        protein: Math.max(0, Math.round(day.protein + proteinDiff)),
+                                        entries: day.entries?.map(e => e.id === id ? { ...e, ...updatedData } : e)
+                                    };
+                                }
+                                return day;
+                            })
+                        };
+                    }
+
+                    return state;
                 });
 
-                const { session, dailyLog } = get();
-                const updated = dailyLog.find(e => e.id === id);
-                if (session?.user && updated) {
+                const { session } = get();
+                if (session?.user && oldEntry) {
+                    const finalEntry = { ...(oldEntry as FoodEntry), ...updatedData };
                     const { error } = await supabase.from('food_entries').update({
-                        name: updated.name,
-                        kcal: updated.kcal,
-                        protein: updated.protein,
-                        carbs: updated.carbs,
-                        fat: updated.fat,
-                        timestamp: updated.timestamp,
-                        requires_review: updated.requiresReview || false
+                        name: finalEntry.name,
+                        kcal: finalEntry.kcal,
+                        protein: finalEntry.protein,
+                        carbs: finalEntry.carbs,
+                        fat: finalEntry.fat,
+                        timestamp: finalEntry.timestamp,
+                        requires_review: finalEntry.requiresReview || false
                     }).eq('id', id);
                     if (error) console.error('Supabase Sync Error:', error.message);
                 }
             },
 
             deleteEntry: async (id) => {
+                let entryToDelete: FoodEntry | null = null;
+                let targetDayKey: string | null = null;
+                
                 set((state) => {
-                    const entryToDelete = state.dailyLog.find(e => e.id === id);
-                    if (!entryToDelete) return state;
+                    entryToDelete = state.dailyLog.find(e => e.id === id) || null;
+                    if (entryToDelete) {
+                        targetDayKey = 'today';
+                        return {
+                            consumedKcal: Math.max(0, Math.round(state.consumedKcal - entryToDelete.kcal)),
+                            consumedProtein: Math.max(0, Math.round(state.consumedProtein - entryToDelete.protein)),
+                            dailyLog: state.dailyLog.filter(e => e.id !== id)
+                        };
+                    }
 
-                    return {
-                        consumedKcal: Math.max(0, Math.round(state.consumedKcal - entryToDelete.kcal)),
-                        consumedProtein: Math.max(0, Math.round(state.consumedProtein - entryToDelete.protein)),
-                        dailyLog: state.dailyLog.filter(e => e.id !== id)
-                    };
+                    for (const historyDay of state.historicalDays || []) {
+                        const histEntry = historyDay.entries?.find(e => e.id === id);
+                        if (histEntry) {
+                            entryToDelete = histEntry;
+                            targetDayKey = historyDay.dateStr;
+                            break;
+                        }
+                    }
+
+                    if (targetDayKey && targetDayKey !== 'today' && entryToDelete) {
+                        return {
+                            historicalDays: state.historicalDays?.map(day => {
+                                if (day.dateStr === targetDayKey) {
+                                    return {
+                                        ...day,
+                                        kcal: Math.max(0, Math.round(day.kcal - entryToDelete!.kcal)),
+                                        protein: Math.max(0, Math.round(day.protein - entryToDelete!.protein)),
+                                        entries: day.entries?.filter(e => e.id !== id)
+                                    };
+                                }
+                                return day;
+                            })
+                        };
+                    }
+                    
+                    return state;
                 });
 
                 // Delete from cloud
                 const { session } = get();
-                if (session?.user) {
+                if (session?.user && entryToDelete) {
                     const { error } = await supabase.from('food_entries').delete().eq('id', id);
                     if (error) console.error('Supabase Delete Error:', error.message);
                 }
