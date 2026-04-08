@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
@@ -512,6 +512,59 @@ const DailyLog = () => {
                                     )}
                                 </div>
                                 </div>{/* /swipe container */}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Recent History Summaries (Only show when NOT viewing a specific history day) */}
+            {!activeHistoryDay && historicalDays && historicalDays.length > 0 && (
+                <div className="mt-8 flex flex-col gap-2 relative z-10 pl-4 border-t border-dashed border-brutal-black/20 pt-8">
+                    <div className="absolute left-0 top-6 bottom-0 w-[1px] bg-brutal-black/10 border-l border-dashed border-brutal-black/10 -z-10" />
+
+                    <div className="flex items-center gap-2 mb-2 bg-off-white w-fit px-2 py-1 absolute -top-[14px] left-1">
+                        <h4 className="font-sans text-[10px] uppercase tracking-[0.2em] font-bold opacity-30">Previous Days</h4>
+                    </div>
+
+                    {historicalDays.slice(0, 7).map((day) => {
+                        const dayAbbr = (() => {
+                            if (day.dateStr === 'Yesterday') return 'Yest';
+                            if (day.entries && day.entries.length > 0) {
+                                const d = new Date(Number(day.entries[0].timestamp));
+                                return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+                            }
+                            return '';
+                        })();
+                        
+                        const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
+                        
+                        return (
+                            <div key={day.dateStr} className="relative w-full">
+                                {/* Timeline dot */}
+                                <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/10 z-10" />
+                                
+                                <div 
+                                    onClick={() => setViewedHistoryDate(day.dateStr)}
+                                    className="p-3 rounded-2xl bg-black/5 hover:bg-black/10 transition-colors border border-transparent hover:border-black/5 flex items-center justify-between group cursor-pointer"
+                                >
+                                    <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                                        <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
+                                        <span className="font-sans text-[10px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 truncate">{shortDate}</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4 shrink-0">
+                                        <div className="flex items-baseline gap-1 bg-white/50 px-2 py-1 rounded">
+                                            <span className="font-data text-sm font-bold text-brutal-black">{day.kcal}</span>
+                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1 bg-white/50 px-2 py-1 rounded">
+                                            <span className="font-data text-sm font-bold text-brutal-black">{day.protein}</span>
+                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                        </div>
+                                        <ChevronRight size={14} className="opacity-20 group-hover:opacity-60 transition-opacity transform group-hover:translate-x-1" />
+                                    </div>
+                                </div>
                             </div>
                         );
                     })}
