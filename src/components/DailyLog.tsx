@@ -6,7 +6,7 @@ import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -539,28 +539,56 @@ const DailyLog = () => {
                         
                         const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
                         
+                        // Progress & Color Logic
+                        const kcalHit = day.kcal <= targetKcal && day.kcal > 0;
+                        const kcalOver = day.kcal > targetKcal;
+                        const proteinHit = day.protein >= targetProtein;
+
+                        const kcalPill = kcalHit 
+                            ? 'bg-green-400/20 text-green-900 border-green-400/30' 
+                            : kcalOver ? 'bg-signal-red/20 text-red-900 border-signal-red/20' : 'bg-white/50 border-transparent text-brutal-black';
+                            
+                        const proPill = proteinHit 
+                            ? 'bg-green-400/20 text-green-900 border-green-400/30' 
+                            : 'bg-white/50 border-transparent text-brutal-black';
+                        
                         return (
                             <div key={day.dateStr} className="relative w-full">
                                 {/* Timeline dot */}
-                                <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/10 z-10" />
+                                <div className={`absolute -left-5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 z-10 ${kcalHit && proteinHit ? 'bg-green-400 border-green-500/20' : kcalOver ? 'bg-signal-red border-signal-red/20' : 'bg-off-white border-brutal-black/10'}`} />
                                 
                                 <div 
                                     onClick={() => setViewedHistoryDate(day.dateStr)}
-                                    className="p-3 rounded-2xl bg-black/5 hover:bg-black/10 transition-colors border border-transparent hover:border-black/5 flex items-center justify-between group cursor-pointer"
+                                    className="relative p-3 rounded-2xl bg-black/5 hover:bg-black/10 transition-colors border border-transparent hover:border-black/5 flex items-center justify-between group cursor-pointer overflow-hidden"
                                 >
-                                    <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                                    {/* Kcal background fill */}
+                                    <div
+                                        className="absolute inset-y-0 left-0 bg-signal-red/10 pointer-events-none transition-all duration-500"
+                                        style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
+                                    />
+                                    {/* Kcal overflow fill */}
+                                    <div
+                                        className="absolute inset-y-0 left-0 bg-signal-red/20 pointer-events-none transition-all duration-500"
+                                        style={{ width: `${Math.max(0, Math.min((day.kcal / targetKcal) * 100 - 100, 100))}%` }}
+                                    />
+                                    {/* Protein progress bar underneath */}
+                                    <div className="absolute bottom-0 left-0 w-full h-[3px] bg-brutal-black/5 pointer-events-none">
+                                        <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
+                                    </div>
+
+                                    <div className="flex items-baseline gap-2 flex-1 min-w-0 relative z-10">
                                         <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
-                                        <span className="font-sans text-[10px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 truncate">{shortDate}</span>
+                                        <span className="font-sans text-[10px] uppercase tracking-wide opacity-50 text-brutal-black shrink-0 truncate">{shortDate}</span>
                                     </div>
                                     
-                                    <div className="flex items-center gap-4 shrink-0">
-                                        <div className="flex items-baseline gap-1 bg-white/50 px-2 py-1 rounded">
-                                            <span className="font-data text-sm font-bold text-brutal-black">{day.kcal}</span>
-                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                    <div className="flex items-center gap-3 shrink-0 relative z-10">
+                                        <div className={`flex items-baseline gap-1 px-2 py-1 rounded border ${kcalPill}`}>
+                                            <span className="font-data text-sm font-bold">{day.kcal}</span>
+                                            <span className="text-[8px] uppercase font-semibold opacity-50 font-sans">Kcal</span>
                                         </div>
-                                        <div className="flex items-baseline gap-1 bg-white/50 px-2 py-1 rounded">
-                                            <span className="font-data text-sm font-bold text-brutal-black">{day.protein}</span>
-                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                        <div className={`flex items-baseline gap-1 px-2 py-1 rounded border ${proPill}`}>
+                                            <span className="font-data text-sm font-bold">{day.protein}</span>
+                                            <span className="text-[8px] uppercase font-semibold opacity-50 font-sans">Pro</span>
                                         </div>
                                         <ChevronRight size={14} className="opacity-20 group-hover:opacity-60 transition-opacity transform group-hover:translate-x-1" />
                                     </div>
