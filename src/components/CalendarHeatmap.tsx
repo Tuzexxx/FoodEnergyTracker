@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CalendarHeatmap = () => {
-    const { historicalDays, targetKcal, targetProtein, consumedKcal, consumedProtein, setViewedHistoryDate } = useStore();
+    const { historicalDays, historicalExerciseDays, targetKcal, targetProtein, consumedKcal, consumedProtein, setViewedHistoryDate, exerciseDay } = useStore();
 
     const [viewMonth, setViewMonth] = useState(new Date());
 
@@ -53,14 +53,24 @@ const CalendarHeatmap = () => {
         const data = dayMap.get(dayNum);
         if (!data || (data.kcal === 0 && data.protein === 0)) return 'bg-brutal-black/5';
 
-        const kcalHit = data.kcal <= targetKcal && data.kcal > 0;
+        const dObj = new Date(year, month, dayNum);
+        const realDateStr = dObj.toDateString();
+
+        let effectiveTargetKcal = targetKcal;
+        if (isCurrentMonth && dayNum === now.getDate()) {
+            effectiveTargetKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
+        } else if (historicalExerciseDays?.includes(realDateStr)) {
+            effectiveTargetKcal = targetKcal + EXERCISE_BONUS_KCAL;
+        }
+
+        const kcalHit = data.kcal <= effectiveTargetKcal && data.kcal > 0;
         const proteinHit = data.protein >= targetProtein;
 
         if (kcalHit && proteinHit) return 'bg-green-400/60';
         if (kcalHit || proteinHit) return 'bg-brutal-black/15';
 
         // Neither hit — red, pulse if kcal > 50% target
-        if (data.kcal > targetKcal * 0.5) return 'bg-signal-red/40 animate-pulse';
+        if (data.kcal > effectiveTargetKcal * 0.5) return 'bg-signal-red/40 animate-pulse';
         return 'bg-signal-red/30';
     };
 

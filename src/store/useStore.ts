@@ -19,6 +19,7 @@ export interface FoodEntry {
 
 export interface HistoricalDay {
     dateStr: string;
+    realDateStr: string;
     kcal: number;
     protein: number;
     entries: FoodEntry[];
@@ -40,6 +41,7 @@ export interface ProcessingLog {
 }
 
 interface AppState {
+    historicalExerciseDays: string[];
     session: Session | null;
     setSession: (session: Session | null) => void;
     isGuest: boolean;
@@ -158,7 +160,7 @@ export const useStore = create<AppState>()(
                         }
 
                         if (!daysMap.has(dateStr)) {
-                            daysMap.set(dateStr, { dateStr, kcal: 0, protein: 0, entries: [] });
+                            daysMap.set(dateStr, { dateStr, realDateStr: date.toDateString(), kcal: 0, protein: 0, entries: [] });
                         }
 
                         const day = daysMap.get(dateStr)!;
@@ -232,8 +234,21 @@ export const useStore = create<AppState>()(
             favorites: [],
             processingLogs: [],
             exerciseDay: false,
+            historicalExerciseDays: [],
 
-            toggleExerciseDay: () => set((state) => ({ exerciseDay: !state.exerciseDay })),
+            toggleExerciseDay: () => set((state) => {
+                const todayStr = new Date().toDateString();
+                const newExerciseDay = !state.exerciseDay;
+                
+                let updatedHistory = [...(state.historicalExerciseDays || [])];
+                if (newExerciseDay) {
+                    if (!updatedHistory.includes(todayStr)) updatedHistory.push(todayStr);
+                } else {
+                    updatedHistory = updatedHistory.filter(d => d !== todayStr);
+                }
+                
+                return { exerciseDay: newExerciseDay, historicalExerciseDays: updatedHistory };
+            }),
 
             celebrationDismissedDate: null,
             dismissCelebration: () => set({ celebrationDismissedDate: new Date().toDateString() }),
@@ -523,7 +538,7 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'macro-tracker-storage',
-            version: 3, // Added lastActiveDate for day-rollover
+            version: 4, // Added historicalExerciseDays
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {
                     persistedState.favorites = [];
@@ -533,6 +548,9 @@ export const useStore = create<AppState>()(
                 }
                 if (version < 3 && persistedState) {
                     persistedState.lastActiveDate = null;
+                }
+                if (version < 4 && persistedState) {
+                    persistedState.historicalExerciseDays = [];
                 }
                 return (persistedState as AppState) || {} as AppState;
             }
