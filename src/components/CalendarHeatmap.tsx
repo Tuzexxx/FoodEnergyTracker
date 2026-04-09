@@ -1,23 +1,41 @@
+import { useState } from 'react';
 import { useStore } from '../store/useStore';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CalendarHeatmap = () => {
-    const { historicalDays, targetKcal, targetProtein, consumedKcal, consumedProtein } = useStore();
+    const { historicalDays, targetKcal, targetProtein, consumedKcal, consumedProtein, setViewedHistoryDate } = useStore();
+
+    const [viewMonth, setViewMonth] = useState(new Date());
 
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const today = now.getDate();
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    
+    const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+    const today = isCurrentMonth ? now.getDate() : -1;
 
     const firstDaySun = new Date(year, month, 1).getDay(); // 0=Sun
     const firstDay = firstDaySun === 0 ? 6 : firstDaySun - 1; // Convert to Mon=0
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const monthName = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const handlePrevMonth = () => {
+        setViewMonth(new Date(year, month - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+        if (!isCurrentMonth) {
+            setViewMonth(new Date(year, month + 1, 1));
+        }
+    };
 
     // Build a map: day number -> { kcal, protein }
     const dayMap = new Map<number, { kcal: number; protein: number }>();
 
-    // Today's data
-    dayMap.set(today, { kcal: consumedKcal, protein: consumedProtein });
+    // Today's data (only for current month)
+    if (isCurrentMonth) {
+        dayMap.set(now.getDate(), { kcal: consumedKcal, protein: consumedProtein });
+    }
 
     // Historical data
     historicalDays?.forEach(day => {
@@ -46,6 +64,27 @@ const CalendarHeatmap = () => {
         return 'bg-signal-red/30';
     };
 
+    const handleDayClick = (d: number) => {
+        if (!dayMap.has(d)) return;
+        
+        const clickedDate = new Date(year, month, d);
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        // Don't open today's modal (it's handled in the main timeline)
+        if (clickedDate.getTime() >= startOfDay.getTime()) return;
+
+        const startOfYesterday = new Date(startOfDay);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+        let dateStr = clickedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        if (clickedDate.getTime() >= startOfYesterday.getTime()) {
+            dateStr = 'Yesterday';
+        }
+
+        setViewedHistoryDate(dateStr);
+    };
+
     // Build grid cells
     const cells: React.ReactNode[] = [];
 
@@ -56,19 +95,22 @@ const CalendarHeatmap = () => {
 
     // Day cells
     for (let d = 1; d <= daysInMonth; d++) {
-        const isFuture = d > today;
-        const isToday = d === today;
+        const isFuture = (year > now.getFullYear()) || (year === now.getFullYear() && month > now.getMonth()) || (isCurrentMonth && d > today);
+        const isToday = isCurrentMonth && d === today;
+        const hasData = dayMap.has(d);
+        const isClickable = hasData && !isToday;
 
         cells.push(
             <div
                 key={d}
+                onClick={() => isClickable && handleDayClick(d)}
                 className={`w-full aspect-square rounded-[4px] transition-all duration-300 flex items-center justify-center ${isFuture
                         ? 'bg-transparent'
                         : getColor(d)
-                    } ${isToday ? 'ring-1 ring-brutal-black/40 ring-offset-1' : ''}`}
+                    } ${isToday ? 'ring-1 ring-brutal-black/40 ring-offset-1' : ''} ${isClickable ? 'cursor-pointer hover:opacity-80 active:scale-95 hover:shadow-sm' : ''}`}
                 title={
                     isFuture ? '' :
-                        dayMap.has(d)
+                        hasData
                             ? `${dayMap.get(d)!.kcal} kcal / ${dayMap.get(d)!.protein}g protein`
                             : 'No data'
                 }
@@ -81,7 +123,21 @@ const CalendarHeatmap = () => {
     return (
         <div className="w-full mt-6 mb-4">
             <div className="flex items-center justify-between mb-3 px-1">
-                <span className="font-sans text-[10px] uppercase tracking-[0.2em] opacity-40 font-bold">{monthName}</span>
+                <div className="flex items-center gap-3">
+                    <button onClick={handlePrevMonth} className="opacity-40 hover:opacity-100 hover:bg-black/5 p-1 rounded-full transition-all">
+                        <ChevronLeft size={16} />
+                    </button>
+                    <span className="font-sans text-[10px] uppercase tracking-[0.2em] opacity-40 font-bold min-w-[100px] text-center">
+                        {monthName}
+                    </span>
+                    <button 
+                        onClick={handleNextMonth} 
+                        className={`p-1 rounded-full transition-all ${isCurrentMonth ? 'opacity-15 cursor-not-allowed' : 'opacity-40 hover:opacity-100 hover:bg-black/5'}`}
+                        disabled={isCurrentMonth}
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-[2px] bg-green-400/60" />

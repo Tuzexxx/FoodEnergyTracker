@@ -1,22 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, Check, X, Trash2, Star, Activity, MessageSquare, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
+import { playSound } from '../utils/audio';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, targetKcal, targetProtein, processingLogs } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [isProcessing, setIsProcessing] = useState(false);
-    const [expandedHistoryDate, setExpandedHistoryDate] = useState<string | null>(null);
+    const [expandedHistoryPanel, setExpandedHistoryPanel] = useState<string | null>(null);
 
     // Brainstorm chat states
     const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
     const [isChatting, setIsChatting] = useState<Record<string, boolean>>({});
     const [chatMessages, setChatMessages] = useState<Record<string, string>>({});
+
+    // Swipe gesture refs
+    const touchRef = useRef<{ id: string; startX: number; startY: number; locked: boolean | null } | null>(null);
+    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const actionLeftRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const actionRightRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const swipeOffsetRef = useRef(0);
+    const didSwipeRef = useRef(false);
 
     useEffect(() => {
         if (!containerRef.current || dailyLog.length === 0) return;
@@ -85,6 +94,98 @@ const DailyLog = () => {
         if (confirm("Are you sure you want to delete this entry?")) {
             deleteEntry(id);
             setEditingId(null);
+            setExpandedId(null);
+        }
+    };
+
+    // --- Swipe handlers for delete/favorite ---
+    const onCardTouchStart = (id: string, e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        touchRef.current = { id, startX: touch.clientX, startY: touch.clientY, locked: null };
+        swipeOffsetRef.current = 0;
+        const el = cardRefs.current[id];
+        if (el) el.style.transition = 'none';
+    };
+
+    const onCardTouchMove = (id: string, e: React.TouchEvent) => {
+        const t = touchRef.current;
+        if (!t || t.id !== id) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - t.startX;
+        const dy = touch.clientY - t.startY;
+        if (t.locked === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+            t.locked = Math.abs(dx) > Math.abs(dy);
+            if (!t.locked) { touchRef.current = null; return; }
+        }
+        if (!t.locked) return;
+        e.preventDefault();
+        const dampened = dx * 0.5;
+        swipeOffsetRef.current = dampened;
+        const el = cardRefs.current[id];
+        if (el) el.style.transform = `translateX(${dampened}px)`;
+
+        // Progressive icon reveal — scale & opacity grow toward threshold
+        const THRESHOLD = 70;
+        const progress = Math.min(Math.abs(dampened) / THRESHOLD, 1);
+        const scale = 0.5 + progress * 0.7; // 0.5 → 1.2
+        const opacity = 0.3 + progress * 0.7; // 0.3 → 1.0
+
+        const leftEl = actionLeftRefs.current[id];
+        const rightEl = actionRightRefs.current[id];
+        if (dampened > 0 && leftEl) {
+            leftEl.style.transform = `scale(${scale})`;
+            leftEl.style.opacity = `${opacity}`;
+        } else if (dampened < 0 && rightEl) {
+            rightEl.style.transform = `scale(${scale})`;
+            rightEl.style.opacity = `${opacity}`;
+        }
+    };
+
+    const onCardTouchEnd = (id: string) => {
+        const t = touchRef.current;
+        if (!t || t.id !== id) { touchRef.current = null; return; }
+        const offset = swipeOffsetRef.current;
+        const THRESHOLD = 70;
+        let acted = false;
+
+        if (offset < -THRESHOLD) {
+            // Swiped LEFT → Delete
+            acted = true;
+            playSound('error');
+            // Use setTimeout so the UI snaps back before confirm dialog blocks
+            setTimeout(() => {
+                if (confirm('Delete this entry?')) {
+                    deleteEntry(id);
+                    setExpandedId(null);
+                }
+            }, 50);
+        } else if (offset > THRESHOLD) {
+            // Swiped RIGHT → Toggle Favorite
+            acted = true;
+            const entry = dailyLog.find(e => e.id === id);
+            if (entry) {
+                const isFav = (favorites || []).some(f => f.name === entry.name);
+                if (isFav) { removeFavorite(entry.name); playSound('click'); }
+                else { addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat }); playSound('targetHit'); }
+            }
+        }
+
+        // Snap back card
+        const el = cardRefs.current[id];
+        if (el) {
+            el.style.transition = 'transform 0.3s cubic-bezier(.2,.8,.3,1)';
+            el.style.transform = 'translateX(0)';
+        }
+        // Reset action icons
+        const leftEl = actionLeftRefs.current[id];
+        const rightEl = actionRightRefs.current[id];
+        if (leftEl) { leftEl.style.transition = 'all 0.3s ease'; leftEl.style.transform = 'scale(0.5)'; leftEl.style.opacity = '0'; }
+        if (rightEl) { rightEl.style.transition = 'all 0.3s ease'; rightEl.style.transform = 'scale(0.5)'; rightEl.style.opacity = '0'; }
+        touchRef.current = null;
+        swipeOffsetRef.current = 0;
+        if (acted) {
+            didSwipeRef.current = true;
+            setTimeout(() => { didSwipeRef.current = false; }, 120);
         }
     };
 
@@ -120,27 +221,46 @@ const DailyLog = () => {
         }
     };
 
+    const activeHistoryDay = viewedHistoryDate ? historicalDays?.find(d => d.dateStr === viewedHistoryDate) : null;
+    const entriesToDisplay = activeHistoryDay ? activeHistoryDay.entries : dailyLog;
+    const headerTitle = activeHistoryDay ? `History — ${viewedHistoryDate}` : 'Timeline';
+
     return (
         <div ref={containerRef} className="flex flex-col gap-4 mt-8 pb-32">
             {/* Sticky Timeline Header */}
-            <div className="sticky top-16 z-30 -mx-4 px-4 py-3 bg-off-white/80 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm mb-4">
-                <h3 className="font-sans text-xs uppercase tracking-[0.2em] opacity-50 flex items-center justify-between">
-                    <span>Timeline</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
+            <div className={`sticky top-16 z-30 -mx-4 px-4 py-3 bg-off-white/80 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm mb-4 transition-colors ${activeHistoryDay ? 'bg-amber-50/90 border-amber-200/50' : ''}`}>
+                <h3 className={`font-sans text-xs uppercase tracking-[0.2em] flex items-center justify-between ${activeHistoryDay ? 'opacity-80 text-amber-900 font-bold' : 'opacity-50'}`}>
+                    <div className="flex items-center gap-2">
+                        {activeHistoryDay && (
+                            <button onClick={() => setViewedHistoryDate(null)} className="p-1 hover:bg-black/5 rounded-full -ml-2 -my-1 transition-colors relative z-40">
+                                <ChevronLeft size={16} />
+                            </button>
+                        )}
+                        <span>{headerTitle}</span>
+                    </div>
+                    {activeHistoryDay ? (
+                        <div className="flex items-center gap-2 text-[10px] tabular-nums tracking-wider opacity-60">
+                            <span>{activeHistoryDay.kcal} kcal</span>
+                            <span>•</span>
+                            <span>{activeHistoryDay.protein}g</span>
+                        </div>
+                    ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
+                    )}
                 </h3>
             </div>
 
-            {dailyLog.length === 0 ? (
+            {entriesToDisplay.length === 0 ? (
                 <div className="p-8 border-dashed border-brutal-black/20 rounded-2xl bg-black/5 text-center">
-                    <p className="font-sans text-sm tracking-widest opacity-60">No entries yet.</p>
+                    <p className="font-sans text-sm tracking-widest opacity-60">{activeHistoryDay ? "No entries for this day." : "No entries yet."}</p>
                 </div>
             ) : (
                 <div className="relative flex flex-col gap-4 z-10 pl-4">
                     {/* Vertical Timeline Guide */}
                     <div className="absolute left-0 top-6 bottom-6 w-[1px] bg-brutal-black/10 border-l border-dashed border-brutal-black/20 -z-10" />
 
-                    {/* Pending API Requests */}
-                    {processingLogs.map((log) => (
+                    {/* Pending API Requests - Only show on Today's timeline */}
+                    {!activeHistoryDay && processingLogs.map((log) => (
                         <div key={log.id} className="relative w-full opacity-60 pointer-events-none">
                             <div className="absolute -left-5 top-8 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/20 z-10 animate-pulse" />
                             <div className="log-card p-4 rounded-2xl bg-white/40 border border-white border-dashed flex items-center justify-between">
@@ -153,7 +273,7 @@ const DailyLog = () => {
                         </div>
                     ))}
 
-                    {dailyLog.map((entry) => {
+                    {entriesToDisplay.map((entry) => {
                         let displayTitle = entry.name;
                         let displayDetails = '';
 
@@ -182,14 +302,34 @@ const DailyLog = () => {
                                 {/* Timeline dot */}
                                 <div className="absolute -left-5 top-8 w-2 h-2 rounded-full bg-off-white border-2 border-brutal-black/20 z-10" />
 
+                                {/* Swipe container */}
+                                <div className="relative overflow-hidden rounded-2xl">
+                                    {/* Action areas — fully hidden at rest, revealed on swipe */}
+                                    <div className="absolute inset-0 pointer-events-none z-0 flex">
+                                        <div className="flex-1 bg-emerald-500 flex items-center pl-5">
+                                            <div ref={el => { actionLeftRefs.current[entry.id] = el; }} className="flex items-center gap-2" style={{ transform: 'scale(0.5)', opacity: 0, transition: 'none' }}>
+                                                <Star size={20} className="text-white fill-white" />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 bg-red-500 flex items-center justify-end pr-5">
+                                            <div ref={el => { actionRightRefs.current[entry.id] = el; }} className="flex items-center gap-2" style={{ transform: 'scale(0.5)', opacity: 0, transition: 'none' }}>
+                                                <Trash2 size={20} className="text-white" />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 <div
-                                    className={`log-card p-4 rounded-2xl transition-all duration-300 bg-white/60 backdrop-blur-md shadow-sm border group relative cursor-pointer
-                                border-white hover:border-brutal-black/10 hover:shadow-md hover:bg-white/80`}
+                                    ref={el => { cardRefs.current[entry.id] = el; }}
+                                    className={`log-card p-4 rounded-2xl bg-white shadow-sm border border-white/80 group relative cursor-pointer z-10`}
                                     onClick={() => {
+                                        if (didSwipeRef.current) return;
                                         if (editingId !== entry.id) {
                                             setExpandedId(prev => prev === entry.id ? null : entry.id);
                                         }
                                     }}
+                                    onTouchStart={(e) => onCardTouchStart(entry.id, e)}
+                                    onTouchMove={(e) => onCardTouchMove(entry.id, e)}
+                                    onTouchEnd={() => onCardTouchEnd(entry.id)}
                                 >
                                     {editingId === entry.id ? (
                                         <div className="flex flex-col gap-3" onClick={e => e.stopPropagation()}>
@@ -290,7 +430,7 @@ const DailyLog = () => {
                                                         </div>
                                                     )}
 
-                                                    <div className="flex flex-wrap justify-between items-center pt-3 border-t border-brutal-black/5 mt-1 gap-y-3">
+                                                    <div className="flex flex-wrap justify-between items-center pt-3 border-t border-brutal-black/5 mt-1 gap-y-2">
                                                         <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-2.5 py-1.5 rounded-lg border border-black/5 min-w-fit">
                                                             <span className="flex gap-1.5 items-center">
                                                                 <span className="opacity-50 text-[9px] uppercase">Pro</span><span className="text-brutal-black/80">{entry.protein}</span>
@@ -305,16 +445,14 @@ const DailyLog = () => {
                                                             </span>
                                                         </div>
 
-                                                        <div className="flex gap-2 shrink-0 ml-auto">
-                                                            {entry.requiresReview && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); updateEntry(entry.id, { requiresReview: false }); }}
-                                                                    className="px-3 py-1.5 transition-colors rounded-full shadow-sm flex items-center justify-center border bg-green-100 text-green-700 border-green-300 hover:bg-green-200 text-[10px] uppercase font-bold tracking-widest gap-1"
-                                                                    title="Approve AI Estimation"
-                                                                >
-                                                                    <Check size={14} strokeWidth={3} /> OK
-                                                                </button>
-                                                            )}
+                                                        <div className="flex gap-1.5 shrink-0 ml-auto">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
+                                                                className="p-1.5 transition-colors rounded-full border text-brutal-black/30 hover:text-red-500 bg-white hover:bg-red-50 border-black/5"
+                                                                title="Delete Entry"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -323,23 +461,20 @@ const DailyLog = () => {
                                                                     if (isFav) removeFavorite(entry.name);
                                                                     else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
                                                                 }}
-                                                                className={`p-2 transition-colors rounded-full shadow-sm border ${(favorites || []).some(f => f.name === entry.name)
+                                                                className={`p-1.5 transition-colors rounded-full border ${(favorites || []).some(f => f.name === entry.name)
                                                                     ? 'bg-amber-50 text-amber-500 border-amber-200'
-                                                                    : 'text-brutal-black/40 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
+                                                                    : 'text-brutal-black/30 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
                                                                     }`}
                                                                 title="Favorite"
                                                             >
-                                                                <Star size={16} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
+                                                                <Star size={14} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
                                                             </button>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); startEdit(entry); }}
-                                                                className={`p-2 transition-colors rounded-full shadow-sm flex items-center justify-center border ${entry.requiresReview
-                                                                    ? 'bg-orange-100 text-orange-600 border-orange-200'
-                                                                    : 'text-brutal-black/40 hover:text-indigo-500 bg-white hover:bg-indigo-50 border-black/5'
-                                                                    }`}
+                                                                className="p-1.5 transition-colors rounded-full border text-brutal-black/30 hover:text-indigo-500 bg-white hover:bg-indigo-50 border-black/5"
                                                                 title="Edit Entry"
                                                             >
-                                                                <Edit2 size={16} />
+                                                                <Edit2 size={14} />
                                                             </button>
                                                         </div>
                                                     </div>
@@ -377,28 +512,23 @@ const DailyLog = () => {
                                         </div>
                                     )}
                                 </div>
+                                </div>{/* /swipe container */}
                             </div>
                         );
                     })}
                 </div>
             )}
 
-            {/* Historical Summaries */}
-            {historicalDays && historicalDays.length > 0 && (
-                <div className="mt-4 flex flex-col gap-1.5">
-                    {/* Header row */}
-                    <div className="px-3 py-1.5 flex items-center gap-2 opacity-50">
-                        <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black shrink-0 w-8">Day</span>
-                        <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black shrink-0 flex-1">Date</span>
-                        <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black text-right w-12">Kcal /{targetKcal}</span>
-                            <span className="w-5" />
-                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider text-brutal-black text-right w-12">Pro /{targetProtein}g</span>
-                        </div>
-                        <span className="w-8 shrink-0" />
+            {/* Recent History Summaries (Only show when NOT viewing a specific history day) */}
+            {!activeHistoryDay && historicalDays && historicalDays.length > 0 && (
+                <div className="mt-8 flex flex-col gap-2 relative z-10 pl-4 border-t border-dashed border-brutal-black/20 pt-8">
+                    <div className="absolute left-0 top-6 bottom-0 w-[1px] bg-brutal-black/10 border-l border-dashed border-brutal-black/10 -z-10" />
+
+                    <div className="flex items-center gap-2 mb-2 bg-off-white w-fit px-2 py-1 absolute -top-[14px] left-1">
+                        <h4 className="font-sans text-[10px] uppercase tracking-[0.2em] font-bold opacity-30">Previous Days</h4>
                     </div>
-                    {historicalDays.map((day) => {
-                        const isExpanded = expandedHistoryDate === day.dateStr;
+
+                    {historicalDays.slice(0, 7).map((day) => {
                         const dayAbbr = (() => {
                             if (day.dateStr === 'Yesterday') return 'Yest';
                             if (day.entries && day.entries.length > 0) {
@@ -407,120 +537,119 @@ const DailyLog = () => {
                             }
                             return '';
                         })();
+                        
                         const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
+                        
+                        // Progress & Color Logic
+                        const kcalHit = day.kcal <= targetKcal && day.kcal > 0;
+                        const kcalOver = day.kcal > targetKcal;
+                        const proteinHit = day.protein >= targetProtein;
+
+                        const kcalPill = kcalHit 
+                            ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 
+                            : kcalOver ? 'bg-signal-red/5 text-red-900/70 border-signal-red/10' : 'bg-white/30 border-transparent text-brutal-black/70';
+                            
+                        const proPill = proteinHit 
+                            ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 
+                            : 'bg-white/30 border-transparent text-brutal-black/70';
+                        
                         return (
-                            <div key={day.dateStr} className="bg-brutal-black/5 rounded-2xl border border-brutal-black/5 transition-all w-full relative">
-                                <div className="px-3 py-2 flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                            <div key={day.dateStr} className="relative w-full">
+                                {/* Timeline dot */}
+                                <div className={`absolute -left-5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 z-10 ${kcalHit && proteinHit ? 'bg-green-400 border-green-500/20' : kcalOver ? 'bg-signal-red border-signal-red/20' : 'bg-off-white border-brutal-black/10'}`} />
+                                
+                                <div 
+                                    onClick={() => setExpandedHistoryPanel(prev => prev === day.dateStr ? null : day.dateStr)}
+                                    className={`relative p-3 rounded-2xl bg-black/5 hover:bg-black/10 transition-colors border border-transparent hover:border-black/5 flex items-center justify-between group cursor-pointer overflow-hidden ${expandedHistoryPanel === day.dateStr ? 'bg-black/10 border-black/10' : ''}`}
+                                >
+                                    <div className="flex items-baseline gap-2 flex-1 min-w-0 relative z-10">
                                         <span className="font-sans text-[10px] font-bold uppercase text-brutal-black/60 shrink-0 w-8">{dayAbbr}</span>
-                                        <span className="font-sans text-[9px] uppercase tracking-wide opacity-40 text-brutal-black shrink-0 flex-1">{shortDate}</span>
-                                        <div className="flex items-center shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.kcal}</span>
-                                            <span className="w-5 shrink-0" />
-                                            <span className="font-data text-xs font-bold text-brutal-black text-right w-12 inline-block">{day.protein}g</span>
-                                        </div>
+                                        <span className="font-sans text-[10px] uppercase tracking-wide opacity-50 text-brutal-black shrink-0 truncate">{shortDate}</span>
                                     </div>
-                                    {day.entries && day.entries.length > 0 && (
-                                        <button
-                                            onClick={() => setExpandedHistoryDate(isExpanded ? null : day.dateStr)}
-                                            className="p-1.5 rounded-full hover:bg-black/5 transition-colors text-brutal-black/50 shrink-0 ml-2"
-                                            title={isExpanded ? "Hide Details" : "View Details"}
-                                        >
-                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                        </button>
-                                    )}
-
-                                    {day.entries && day.entries.length > 0 && isExpanded && (
-                                        <div className="absolute top-full left-0 w-full mt-1 flex flex-col items-center bg-white/40 rounded-xl p-2 z-10 border border-white/50 shadow-sm backdrop-blur-md">
-                                            <div className="w-full mt-3 flex flex-col items-center">
-                                                <div className="w-full mt-1 flex flex-col gap-1.5 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-300">
-                                                    {day.entries.map((yEntry) => {
-                                                        let yTitle = yEntry.name;
-                                                        const yStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
-                                                        if (yStarMatch) {
-                                                            yTitle = yStarMatch[1];
-                                                        } else if (yEntry.name.includes('||')) {
-                                                            yTitle = yEntry.name.split('||')[0].trim();
-                                                        } else {
-                                                            const words = yEntry.name.trim().split(/\s+/);
-                                                            yTitle = words.slice(0, 2).join(' ');
-                                                        }
-                                                        let yNameForFav = yEntry.name;
-                                                        const yFavStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
-                                                        if (yFavStarMatch) {
-                                                            yNameForFav = yEntry.name; // Keep full name for fav consistency
-                                                        } else if (yEntry.name.includes('||')) {
-                                                            yNameForFav = yEntry.name; // Keep full name
-                                                        }
-                                                        const isFav = favorites.some((f) => f.name === yNameForFav);
-
-                                                        const handleFavToggle = (e: React.MouseEvent) => {
-                                                            e.stopPropagation();
-                                                            if (isFav) {
-                                                                removeFavorite(yNameForFav);
-                                                            } else {
-                                                                addFavorite({
-                                                                    name: yNameForFav,
-                                                                    kcal: yEntry.kcal,
-                                                                    protein: yEntry.protein,
-                                                                    carbs: yEntry.carbs,
-                                                                    fat: yEntry.fat
-                                                                });
-                                                            }
-                                                        };
-
-                                                        return (
-                                                            <div key={yEntry.id} className="flex items-center w-full px-2 py-1.5 bg-white/40 rounded-lg text-left border border-white gap-2">
-                                                                <span className="font-sans text-[8px] font-medium opacity-40 bg-black/5 px-1 rounded shrink-0">
-                                                                    {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
-                                                                <button
-                                                                    onClick={handleFavToggle}
-                                                                    className={`shrink-0 hover:scale-110 active:scale-95 transition-transform ${isFav ? 'text-amber-400' : 'text-brutal-black/20 hover:text-amber-400/50'}`}
-                                                                    title={isFav ? "Remove from Favorites" : "Save as Favorite"}
-                                                                >
-                                                                    <Star size={10} className={isFav ? "fill-amber-400" : ""} />
-                                                                </button>
-                                                                <span className="font-sans font-semibold text-[10px] leading-tight text-brutal-black flex-1 truncate capitalize">
-                                                                    {yTitle}
-                                                                </span>
-                                                                <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5 ml-auto">
-                                                                    <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
-                                                                    <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                                    <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
-                                                                    <span className="font-data text-[10px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
-                                                                    <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
+                                    
+                                    <div className="flex items-center gap-3 shrink-0 relative z-10">
+                                        <div className={`flex items-baseline gap-1 px-2 py-1 rounded border ${kcalPill}`}>
+                                            <span className="font-data text-sm font-bold">{day.kcal}</span>
+                                            <span className="text-[8px] uppercase font-semibold opacity-50 font-sans">Kcal</span>
                                         </div>
-                                    )}
+                                        <div className={`flex items-baseline gap-1 px-2 py-1 rounded border ${proPill}`}>
+                                            <span className="font-data text-sm font-bold">{day.protein}</span>
+                                            <span className="text-[8px] uppercase font-semibold opacity-50 font-sans">Pro</span>
+                                        </div>
+                                        {expandedHistoryPanel === day.dateStr ? (
+                                            <ChevronUp size={14} className="opacity-40" />
+                                        ) : (
+                                            <ChevronDown size={14} className="opacity-20 group-hover:opacity-60 transition-opacity transform group-hover:translate-y-0.5" />
+                                        )}
+                                    </div>
                                 </div>
-                                {/* Full-height kcal background fill — same style as main widget */}
-                                <div
-                                    className="absolute inset-y-0 left-0 bg-signal-red/15 pointer-events-none rounded-2xl transition-all duration-500"
-                                    style={{ width: `${Math.min((day.kcal / targetKcal) * 100, 100)}%` }}
-                                />
-                                {/* Kcal overflow — restarts from left, more intense */}
-                                <div
-                                    className="absolute inset-y-0 left-0 bg-signal-red/35 pointer-events-none rounded-2xl transition-all duration-500"
-                                    style={{ width: `${Math.max(0, Math.min((day.kcal / targetKcal) * 100 - 100, 100))}%` }}
-                                />
-                                {/* Protein progress bar — thin at bottom */}
-                                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-brutal-black/5 rounded-b-2xl overflow-hidden pointer-events-none">
-                                    <div className="h-full bg-brutal-black/20 transition-all duration-500" style={{ width: `${Math.min((day.protein / targetProtein) * 100, 100)}%` }} />
-                                    {/* Protein overflow bar */}
-                                    <div className="absolute inset-0 bg-brutal-black/40 transition-all duration-500" style={{ width: `${Math.max(0, Math.min((day.protein / targetProtein) * 100 - 100, 100))}%` }} />
-                                </div>
+                                
+                                {/* Expanded entries layout */}
+                                {expandedHistoryPanel === day.dateStr && day.entries && day.entries.length > 0 && (
+                                    <div className="mt-2 pl-4 border-l-2 border-black/5 flex flex-col gap-1.5 py-1">
+                                        {day.entries.map((yEntry) => {
+                                            let yTitle = yEntry.name;
+                                            const yStarMatch = yEntry.name.match(/^\*([^*]+)\*/);
+                                            if (yStarMatch) {
+                                                yTitle = yStarMatch[1];
+                                            } else if (yEntry.name.includes('||')) {
+                                                yTitle = yEntry.name.split('||')[0].trim();
+                                            } else {
+                                                const words = yEntry.name.trim().split(/\s+/);
+                                                yTitle = words.slice(0, 2).join(' ');
+                                            }
+                                            
+                                            // Handle favorite check
+                                            let yNameForFav = yEntry.name;
+                                            if (yStarMatch || yEntry.name.includes('||')) {
+                                                yNameForFav = yEntry.name;
+                                            }
+                                            const safeFavorites = favorites || [];
+                                            const isFav = safeFavorites.some((f) => f.name === yNameForFav);
+
+                                            return (
+                                                <div key={yEntry.id} className="flex items-center justify-between w-full px-3 py-2 bg-white/40 rounded-xl text-left border border-white gap-2 group/entry hover:bg-white/60 transition-colors">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className="font-sans text-[9px] font-medium opacity-40 bg-black/5 px-1.5 py-0.5 rounded shrink-0 tabular-nums">
+                                                            {new Date(yEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                        <span className="font-sans font-semibold text-[11px] leading-tight text-brutal-black truncate capitalize">
+                                                            {yTitle}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <div className="flex items-center gap-1 shrink-0 bg-black/5 px-1.5 py-0.5 rounded border border-black/5">
+                                                            <span className="font-data text-[11px] font-bold leading-none text-brutal-black">{yEntry.kcal}</span>
+                                                            <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
+                                                            <span className="text-brutal-black/20 mx-0.5 text-[8px]">/</span>
+                                                            <span className="font-data text-[11px] font-bold leading-none text-brutal-black">{yEntry.protein}</span>
+                                                            <span className="text-[7px] uppercase font-semibold text-brutal-black/40 font-sans">Pro</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (isFav) removeFavorite(yNameForFav);
+                                                                else addFavorite({ name: yNameForFav, kcal: yEntry.kcal, protein: yEntry.protein, carbs: yEntry.carbs, fat: yEntry.fat });
+                                                                playSound(isFav ? 'click' : 'targetHit');
+                                                            }}
+                                                            className={`p-1 rounded-full transition-colors ${isFav ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'text-brutal-black/20 hover:text-amber-500 hover:bg-black/5'}`}
+                                                            title={isFav ? "Remove from Favorites" : "Save as Favorite"}
+                                                        >
+                                                            <Star size={12} fill={isFav ? 'currentColor' : 'none'} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
                 </div>
-            )
-            }
+            )}
+
         </div>
     );
 };

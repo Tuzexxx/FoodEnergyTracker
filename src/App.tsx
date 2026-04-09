@@ -14,13 +14,23 @@ import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './utils/supabase';
 
 function App() {
-    const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration } = useStore();
+    const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [manualCelebrate, setManualCelebrate] = useState(false);
 
+    // Day rollover: detect new day and move consumed → yesterday
+    useEffect(() => {
+        checkDayRollover();
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') checkDayRollover();
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [checkDayRollover]);
+
     const shouldCelebrate = useMemo(() => {
         if (!isCalibrated || targetKcal === 0 || targetProtein === 0) return false;
-        if (yesterdayKcal < targetKcal || yesterdayProtein < targetProtein) return false;
+        if (yesterdayKcal > targetKcal || yesterdayProtein < targetProtein) return false;
         const todayStr = new Date().toDateString();
         return celebrationDismissedDate !== todayStr;
     }, [isCalibrated, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate]);
