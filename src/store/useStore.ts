@@ -59,6 +59,7 @@ interface AppState {
     dailyLog: FoodEntry[];
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
     addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
+    addEntryWithTimestamp: (entry: Omit<FoodEntry, 'id' | 'timestamp'>, timestamp: number) => void;
     updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id'>>) => void;
     deleteEntry: (id: string) => void;
     resetDaily: () => void;
@@ -332,6 +333,38 @@ export const useStore = create<AppState>()(
                         requires_review: entry.requiresReview || false
                     });
                     if (error) console.error('Supabase Sync Error:', error.message);
+                }
+            },
+
+            addEntryWithTimestamp: async (entry, timestamp) => {
+                const newId = Math.random().toString(36).substring(7);
+                const newEntry = { ...entry, id: newId, timestamp };
+
+                // Insert at correct chronological position (descending by timestamp)
+                set((state) => {
+                    const updatedLog = [...state.dailyLog, newEntry].sort((a, b) => b.timestamp - a.timestamp);
+                    return {
+                        consumedKcal: Math.round(state.consumedKcal + entry.kcal),
+                        consumedProtein: Math.round(state.consumedProtein + entry.protein),
+                        dailyLog: updatedLog
+                    };
+                });
+
+                // Push to cloud in background
+                const { session } = get();
+                if (session?.user) {
+                    const { error } = await supabase.from("food_entries").insert({
+                        id: newId,
+                        user_id: session.user.id,
+                        name: entry.name,
+                        kcal: entry.kcal,
+                        protein: entry.protein,
+                        carbs: entry.carbs,
+                        fat: entry.fat,
+                        timestamp: timestamp,
+                        requires_review: entry.requiresReview || false
+                    });
+                    if (error) console.error("Supabase Sync Error:", error.message);
                 }
             },
 
