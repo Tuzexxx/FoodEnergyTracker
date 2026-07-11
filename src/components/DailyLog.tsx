@@ -4,9 +4,10 @@ import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, Che
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
+import { EXERCISE_BONUS_KCAL } from '../store/useStore';
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein, historicalExerciseDays } = useStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -541,8 +542,11 @@ const DailyLog = () => {
                         const shortDate = day.dateStr === 'Yesterday' ? '' : day.dateStr.replace(/, \d{4}$/, '');
                         
                         // Progress & Color Logic
-                        const kcalHit = day.kcal <= targetKcal && day.kcal > 0;
-                        const kcalOver = day.kcal > targetKcal;
+                        const isGymDay = historicalExerciseDays?.includes(day.realDateStr) || false;
+                        const effectiveTargetKcal = targetKcal + (isGymDay ? EXERCISE_BONUS_KCAL : 0);
+
+                        const kcalHit = day.kcal <= effectiveTargetKcal && day.kcal > 0;
+                        const kcalOver = day.kcal > effectiveTargetKcal;
                         const proteinHit = day.protein >= targetProtein;
 
                         const kcalPill = kcalHit 

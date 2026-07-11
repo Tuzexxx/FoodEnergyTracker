@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, X, Activity, Image as ImageIcon, Mic, Star, Edit2, Trash2 } from 'lucide-react';
+import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2 } from 'lucide-react';
+import BatchUpload from './BatchUpload';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -14,6 +15,7 @@ const SmartLogging = () => {
     const [editingFav, setEditingFav] = useState<any>(null);
     const [isFavAdjusting, setIsFavAdjusting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [isBatchOpen, setIsBatchOpen] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const [telemetryError, setTelemetryError] = useState<string | null>(null);
     const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs } = useStore();
@@ -23,7 +25,6 @@ const SmartLogging = () => {
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
-    const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
     // --- Background Queue: process a single pending item ---
@@ -234,39 +235,6 @@ const SmartLogging = () => {
         e.target.value = '';
     };
 
-    const startDictation = () => {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Your browser does not support voice recognition.");
-            return;
-        }
-        const recognition = new SpeechRecognition();
-        // Removed hardcoded recognition.lang = 'cs-CZ' to allow browser default / multi-language support.
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        const tempId = Math.random().toString(36).substring(7);
-        recognition.onstart = () => {
-            addProcessingLog({ id: tempId, text: 'Listening...', type: 'voice' });
-        };
-        recognition.onend = () => {
-            removeProcessingLog(tempId);
-        };
-
-        recognition.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript;
-            setInput((prev) => prev ? prev + ' ' + transcript : transcript);
-            playSound('log');
-            setIsFocused(true);
-        };
-
-        recognition.onerror = (event: any) => {
-            console.error("Speech recognition error", event.error);
-            removeProcessingLog(tempId);
-        };
-
-        recognition.start();
-    };
 
     return (
         <div className="relative isolate flex flex-col items-center">
@@ -301,7 +269,6 @@ const SmartLogging = () => {
             )}
 
             {/* Native Camera Capture Input */}
-            <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraInputRef} onChange={handleImageUpload} />
             {/* Photo Gallery Selection Input */}
             <input type="file" accept="image/*" className="hidden" ref={galleryInputRef} onChange={handleImageUpload} />
 
@@ -504,26 +471,20 @@ const SmartLogging = () => {
                 <div className="flex flex-col relative z-10 w-full">
                     {/* Tool Bar Stacked Above */}
                     <div className="flex items-center gap-1 px-1 border-b border-black/5 pb-2 mb-1">
-                        <button
-                            onClick={() => cameraInputRef.current?.click()}
+<button
+                            onClick={() => galleryInputRef.current?.click()}
                             className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
-                            disabled={isProcessing} title="Take Photo"
+                            disabled={isProcessing} title="Add Photo"
                         >
                             <Camera size={20} strokeWidth={2} />
                         </button>
                         <button
-                            onClick={() => galleryInputRef.current?.click()}
-                            className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
-                            disabled={isProcessing} title="Upload from Gallery"
+                            onClick={() => setIsBatchOpen(true)}
+                            className="relative w-10 h-10 flex items-center justify-center rounded-full text-violet-500 hover:text-violet-600 transition-all hover:bg-violet-50 active:scale-90"
+                            disabled={isProcessing} title="Day Recap"
                         >
-                            <ImageIcon size={20} strokeWidth={2} />
-                        </button>
-                        <button
-                            onClick={startDictation}
-                            className="w-10 h-10 flex items-center justify-center rounded-full text-red-500 hover:text-white transition-all hover:bg-red-500 active:scale-90"
-                            disabled={isProcessing} title="Voice Dictation"
-                        >
-                            {isProcessing ? <Activity size={20} className="animate-spin" /> : <Mic size={20} strokeWidth={2} />}
+                            <LayoutGrid size={20} strokeWidth={2} />
+                            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">PRO</span>
                         </button>
                         <div className="w-[1px] h-6 bg-black/10 mx-1"></div>
                         {favorites && favorites.length > 0 && (
@@ -586,6 +547,8 @@ const SmartLogging = () => {
                     </div>
                 </div>
             </div>
+                    {/* Batch Upload Modal */}
+            <BatchUpload isOpen={isBatchOpen} onClose={() => setIsBatchOpen(false)} />
         </div>
     );
 };
