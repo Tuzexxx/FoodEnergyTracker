@@ -18,7 +18,7 @@ const SmartLogging = () => {
     const [isBatchOpen, setIsBatchOpen] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const [telemetryError, setTelemetryError] = useState<string | null>(null);
-    const { isCalibrated, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs } = useStore();
+    const { isCalibrated, session, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs } = useStore();
 
     // Only lock the SmartLogging UI if actively recording voice dictation
     const isProcessing = processingLogs.some(log => log.type === 'voice');
@@ -26,14 +26,21 @@ const SmartLogging = () => {
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
+    const inFlightRequestsRef = useRef(new Set<string>());
+    const queueScope = session?.user.id ?? 'guest';
 
     // --- Background Queue: process a single pending item ---
     const processRequest = useCallback(async (id: string, prompt: string, image?: string, isRetry = false) => {
+        if (inFlightRequestsRef.current.has(id)) return;
+        inFlightRequestsRef.current.add(id);
+
         try {
             const response: any = await getAiResponse(prompt, image || undefined);
 
             if (response.type === 'success' && response.data) {
                 await removePending(id);
+                const currentScope = useStore.getState().session?.user.id ?? 'guest';
+                if (currentScope !== queueScope) return;
                 if (!isRetry) playSound('log');
                 addEntry(response.data);
             } else if (response.type === 'clarification' && response.options) {
@@ -41,6 +48,12 @@ const SmartLogging = () => {
                 if (!isRetry) {
                     playSound('error');
                     setInterrogation({ ...response, originalInput: prompt, originalImage: image });
+                }
+            } else if (response.retryable) {
+                // Keep transient failures in IndexedDB so the next visibility event can retry them.
+                if (!isRetry) {
+                    setTelemetryError(response.error || "Telemetry analysis failed. It will retry when the app resumes.");
+                    setTimeout(() => setTelemetryError(null), 10_000);
                 }
             } else {
                 // Non-recoverable error — remove from queue to avoid infinite retries
@@ -56,13 +69,14 @@ const SmartLogging = () => {
             console.warn(`Request ${id} failed, will retry on resume`, error);
             if (!isRetry) playSound('error');
         } finally {
+            inFlightRequestsRef.current.delete(id);
             removeProcessingLog(id);
         }
-    }, [addEntry, removeProcessingLog, setInterrogation]);
+    }, [addEntry, removeProcessingLog, queueScope]);
 
     // --- Retry pending items when the app resumes (screen unlock / tab focus) ---
     const retryPending = useCallback(async () => {
-        const pending = await getAllPending();
+        const pending = await getAllPending(queueScope);
         if (pending.length === 0) return;
         console.log(`[PendingQueue] Retrying ${pending.length} item(s)`);
 
@@ -70,14 +84,13 @@ const SmartLogging = () => {
             addProcessingLog({ id: item.id, text: item.input || 'Retrying...', type: item.image ? 'image' : 'text' });
             processRequest(item.id, item.input, item.image, true);
         }
-    }, [addProcessingLog, processRequest]);
+    }, [addProcessingLog, processRequest, queueScope]);
 
     // Wipe stale UI processing entries + retry any IndexedDB pending items on mount
     useEffect(() => {
         clearProcessingLogs();
         retryPending();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [clearProcessingLogs, retryPending]);
 
     // Listen for visibility change to retry pending items when app resumes
     useEffect(() => {
@@ -120,7 +133,7 @@ const SmartLogging = () => {
 
         const currentInput = input;
         const currentImage = selectedImage;
-        const tempId = Math.random().toString(36).substring(7);
+        const tempId = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
 
         // Clear UI instantly for parallel logging
         setInput('');
@@ -131,7 +144,7 @@ const SmartLogging = () => {
 
         // 1. Persist to IndexedDB BEFORE sending — survives screen-lock
         try {
-            await savePending(tempId, prompt, currentImage || undefined);
+            await savePending(tempId, prompt, currentImage || undefined, queueScope);
         } catch (err) {
             console.warn('IndexedDB save failed. Continuing without persistence.', err);
         }
@@ -159,7 +172,7 @@ const SmartLogging = () => {
         const currentInterrogation = interrogation; // capture before dismissing
         dismissInterrogation();
 
-        const tempId = Math.random().toString(36).substring(7);
+        const tempId = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
         const resolvedInput = `${currentInterrogation.originalInput} (${option})`;
         const originalImage = currentInterrogation.originalImage;
 

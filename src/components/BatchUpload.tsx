@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, LayoutGrid, Check, AlertCircle, Loader2, Upload, Clock, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { getAiResponse } from '../utils/ai';
@@ -66,7 +66,12 @@ const BatchUpload = ({ isOpen, onClose }: BatchUploadProps) => {
     const [failedCount, setFailedCount] = useState(0);
     const [isDone, setIsDone] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const photosRef = useRef<PhotoItem[]>([]);
     const { addEntryWithTimestamp } = useStore();
+
+    useEffect(() => () => {
+        photosRef.current.forEach(photo => URL.revokeObjectURL(photo.preview));
+    }, []);
 
     const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -79,7 +84,7 @@ const BatchUpload = ({ isOpen, onClose }: BatchUploadProps) => {
                 const timestamp = await extractPhotoTimestamp(file);
                 const preview = URL.createObjectURL(file);
                 return {
-                    id: Math.random().toString(36).substring(7),
+                    id: globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2),
                     file,
                     preview,
                     timestamp,
@@ -90,6 +95,8 @@ const BatchUpload = ({ isOpen, onClose }: BatchUploadProps) => {
 
         // Sort by timestamp (earliest first) for chronological processing
         items.sort((a, b) => a.timestamp - b.timestamp);
+        photosRef.current.forEach(photo => URL.revokeObjectURL(photo.preview));
+        photosRef.current = items;
         setPhotos(items);
         setIsDone(false);
         setCompletedCount(0);
@@ -158,7 +165,8 @@ const BatchUpload = ({ isOpen, onClose }: BatchUploadProps) => {
 
     const handleClose = () => {
         // Cleanup object URLs
-        photos.forEach(p => URL.revokeObjectURL(p.preview));
+        photosRef.current.forEach(p => URL.revokeObjectURL(p.preview));
+        photosRef.current = [];
         setPhotos([]);
         setIsAnalyzing(false);
         setIsDone(false);

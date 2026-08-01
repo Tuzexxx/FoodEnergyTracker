@@ -11,7 +11,7 @@ import SettingsPanel from './components/SettingsPanel';
 import AuthScreen from './components/AuthScreen';
 import GlitterCelebration from './components/GlitterCelebration';
 import { Analytics } from '@vercel/analytics/react';
-import { supabase } from './utils/supabase';
+import { isSupabaseConfigured, supabase } from './utils/supabase';
 
 function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
@@ -36,6 +36,8 @@ function App() {
     }, [isCalibrated, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate]);
 
     useEffect(() => {
+        if (!isSupabaseConfigured) return;
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
         });
@@ -48,6 +50,30 @@ function App() {
 
         return () => subscription.unsubscribe();
     }, [setSession]);
+
+    if (!isSupabaseConfigured && !isGuest) {
+        return (
+            <div className="min-h-screen bg-off-white text-brutal-black p-6 flex flex-col justify-center items-center">
+                <div className="w-full max-w-md brutal-card p-6 sm:p-8">
+                    <p className="font-sans text-[10px] uppercase tracking-[0.25em] opacity-50 mb-3">Local setup</p>
+                    <h1 className="font-drama text-4xl mb-4">Supabase is not connected</h1>
+                    <p className="font-sans text-sm leading-relaxed opacity-70 mb-6">
+                        Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to
+                        <code> .env.local</code>, then restart the dev server to enable sign-in and cloud sync.
+                    </p>
+                    <button
+                        onClick={() => setGuestMode(true)}
+                        className="w-full bg-brutal-black text-off-white p-4 font-sans text-sm tracking-widest uppercase font-bold hover:bg-brutal-black/90 transition-colors"
+                    >
+                        Continue as Guest
+                    </button>
+                    <p className="font-sans text-xs opacity-50 mt-4 text-center">
+                        Guest mode keeps your test data in this browser only.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     // Basic mobile-first layout structure
     return (

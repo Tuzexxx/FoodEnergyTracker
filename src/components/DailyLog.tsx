@@ -4,7 +4,8 @@ import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, Che
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
-import { EXERCISE_BONUS_KCAL } from '../store/useStore';
+import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
+import { supabase } from '../utils/supabase';
 
 const DailyLog = () => {
     const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein, historicalExerciseDays } = useStore();
@@ -61,7 +62,7 @@ const DailyLog = () => {
         const updatedDate = new Date(originalTimestamp);
         updatedDate.setHours(Number(hours), Number(minutes), 0, 0);
 
-        let finalData = {
+        const finalData = {
             name: editForm.name,
             kcal: Number(editForm.kcal),
             protein: Number(editForm.protein),
@@ -198,9 +199,14 @@ const DailyLog = () => {
         setIsChatting(prev => ({ ...prev, [entry.id]: true }));
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+            else headers['X-Client-Mode'] = 'guest';
+
             const res = await fetch('/api/edit-entry', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ entry, message })
             });
             const data = await res.json();
@@ -544,10 +550,11 @@ const DailyLog = () => {
                         // Progress & Color Logic
                         const isGymDay = historicalExerciseDays?.includes(day.realDateStr) || false;
                         const effectiveTargetKcal = targetKcal + (isGymDay ? EXERCISE_BONUS_KCAL : 0);
+                        const effectiveTargetProtein = targetProtein + (isGymDay ? EXERCISE_BONUS_PROTEIN : 0);
 
                         const kcalHit = day.kcal <= effectiveTargetKcal && day.kcal > 0;
                         const kcalOver = day.kcal > effectiveTargetKcal;
-                        const proteinHit = day.protein >= targetProtein;
+                        const proteinHit = day.protein >= effectiveTargetProtein;
 
                         const kcalPill = kcalHit 
                             ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 

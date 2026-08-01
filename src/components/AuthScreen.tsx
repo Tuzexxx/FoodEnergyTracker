@@ -33,15 +33,20 @@ const AuthScreen = () => {
         }
 
         setLoading(true);
-        if (isSignUp) {
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) setErrorMsg(error.message);
-            else alert('Your account is ready now!');
-        } else {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) setErrorMsg(error.message);
+        try {
+            if (isSignUp) {
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (error) setErrorMsg(error.message);
+                else alert('Your account is ready now!');
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) setErrorMsg(error.message);
+            }
+        } catch {
+            setErrorMsg('Authentication service unavailable. Please try again.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (

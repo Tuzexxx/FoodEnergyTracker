@@ -46,9 +46,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * PROTEIN target — adjusted by goal intent
  * ─────────────────────────────────────────────────────────────────────────────
- *   SHRED  : 2.0 g/kg  (slightly higher to protect muscle in a caloric deficit)
- *   RECOMP : 1.8 g/kg  (sweet spot for building muscle while burning fat)
- *   TITAN  : 1.6 g/kg  (plenty of protein; caloric surplus handles energy demands)
+ *   SHRED  : 2.2 g/kg  (slightly higher to protect muscle in a caloric deficit)
+ *   RECOMP : 2.4 g/kg  (higher target for building muscle while recomping)
+ *   TITAN  : 1.8 g/kg  (plenty of protein in a caloric surplus)
  *
  *   Sources: Helms et al. (2014) JISSN; Morton et al. (2017) BJSM.
  */
@@ -128,14 +128,14 @@ export function calculateTargets({ weight, height, age, gender, goal, activityLe
 
     // Step 3: Goal modifier
     let kcalModifier = 1.0;    // RECOMP default
-    let proteinPerKg = 1.8;    // RECOMP: sweet spot for building muscle while burning fat
+    let proteinPerKg = 2.4;    // RECOMP: higher target for building muscle while recomping
 
     if (goal.includes('SHRED')) {
         kcalModifier = 0.80;
-        proteinPerKg = 2.0;    // Slightly higher to protect muscle in a caloric deficit
+        proteinPerKg = 2.2;    // Slightly higher to protect muscle in a caloric deficit
     } else if (goal.includes('TITAN')) {
         kcalModifier = 1.15;
-        proteinPerKg = 1.6;    // Caloric surplus handles energy demands
+        proteinPerKg = 1.8;    // Caloric surplus handles energy demands
     }
 
     return {

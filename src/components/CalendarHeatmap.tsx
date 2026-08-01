@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
+import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CalendarHeatmap = () => {
@@ -57,14 +57,17 @@ const CalendarHeatmap = () => {
         const realDateStr = dObj.toDateString();
 
         let effectiveTargetKcal = targetKcal;
+        let effectiveTargetProtein = targetProtein;
         if (isCurrentMonth && dayNum === now.getDate()) {
             effectiveTargetKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
+            effectiveTargetProtein += exerciseDay ? EXERCISE_BONUS_PROTEIN : 0;
         } else if (historicalExerciseDays?.includes(realDateStr)) {
             effectiveTargetKcal = targetKcal + EXERCISE_BONUS_KCAL;
+            effectiveTargetProtein += EXERCISE_BONUS_PROTEIN;
         }
 
         const kcalHit = data.kcal <= effectiveTargetKcal && data.kcal > 0;
-        const proteinHit = data.protein >= targetProtein;
+        const proteinHit = data.protein >= effectiveTargetProtein;
 
         if (kcalHit && proteinHit) return 'bg-green-400/60';
         if (kcalHit || proteinHit) return 'bg-brutal-black/15';
