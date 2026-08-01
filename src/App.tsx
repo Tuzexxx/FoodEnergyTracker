@@ -93,9 +93,6 @@ function App() {
                     <span className="font-sans text-[9px] uppercase tracking-widest opacity-40 bg-black/5 px-2 py-0.5 rounded-full border border-black/5 leading-none mt-1">
                         by MiHo
                     </span>
-                    <span className="font-sans text-[8px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-500 text-white px-2.5 py-1 rounded-full leading-none mt-1 shadow-sm shadow-amber-500/20">
-                        PRO
-                    </span>
                 </h1>
                 <div className="flex items-center gap-4 text-brutal-black">
                     <PWAInstall />
