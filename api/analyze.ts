@@ -1,12 +1,14 @@
-export default async function handler(req: any, res: any) {
+import { guardRequest, isValidMacroResult, validateAnalyzeBody, ApiRequest, ApiResponse } from './_security';
+
+export default async function handler(req: ApiRequest & { method?: string }, res: ApiResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { input, image } = req.body;
-    if (!input && !image) {
-        return res.status(400).json({ error: 'Input or image is required' });
-    }
+    if (await guardRequest(req, res) === null) return;
+    const validated = validateAnalyzeBody(req.body);
+    if ('error' in validated) return res.status(400).json({ error: validated.error });
+    const { input, image } = validated;
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -68,7 +70,7 @@ CLARIFICATION FORMAT:
         }
 
         const MODELS = [
-            'gemini-3.1-flash-lite',
+            'gemini-3.5-flash-lite',
         ];
 
         const requestBody = JSON.stringify({
@@ -76,7 +78,8 @@ CLARIFICATION FORMAT:
                 parts: [{ text: prompt }]
             },
             contents: [{ parts }],
-            tools: [{ googleSearch: {} }]
+            tools: [{ googleSearch: {} }],
+            generationConfig: { responseMimeType: 'application/json' },
         });
 
         let geminiResponse: Response | null = null;
@@ -115,7 +118,7 @@ CLARIFICATION FORMAT:
             return res.status(503).json({ error: `All AI models unavailable. Last error: ${lastError.substring(0, 200)}`, type: 'error' });
         }
 
-        const data = await geminiResponse.json();
+        const data: any = await geminiResponse.json();
         const candidate = data.candidates?.[0];
         if (!candidate || !candidate.content || !candidate.content.parts) {
             console.error("Unexpected Gemini response structure:", JSON.stringify(data));
@@ -130,7 +133,7 @@ CLARIFICATION FORMAT:
             return res.status(500).json({ error: 'No text returned from AI', type: 'error' });
         }
 
-        let resultText = textPart.text;
+        const resultText = textPart.text;
 
         let result;
         try {
@@ -143,7 +146,7 @@ CLARIFICATION FORMAT:
             } else {
                 throw new Error("No JSON object braces found in response");
             }
-        } catch (parseError) {
+        } catch {
             console.warn("Gemini output was not valid JSON. Forwarding raw text as clarification.", resultText);
             // If Gemini refuses to output JSON and gives a conversational text (like "I can't recognize this image"),
             // we safely package it as a clarification so the frontend displays it in the red interrogation panel instead of exploding.
@@ -154,9 +157,13 @@ CLARIFICATION FORMAT:
             };
         }
 
+        if (result?.type === 'success' && !isValidMacroResult(result)) {
+            return res.status(502).json({ error: 'AI returned invalid macro values.', type: 'error' });
+        }
+
         return res.status(200).json(result);
     } catch (error: any) {
         console.error('API Route Error:', error.message || error);
-        return res.status(500).json({ error: 'Internal Server Error', type: 'error', details: error.message });
+        return res.status(500).json({ error: 'Internal Server Error', type: 'error' });
     }
 }

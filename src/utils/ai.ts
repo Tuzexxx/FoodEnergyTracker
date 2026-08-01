@@ -1,4 +1,5 @@
 import { useStore } from '../store/useStore';
+import { isSupabaseConfigured, supabase } from './supabase';
 
 export const getAiResponse = async (input: string, image?: string) => {
     const controller = new AbortController();
@@ -45,9 +46,19 @@ export const getAiResponse = async (input: string, image?: string) => {
     }
 
     try {
+        const { data: { session } } = isSupabaseConfigured
+            ? await supabase.auth.getSession()
+            : { data: { session: null } };
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+            headers.Authorization = `Bearer ${session.access_token}`;
+        } else {
+            headers['X-Client-Mode'] = 'guest';
+        }
+
         const res = await fetch('/api/analyze', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ input, image }),
             signal: controller.signal,
         });
@@ -59,10 +70,18 @@ export const getAiResponse = async (input: string, image?: string) => {
             console.error("API Error", errorText);
             try {
                 const errorJson = JSON.parse(errorText);
-                return { type: 'error', error: errorJson.error || errorJson.message || `Server Error ${res.status}` };
+                return {
+                    type: 'error',
+                    error: errorJson.error || errorJson.message || `Server Error ${res.status}`,
+                    retryable: res.status === 429 || res.status >= 500,
+                };
             } catch {
-                if (res.status === 504) return { type: 'error', error: 'Vercel Timeout (Model too slow, >10s)' };
-                return { type: 'error', error: `Server Error ${res.status}: ${errorText.substring(0, 100)}` };
+                if (res.status === 504) return { type: 'error', error: 'Server timeout. Please retry.', retryable: true };
+                return {
+                    type: 'error',
+                    error: `Server Error ${res.status}`,
+                    retryable: res.status === 429 || res.status >= 500,
+                };
             }
         }
 
@@ -71,9 +90,9 @@ export const getAiResponse = async (input: string, image?: string) => {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') {
             console.warn("AI request timed out or was aborted (screen lock?)");
-            return { type: 'error', error: 'Request timed out (60s)' };
+            return { type: 'error', error: 'Request timed out. It will retry when the app resumes.', retryable: true };
         }
         console.error("Network Error", e);
-        return { type: 'error', error: `Network Error: ${e.message || 'Failed to fetch'}` };
+        return { type: 'error', error: 'Network error. It will retry when the app resumes.', retryable: true };
     }
 };

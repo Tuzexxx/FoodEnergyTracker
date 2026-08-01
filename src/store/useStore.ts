@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../utils/calorieFormula';
+import { clearAllPending } from '../utils/pendingQueue';
 
 export { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN };
 
@@ -34,6 +35,25 @@ interface UserProfile {
     activityLevel: string;
 }
 
+const createId = () => globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
+
+const startOfLocalDay = (timestamp: number) => {
+    const date = new Date(timestamp);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime();
+};
+
+const isToday = (timestamp: number) => startOfLocalDay(timestamp) === startOfLocalDay(Date.now());
+
+const historyLabel = (timestamp: number) => {
+    const todayStart = startOfLocalDay(Date.now());
+    const timestampStart = startOfLocalDay(timestamp);
+    const yesterday = new Date(todayStart);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (timestampStart === yesterday.getTime()) return 'Yesterday';
+    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
 export interface ProcessingLog {
     id: string;
     text: string;
@@ -43,6 +63,9 @@ export interface ProcessingLog {
 interface AppState {
     historicalExerciseDays: string[];
     session: Session | null;
+    // Identifies which account owns the locally cached favorites. The session
+    // itself is intentionally not persisted by Zustand.
+    persistedScope: string | null;
     setSession: (session: Session | null) => void;
     isGuest: boolean;
     setGuestMode: (isGuest: boolean) => void;
@@ -57,17 +80,17 @@ interface AppState {
     yesterdayProtein: number;
     historicalDays: HistoricalDay[];
     dailyLog: FoodEntry[];
-    calibrateUser: (profile: UserProfile, kcal: number, protein: number) => void;
-    addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
-    addEntryWithTimestamp: (entry: Omit<FoodEntry, 'id' | 'timestamp'>, timestamp: number) => void;
-    updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id'>>) => void;
-    deleteEntry: (id: string) => void;
-    resetDaily: () => void;
+    calibrateUser: (profile: UserProfile, kcal: number, protein: number) => Promise<void>;
+    addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => Promise<void>;
+    addEntryWithTimestamp: (entry: Omit<FoodEntry, 'id' | 'timestamp'>, timestamp: number) => Promise<void>;
+    updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id'>>) => Promise<void>;
+    deleteEntry: (id: string) => Promise<void>;
+    resetDaily: () => Promise<void>;
     resetAll: () => void;
     favorites: Omit<FoodEntry, 'id' | 'timestamp'>[];
-    addFavorite: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
-    removeFavorite: (name: string) => void;
-    updateFavorite: (oldName: string, updatedFav: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
+    addFavorite: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => Promise<void>;
+    removeFavorite: (name: string) => Promise<void>;
+    updateFavorite: (oldName: string, updatedFav: Omit<FoodEntry, 'id' | 'timestamp'>) => Promise<void>;
     processingLogs: ProcessingLog[];
     addProcessingLog: (log: ProcessingLog) => void;
     removeProcessingLog: (id: string) => void;
@@ -84,25 +107,79 @@ interface AppState {
 
 export const useStore = create<AppState>()(
     persist(
-        (set, get) => ({
+    (set, get) => ({
             session: null,
+            persistedScope: null,
             viewedHistoryDate: null,
             setViewedHistoryDate: (date) => set({ viewedHistoryDate: date }),
             setSession: (session) => {
-                set({ session, isGuest: false });
+                const previousUserId = get().session?.user.id;
+                const nextUserId = session?.user.id;
+                const previousPersistedScope = get().persistedScope;
+                const canReusePersistedFavorites = Boolean(session?.user.id && previousPersistedScope === session.user.id);
+                const userChanged = previousUserId !== nextUserId && (previousUserId !== undefined || nextUserId !== undefined);
+
+                if (userChanged) {
+                    void clearAllPending();
+                    set({
+                        session,
+                        isGuest: false,
+                        persistedScope: nextUserId ?? null,
+                        isCalibrated: false,
+                        profile: null,
+                        targetKcal: 0,
+                        targetProtein: 0,
+                        consumedKcal: 0,
+                        consumedProtein: 0,
+                        yesterdayKcal: 0,
+                        yesterdayProtein: 0,
+                        historicalDays: [],
+                        dailyLog: [],
+                        // On a fresh app load the session is restored after
+                        // persisted state. Keep this user's cached favorites
+                        // while cloud hydration runs; discard other accounts.
+                        favorites: canReusePersistedFavorites ? get().favorites : [],
+                        historicalExerciseDays: [],
+                        exerciseDay: false,
+                        viewedHistoryDate: null,
+                    });
+                } else {
+                    set({ session, persistedScope: nextUserId ?? previousPersistedScope });
+                }
                 if (session) {
-                    get().fetchCloudData();
+                    void get().fetchCloudData();
                 }
             },
             isGuest: false,
-            setGuestMode: (isGuest) => set({ isGuest }),
+            setGuestMode: (isGuest) => set((state) => ({
+                isGuest,
+                // Keep the guest scope while the user is on the auth screen
+                // so a sign-in attempt cannot erase local favorites first.
+                persistedScope: isGuest ? 'guest' : (state.session?.user.id ?? state.persistedScope),
+            })),
 
             fetchCloudData: async () => {
                 const { session } = get();
                 if (!session?.user) return;
+                const userId = session.user.id;
+
+                // Clear account-scoped state before hydration so stale data from a
+                // previous account cannot remain visible during the fetch.
+                set({
+                    isCalibrated: false,
+                    profile: null,
+                    targetKcal: 0,
+                    targetProtein: 0,
+                    consumedKcal: 0,
+                    consumedProtein: 0,
+                    yesterdayKcal: 0,
+                    yesterdayProtein: 0,
+                    historicalDays: [],
+                    dailyLog: [],
+                });
 
                 // Fetch profile
-                const { data: profileData } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+                const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
                 const startOfDay = new Date();
                 startOfDay.setHours(0, 0, 0, 0);
@@ -110,21 +187,29 @@ export const useStore = create<AppState>()(
                 // Fetch today's entries
                 const { data: entries } = await supabase.from('food_entries')
                     .select('*')
-                    .eq('user_id', session.user.id)
+                    .eq('user_id', userId)
                     .gte('timestamp', startOfDay.getTime())
                     .order('timestamp', { ascending: false });
 
                 // Fetch favorites
-                const { data: favoritesData } = await supabase.from('favorites')
+                const { data: favoritesData, error: favoritesError } = await supabase.from('favorites')
                     .select('*')
-                    .eq('user_id', session.user.id);
+                    .eq('user_id', userId);
+
+                if (favoritesError) {
+                    // A temporary read/RLS failure must not erase favorites
+                    // that are already cached locally.
+                    console.error('Supabase Favorites Read Error:', favoritesError.message);
+                }
 
                 // Fetch all historical entries before today
                 const { data: historicalEntries } = await supabase.from('food_entries')
                     .select('*')
-                    .eq('user_id', session.user.id)
+                    .eq('user_id', userId)
                     .lt('timestamp', startOfDay.getTime())
                     .order('timestamp', { ascending: false });
+
+                if (get().session?.user.id !== userId) return;
 
                 if (profileData) {
                     set({
@@ -210,13 +295,13 @@ export const useStore = create<AppState>()(
                     });
                 }
 
-                if (favoritesData && favoritesData.length > 0) {
-                    const parsedFavorites = favoritesData.map(f => ({
-                        name: f.name,
-                        kcal: Math.round(Number(f.kcal)),
-                        protein: Math.round(Number(f.protein)),
-                        carbs: Math.round(Number(f.carbs)),
-                        fat: Math.round(Number(f.fat))
+                if (!favoritesError) {
+                    const parsedFavorites = (favoritesData || []).map(f => ({
+                            name: f.name,
+                            kcal: Math.round(Number(f.kcal)),
+                            protein: Math.round(Number(f.protein)),
+                            carbs: Math.round(Number(f.carbs)),
+                            fat: Math.round(Number(f.fat))
                     }));
                     set({ favorites: parsedFavorites });
                 }
@@ -298,6 +383,7 @@ export const useStore = create<AppState>()(
                         age: profile.age,
                         gender: profile.gender,
                         goal: profile.goal,
+                        activity_level: profile.activityLevel,
                         target_kcal: kcal,
                         target_protein: protein,
                         updated_at: new Date().toISOString()
@@ -307,7 +393,7 @@ export const useStore = create<AppState>()(
             },
 
             addEntry: async (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => {
-                const newId = Math.random().toString(36).substring(7);
+                const newId = createId();
                 const timestamp = Date.now();
                 const newEntry = { ...entry, id: newId, timestamp };
 
@@ -332,16 +418,54 @@ export const useStore = create<AppState>()(
                         timestamp: timestamp,
                         requires_review: entry.requiresReview || false
                     });
-                    if (error) console.error('Supabase Sync Error:', error.message);
+                    if (error) {
+                        console.error('Supabase Sync Error:', error.message);
+                        set((state) => ({
+                            consumedKcal: Math.max(0, Math.round(state.consumedKcal - entry.kcal)),
+                            consumedProtein: Math.max(0, Math.round(state.consumedProtein - entry.protein)),
+                            dailyLog: state.dailyLog.filter(item => item.id !== newId),
+                        }));
+                    }
                 }
             },
 
             addEntryWithTimestamp: async (entry, timestamp) => {
-                const newId = Math.random().toString(36).substring(7);
+                const newId = createId();
                 const newEntry = { ...entry, id: newId, timestamp };
 
-                // Insert at correct chronological position (descending by timestamp)
+                // Keep Day Recap entries in the day represented by their photo
+                // timestamp. Older photos must not inflate today's totals.
                 set((state) => {
+                    if (!isToday(timestamp)) {
+                        const dateStr = historyLabel(timestamp);
+                        const existingDay = state.historicalDays.find(day => day.dateStr === dateStr);
+                        const nextDay: HistoricalDay = existingDay
+                            ? {
+                                ...existingDay,
+                                kcal: existingDay.kcal + Math.round(entry.kcal),
+                                protein: existingDay.protein + Math.round(entry.protein),
+                                entries: [...existingDay.entries, newEntry].sort((a, b) => b.timestamp - a.timestamp),
+                            }
+                            : {
+                                dateStr,
+                                realDateStr: new Date(timestamp).toDateString(),
+                                kcal: Math.round(entry.kcal),
+                                protein: Math.round(entry.protein),
+                                entries: [newEntry],
+                            };
+
+                        return {
+                            historicalDays: [
+                                ...state.historicalDays.filter(day => day.dateStr !== dateStr),
+                                nextDay,
+                            ].sort((a, b) => {
+                                const aTime = a.entries[0]?.timestamp || 0;
+                                const bTime = b.entries[0]?.timestamp || 0;
+                                return bTime - aTime;
+                            }),
+                        };
+                    }
+
                     const updatedLog = [...state.dailyLog, newEntry].sort((a, b) => b.timestamp - a.timestamp);
                     return {
                         consumedKcal: Math.round(state.consumedKcal + entry.kcal),
@@ -364,13 +488,43 @@ export const useStore = create<AppState>()(
                         timestamp: timestamp,
                         requires_review: entry.requiresReview || false
                     });
-                    if (error) console.error("Supabase Sync Error:", error.message);
+                    if (error) {
+                        console.error("Supabase Sync Error:", error.message);
+                        set((state) => {
+                            const dailyEntry = state.dailyLog.find(item => item.id === newId);
+                            if (dailyEntry) {
+                                return {
+                                    consumedKcal: Math.max(0, Math.round(state.consumedKcal - entry.kcal)),
+                                    consumedProtein: Math.max(0, Math.round(state.consumedProtein - entry.protein)),
+                                    dailyLog: state.dailyLog.filter(item => item.id !== newId),
+                                };
+                            }
+
+                            return {
+                                historicalDays: state.historicalDays
+                                    .map(day => {
+                                        if (!day.entries.some(item => item.id === newId)) return day;
+                                        return {
+                                            ...day,
+                                            kcal: Math.max(0, day.kcal - Math.round(entry.kcal)),
+                                            protein: Math.max(0, day.protein - Math.round(entry.protein)),
+                                            entries: day.entries.filter(item => item.id !== newId),
+                                        };
+                                    })
+                                    .filter(day => day.entries.length > 0),
+                            };
+                        });
+                    }
                 }
             },
 
             updateEntry: async (id, updatedData) => {
                 let targetDayKey: string | null = null;
                 let oldEntry: FoodEntry | null = null;
+                const previousDailyLog = get().dailyLog;
+                const previousHistoricalDays = get().historicalDays;
+                const previousConsumedKcal = get().consumedKcal;
+                const previousConsumedProtein = get().consumedProtein;
 
                 set((state) => {
                     // First check today
@@ -433,13 +587,25 @@ export const useStore = create<AppState>()(
                         timestamp: finalEntry.timestamp,
                         requires_review: finalEntry.requiresReview || false
                     }).eq('id', id);
-                    if (error) console.error('Supabase Sync Error:', error.message);
+                    if (error) {
+                        console.error('Supabase Sync Error:', error.message);
+                        set({
+                            dailyLog: previousDailyLog,
+                            historicalDays: previousHistoricalDays,
+                            consumedKcal: previousConsumedKcal,
+                            consumedProtein: previousConsumedProtein,
+                        });
+                    }
                 }
             },
 
             deleteEntry: async (id) => {
                 let entryToDelete: FoodEntry | null = null;
                 let targetDayKey: string | null = null;
+                const previousDailyLog = get().dailyLog;
+                const previousHistoricalDays = get().historicalDays;
+                const previousConsumedKcal = get().consumedKcal;
+                const previousConsumedProtein = get().consumedProtein;
                 
                 set((state) => {
                     entryToDelete = state.dailyLog.find(e => e.id === id) || null;
@@ -484,31 +650,78 @@ export const useStore = create<AppState>()(
                 const { session } = get();
                 if (session?.user && entryToDelete) {
                     const { error } = await supabase.from('food_entries').delete().eq('id', id);
-                    if (error) console.error('Supabase Delete Error:', error.message);
+                    if (error) {
+                        console.error('Supabase Delete Error:', error.message);
+                        set({
+                            dailyLog: previousDailyLog,
+                            historicalDays: previousHistoricalDays,
+                            consumedKcal: previousConsumedKcal,
+                            consumedProtein: previousConsumedProtein,
+                        });
+                    }
                 }
             },
 
-            resetDaily: () => set((state) => ({
-                yesterdayKcal: state.consumedKcal,
-                yesterdayProtein: state.consumedProtein,
-                consumedKcal: 0,
-                consumedProtein: 0,
-                dailyLog: [],
-                exerciseDay: false,
-            })),
+            resetDaily: async () => {
+                const previous = get();
+                set({
+                    yesterdayKcal: 0,
+                    yesterdayProtein: 0,
+                    consumedKcal: 0,
+                    consumedProtein: 0,
+                    dailyLog: [],
+                    exerciseDay: false,
+                });
 
-            resetAll: () => set(() => ({
-                isCalibrated: false,
-                isGuest: false,
-                profile: null,
-                targetKcal: 0,
-                targetProtein: 0,
-                consumedKcal: 0,
-                consumedProtein: 0,
-                dailyLog: []
-            })),
+                const { session } = get();
+                if (session?.user) {
+                    const startOfDay = new Date();
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const { error } = await supabase.from('food_entries')
+                        .delete()
+                        .eq('user_id', session.user.id)
+                        .gte('timestamp', startOfDay.getTime());
+                    if (error) {
+                        console.error('Supabase Reset Error:', error.message);
+                        set({
+                            yesterdayKcal: previous.yesterdayKcal,
+                            yesterdayProtein: previous.yesterdayProtein,
+                            consumedKcal: previous.consumedKcal,
+                            consumedProtein: previous.consumedProtein,
+                            dailyLog: previous.dailyLog,
+                            exerciseDay: previous.exerciseDay,
+                        });
+                    }
+                }
+            },
+
+            resetAll: () => {
+                void clearAllPending();
+                set(() => ({
+                    isCalibrated: false,
+                    isGuest: false,
+                    persistedScope: null,
+                    profile: null,
+                    targetKcal: 0,
+                    targetProtein: 0,
+                    consumedKcal: 0,
+                    consumedProtein: 0,
+                    yesterdayKcal: 0,
+                    yesterdayProtein: 0,
+                    dailyLog: [],
+                    historicalDays: [],
+                    favorites: [],
+                    historicalExerciseDays: [],
+                    exerciseDay: false,
+                    lastActiveDate: null,
+                    celebrationDismissedDate: null,
+                    viewedHistoryDate: null,
+                    processingLogs: [],
+                }));
+            },
 
             addFavorite: async (entry) => {
+                const previousFavorites = get().favorites;
                 set((state) => ({
                     favorites: [...(state.favorites || []).filter(f => f.name !== entry.name), entry]
                 }));
@@ -524,11 +737,15 @@ export const useStore = create<AppState>()(
                         fat: entry.fat,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,name' });
-                    if (error) console.error('Supabase Sync Error:', error.message);
+                    if (error) {
+                        console.error('Supabase Sync Error:', error.message);
+                        set({ favorites: previousFavorites });
+                    }
                 }
             },
 
             removeFavorite: async (name) => {
+                const previousFavorites = get().favorites;
                 set((state) => ({
                     favorites: (state.favorites || []).filter(f => f.name !== name)
                 }));
@@ -536,11 +753,15 @@ export const useStore = create<AppState>()(
                 const { session } = get();
                 if (session?.user) {
                     const { error } = await supabase.from('favorites').delete().eq('user_id', session.user.id).eq('name', name);
-                    if (error) console.error('Supabase Sync Error:', error.message);
+                    if (error) {
+                        console.error('Supabase Sync Error:', error.message);
+                        set({ favorites: previousFavorites });
+                    }
                 }
             },
 
             updateFavorite: async (oldName, updatedFav) => {
+                const previousFavorites = get().favorites;
                 set((state) => {
                     const updatedList = (state.favorites || []).map(f =>
                         f.name === oldName ? updatedFav : f
@@ -553,7 +774,12 @@ export const useStore = create<AppState>()(
                     // We delete the old and insert/upsert new if the name changed, 
                     // or just upsert if the name is the same.
                     if (oldName !== updatedFav.name) {
-                        await supabase.from('favorites').delete().eq('user_id', session.user.id).eq('name', oldName);
+                        const { error } = await supabase.from('favorites').delete().eq('user_id', session.user.id).eq('name', oldName);
+                        if (error) {
+                            console.error('Supabase Sync Error:', error.message);
+                            set({ favorites: previousFavorites });
+                            return;
+                        }
                     }
                     
                     const { error } = await supabase.from('favorites').upsert({
@@ -565,13 +791,40 @@ export const useStore = create<AppState>()(
                         fat: updatedFav.fat,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,name' });
-                    if (error) console.error('Supabase Sync Error:', error.message);
+                    if (error) {
+                        console.error('Supabase Sync Error:', error.message);
+                        set({ favorites: previousFavorites });
+                    }
                 }
             }
         }),
         {
             name: 'macro-tracker-storage',
-            version: 4, // Added historicalExerciseDays
+            version: 5, // Added account-scoped favorite persistence
+            // Keep favorites locally as a recovery cache for both guests and
+            // signed-in users. The persisted scope prevents cross-account use;
+            // Supabase remains the source of truth when its read succeeds.
+            partialize: (state) => ({
+                isGuest: state.isGuest,
+                persistedScope: state.session?.user.id ?? state.persistedScope ?? (state.isGuest ? 'guest' : null),
+                favorites: state.favorites,
+                ...(state.isGuest ? {
+                isCalibrated: state.isCalibrated,
+                profile: state.profile,
+                targetKcal: state.targetKcal,
+                targetProtein: state.targetProtein,
+                consumedKcal: state.consumedKcal,
+                consumedProtein: state.consumedProtein,
+                yesterdayKcal: state.yesterdayKcal,
+                yesterdayProtein: state.yesterdayProtein,
+                historicalDays: state.historicalDays,
+                dailyLog: state.dailyLog,
+                exerciseDay: state.exerciseDay,
+                historicalExerciseDays: state.historicalExerciseDays,
+                celebrationDismissedDate: state.celebrationDismissedDate,
+                lastActiveDate: state.lastActiveDate,
+                } : {}),
+            }),
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {
                     persistedState.favorites = [];
@@ -584,6 +837,9 @@ export const useStore = create<AppState>()(
                 }
                 if (version < 4 && persistedState) {
                     persistedState.historicalExerciseDays = [];
+                }
+                if (version < 5 && persistedState) {
+                    persistedState.persistedScope = persistedState.isGuest ? 'guest' : null;
                 }
                 return (persistedState as AppState) || {} as AppState;
             }

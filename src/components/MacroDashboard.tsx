@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { AlertCircle, CheckCircle2, Flame } from 'lucide-react';
-import { useStore, EXERCISE_BONUS_KCAL } from '../store/useStore';
+import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 
 const MacroDashboard = () => {
     const { targetKcal, consumedKcal, targetProtein, consumedProtein, exerciseDay, toggleExerciseDay, profile } = useStore();
@@ -9,7 +9,7 @@ const MacroDashboard = () => {
     const showGymButton = !profile?.activityLevel || profile?.activityLevel === 'SEDENTARY' || profile?.activityLevel === 'LIGHT';
 
     const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
-    const effectiveProtein = targetProtein; // protein target unchanged on exercise days
+    const effectiveProtein = targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
 
     const kcalRef = useRef(null);
     const proteinRef = useRef(null);

@@ -12,6 +12,7 @@ import { get, set, del, keys, createStore } from 'idb-keyval';
 
 export interface PendingItem {
     id: string;
+    scope: string;
     input: string;
     image?: string;
     timestamp: number;
@@ -22,9 +23,10 @@ export interface PendingItem {
 const pendingStore = createStore('macro-tracker-pending', 'pending-requests');
 
 /** Persist a request payload before sending */
-export async function savePending(id: string, input: string, image?: string): Promise<void> {
+export async function savePending(id: string, input: string, image?: string, scope = 'guest'): Promise<void> {
     const item: PendingItem = {
         id,
+        scope,
         input,
         image,
         timestamp: Date.now(),
@@ -39,13 +41,18 @@ export async function removePending(id: string): Promise<void> {
 }
 
 /** Get all pending items for retry */
-export async function getAllPending(): Promise<PendingItem[]> {
+export async function getAllPending(scope = 'guest'): Promise<PendingItem[]> {
     const allKeys = await keys(pendingStore);
     const items: PendingItem[] = [];
 
     for (const key of allKeys) {
         const item = await get<PendingItem>(key, pendingStore);
         if (item) {
+            // Older queue entries predate account scoping. Treat them as guest-only
+            // rather than allowing them to be retried for a signed-in user.
+            if (!item.scope) item.scope = 'guest';
+            if (item.scope !== scope) continue;
+
             // Garbage-collect items older than 24 hours
             if (Date.now() - item.timestamp > 24 * 60 * 60 * 1000) {
                 await del(key, pendingStore);

@@ -6,6 +6,7 @@ CREATE TABLE public.profiles (
   age INTEGER,
   gender TEXT,
   goal TEXT,
+  activity_level TEXT,
   target_kcal NUMERIC,
   target_protein NUMERIC,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -25,9 +26,22 @@ CREATE TABLE public.food_entries (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create saved food favorites
+CREATE TABLE public.favorites (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  kcal NUMERIC NOT NULL,
+  protein NUMERIC NOT NULL,
+  carbs NUMERIC NOT NULL,
+  fat NUMERIC NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY (user_id, name)
+);
+
 -- Set up Row Level Security (RLS) to ensure users can only see their own data
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.food_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 
 -- Policies for profiles
 CREATE POLICY "Users can view own profile." ON profiles FOR SELECT USING (auth.uid() = id);
@@ -39,3 +53,9 @@ CREATE POLICY "Users can view own entries." ON food_entries FOR SELECT USING (au
 CREATE POLICY "Users can insert own entries." ON food_entries FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own entries." ON food_entries FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own entries." ON food_entries FOR DELETE USING (auth.uid() = user_id);
+
+-- Policies for favorites
+CREATE POLICY "Users can view own favorites." ON favorites FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own favorites." ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own favorites." ON favorites FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own favorites." ON favorites FOR DELETE USING (auth.uid() = user_id);
