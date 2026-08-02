@@ -549,8 +549,8 @@ const DailyLog = () => {
                         
                         // Progress & Color Logic
                         const isGymDay = historicalExerciseDays?.includes(day.realDateStr) || false;
-                        const effectiveTargetKcal = targetKcal + (isGymDay ? EXERCISE_BONUS_KCAL : 0);
-                        const effectiveTargetProtein = targetProtein + (isGymDay ? EXERCISE_BONUS_PROTEIN : 0);
+                        const effectiveTargetKcal = (day.targetKcal ?? targetKcal) + (isGymDay ? EXERCISE_BONUS_KCAL : 0);
+                        const effectiveTargetProtein = (day.targetProtein ?? targetProtein) + (isGymDay ? EXERCISE_BONUS_PROTEIN : 0);
 
                         const kcalHit = day.kcal <= effectiveTargetKcal && day.kcal > 0;
                         const kcalOver = day.kcal > effectiveTargetKcal;

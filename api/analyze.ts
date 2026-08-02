@@ -246,7 +246,17 @@ CLARIFICATION FORMAT:
             return res.status(503).json({ error: `All AI models unavailable. Last error: ${lastError.substring(0, 200)}`, type: 'error' });
         }
 
-        const data: any = await geminiResponse.json();
+        interface GeminiCandidate {
+    content?: {
+        parts?: Array<{ text?: string }>;
+    };
+}
+
+interface GeminiResponse {
+    candidates?: GeminiCandidate[];
+}
+
+        const data = (await geminiResponse.json()) as GeminiResponse;
         const candidate = data.candidates?.[0];
         if (!candidate || !candidate.content || !candidate.content.parts) {
             console.error("Unexpected Gemini response structure:", JSON.stringify(data));

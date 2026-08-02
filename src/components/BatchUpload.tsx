@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { X, LayoutGrid, Check, AlertCircle, Loader2, Upload, Clock, Sparkles } from 'lucide-react';
+import { X, LayoutGrid, Check, AlertCircle, Loader2, Upload, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { getAiResponse } from '../utils/ai';
 import { extractPhotoTimestamp } from '../utils/exifTimestamp';
@@ -104,6 +104,38 @@ const BatchUpload = ({ isOpen, onClose }: BatchUploadProps) => {
 
         if (e.target) e.target.value = '';
     }, []);
+
+    
+    const retryPhoto = useCallback(async (photoId: string) => {
+        const photo = photos.find(p => p.id === photoId);
+        if (!photo || isAnalyzing) return;
+
+        setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, status: 'processing', errorMessage: undefined } : p));
+        setIsAnalyzing(true);
+
+        try {
+            const base64 = await resizeImageToBase64(photo.file);
+            const promptText = "Analyze this food image. Estimate macros accurately with approximate metric weight (grams/ml).";
+            const response: any = await getAiResponse(promptText, base64);
+
+            if (response.type === 'success' && response.data) {
+                addEntryWithTimestamp(response.data, photo.timestamp);
+                setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, status: 'success' } : p));
+                setCompletedCount(c => c + 1);
+                setFailedCount(f => Math.max(0, f - 1));
+                playSound('log');
+            } else {
+                const msg = response.error || (response.type === 'clarification' ? 'Image requires review' : 'Analysis failed');
+                setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, status: 'error', errorMessage: msg } : p));
+                playSound('error');
+            }
+        } catch (err: any) {
+            setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, status: 'error', errorMessage: err.message || 'Error' } : p));
+            playSound('error');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    }, [photos, isAnalyzing, addEntryWithTimestamp]);
 
     const analyzeAll = useCallback(async () => {
         if (photos.length === 0) return;
@@ -332,12 +364,20 @@ const BatchUpload = ({ isOpen, onClose }: BatchUploadProps) => {
                                     )}
 
                                     {photo.status === 'error' && (
-                                        <div className="absolute inset-0 bg-red-900/30 backdrop-blur-sm flex items-center justify-center">
-                                            <div className="flex flex-col items-center gap-1 px-3">
-                                                <AlertCircle size={24} className="text-red-300" />
-                                                <span className="font-sans text-[9px] text-red-200 text-center leading-tight">
+                                        <div className="absolute inset-0 bg-red-900/40 backdrop-blur-sm flex items-center justify-center p-2">
+                                            <div className="flex flex-col items-center gap-1.5 text-center">
+                                                <AlertCircle size={20} className="text-red-300" />
+                                                <span className="font-sans text-[9px] text-red-100 font-bold leading-tight line-clamp-2">
                                                     {photo.errorMessage || 'Failed'}
                                                 </span>
+                                                {!isAnalyzing && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); retryPhoto(photo.id); }}
+                                                        className="mt-1 px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white text-[9px] font-bold uppercase rounded-full tracking-wider flex items-center gap-1 transition active:scale-95"
+                                                    >
+                                                        <RefreshCw size={10} /> Retry
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     )}

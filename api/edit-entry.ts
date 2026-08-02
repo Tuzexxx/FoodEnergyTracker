@@ -221,7 +221,17 @@ SUCCESS FORMAT:
             return res.status(503).json({ error: 'All AI models unavailable', type: 'error' });
         }
 
-        const data: any = await geminiResponse.json();
+        interface GeminiCandidate {
+    content?: {
+        parts?: Array<{ text?: string }>;
+    };
+}
+
+interface GeminiResponse {
+    candidates?: GeminiCandidate[];
+}
+
+        const data = (await geminiResponse.json()) as GeminiResponse;
         const candidate = data.candidates?.[0];
         if (!candidate || !candidate.content || !candidate.content.parts) {
             return res.status(500).json({ error: 'Unexpected response format from AI', type: 'error' });
