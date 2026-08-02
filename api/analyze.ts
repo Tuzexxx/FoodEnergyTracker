@@ -69,8 +69,11 @@ CLARIFICATION FORMAT:
             }
         }
 
-        const MODELS = [
+                const MODELS = [
+            'gemini-3.5-flash',
             'gemini-3.5-flash-lite',
+            'gemini-3.1-flash-lite',
+            'gemini-2.5-flash-lite',
         ];
 
         const requestBody = JSON.stringify({
@@ -85,33 +88,29 @@ CLARIFICATION FORMAT:
         let geminiResponse: Response | null = null;
         let lastError = '';
 
-        for (const model of MODELS) {
+                for (const model of MODELS) {
             console.log(`[analyze] Trying model: ${model}`);
-            const resp = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: requestBody,
+            try {
+                const resp = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: requestBody,
+                    }
+                );
+
+                if (resp.ok) {
+                    geminiResponse = resp;
+                    break;
                 }
-            );
 
-            if (resp.ok) {
-                geminiResponse = resp;
-                break;
+                lastError = await resp.text();
+                console.warn(`[analyze] Model ${model} failed (${resp.status}):`, lastError);
+            } catch (err: any) {
+                lastError = err.message || String(err);
+                console.warn(`[analyze] Model ${model} exception:`, lastError);
             }
-
-            // Retryable errors: 503 (overloaded), 429 (rate-limit)
-            lastError = await resp.text();
-            console.warn(`[analyze] Model ${model} failed (${resp.status}):`, lastError);
-
-            if (resp.status === 503 || resp.status === 429) {
-                console.log(`[analyze] Retryable error, falling back to next model...`);
-                continue;
-            }
-
-            // Non-retryable error — stop immediately
-            return res.status(500).json({ error: `Gemini API Error (${resp.status}): ${lastError.substring(0, 200)}`, type: 'error' });
         }
 
         if (!geminiResponse) {

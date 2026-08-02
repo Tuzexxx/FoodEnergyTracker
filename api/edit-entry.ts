@@ -48,8 +48,11 @@ SUCCESS FORMAT:
   }
 }`;
 
-        const MODELS = [
+                const MODELS = [
+            'gemini-3.5-flash',
             'gemini-3.5-flash-lite',
+            'gemini-3.1-flash-lite',
+            'gemini-2.5-flash-lite',
         ];
 
         const requestBody = JSON.stringify({
@@ -66,27 +69,29 @@ SUCCESS FORMAT:
         let geminiResponse: Response | null = null;
         let lastError = '';
 
-        for (const model of MODELS) {
-            const resp = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: requestBody,
+                for (const model of MODELS) {
+            console.log(`[edit-entry] Trying model: ${model}`);
+            try {
+                const resp = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: requestBody,
+                    }
+                );
+
+                if (resp.ok) {
+                    geminiResponse = resp;
+                    break;
                 }
-            );
 
-            if (resp.ok) {
-                geminiResponse = resp;
-                break;
+                lastError = await resp.text();
+                console.warn(`[edit-entry] Model ${model} failed (${resp.status}):`, lastError);
+            } catch (err: any) {
+                lastError = err.message || String(err);
+                console.warn(`[edit-entry] Model ${model} exception:`, lastError);
             }
-
-            lastError = await resp.text();
-            console.warn(`[edit-entry] Model ${model} failed (${resp.status}):`, lastError);
-
-            if (resp.status === 503 || resp.status === 429) continue;
-
-            return res.status(500).json({ error: `Gemini API Error (${resp.status})`, type: 'error' });
         }
 
         if (!geminiResponse) {

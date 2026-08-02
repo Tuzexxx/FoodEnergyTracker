@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useStore } from './store/useStore';
-import { Settings, Sparkles } from 'lucide-react';
+import { FlaskConical, Settings, Sparkles } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
@@ -81,12 +81,17 @@ function App() {
             {/* Settings / PWA Install Bridge */}
             <nav className="py-4 px-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0 bg-off-white/90 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm">
                 <h1 className="font-drama tracking-wide text-xl flex items-center gap-3 text-brutal-black drop-shadow-sm">
+                    <span
+                        className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.16em] text-violet-700 shadow-sm"
+                        title="Lab environment"
+                        aria-label="Lab environment"
+                    >
+                        <FlaskConical size={13} strokeWidth={2.4} aria-hidden="true" />
+                        Lab
+                    </span>
                     MacroTrack
                     <span className="font-sans text-[9px] uppercase tracking-widest opacity-40 bg-black/5 px-2 py-0.5 rounded-full border border-black/5 leading-none mt-1">
                         by MiHo
-                    </span>
-                    <span className="font-sans text-[8px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-500 text-white px-2.5 py-1 rounded-full leading-none mt-1 shadow-sm shadow-amber-500/20">
-                        PRO
                     </span>
                 </h1>
                 <div className="flex items-center gap-4 text-brutal-black">
