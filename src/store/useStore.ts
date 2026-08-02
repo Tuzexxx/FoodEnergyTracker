@@ -19,6 +19,8 @@ export interface FoodEntry {
 }
 
 export interface HistoricalDay {
+    targetKcal?: number;
+    targetProtein?: number;
     dateStr: string;
     realDateStr: string;
     kcal: number;
@@ -329,11 +331,21 @@ export const useStore = create<AppState>()(
             lastActiveDate: null,
             checkDayRollover: () => {
                 const todayStr = new Date().toDateString();
-                const { lastActiveDate, consumedKcal, consumedProtein } = get();
+                const { lastActiveDate, consumedKcal, consumedProtein, targetKcal, targetProtein, dailyLog, historicalDays } = get();
 
                 if (lastActiveDate && lastActiveDate !== todayStr) {
-                    // Day changed — move consumed totals to "yesterday" and reset
-                    console.log(`[DayRollover] ${lastActiveDate} → ${todayStr}. Yesterday: ${consumedKcal} kcal, ${consumedProtein}g protein`);
+                    // Day changed � move consumed totals and daily entries to historicalDays with active targets
+                    console.log(`[DayRollover] ${lastActiveDate} -> ${todayStr}. Yesterday: ${consumedKcal} kcal, ${consumedProtein}g protein`);
+                    const rolledOverDay: HistoricalDay = {
+                        dateStr: lastActiveDate,
+                        realDateStr: lastActiveDate,
+                        kcal: consumedKcal,
+                        protein: consumedProtein,
+                        targetKcal,
+                        targetProtein,
+                        entries: [...dailyLog]
+                    };
+                    const existingFiltered = (historicalDays || []).filter(h => h.dateStr !== lastActiveDate);
                     set({
                         yesterdayKcal: consumedKcal,
                         yesterdayProtein: consumedProtein,
@@ -342,9 +354,10 @@ export const useStore = create<AppState>()(
                         dailyLog: [],
                         exerciseDay: false,
                         lastActiveDate: todayStr,
+                        historicalDays: [rolledOverDay, ...existingFiltered]
                     });
                 } else if (!lastActiveDate) {
-                    // First time — just record today
+                    // First time � just record today
                     set({ lastActiveDate: todayStr });
                 }
             },

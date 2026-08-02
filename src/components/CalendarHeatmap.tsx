@@ -30,11 +30,11 @@ const CalendarHeatmap = () => {
     };
 
     // Build a map: day number -> { kcal, protein }
-    const dayMap = new Map<number, { kcal: number; protein: number }>();
+    const dayMap = new Map<number, { kcal: number; protein: number; targetKcal?: number; targetProtein?: number }>();
 
     // Today's data (only for current month)
     if (isCurrentMonth) {
-        dayMap.set(now.getDate(), { kcal: consumedKcal, protein: consumedProtein });
+        dayMap.set(now.getDate(), { kcal: consumedKcal, protein: consumedProtein, targetKcal, targetProtein });
     }
 
     // Historical data
@@ -42,7 +42,7 @@ const CalendarHeatmap = () => {
         if (day.entries && day.entries.length > 0) {
             const d = new Date(Number(day.entries[0].timestamp));
             if (d.getMonth() === month && d.getFullYear() === year) {
-                dayMap.set(d.getDate(), { kcal: day.kcal, protein: day.protein });
+                dayMap.set(d.getDate(), { kcal: day.kcal, protein: day.protein, targetKcal: day.targetKcal, targetProtein: day.targetProtein });
             }
         }
     });

@@ -36,6 +36,13 @@ function App() {
         return celebrationDismissedDate !== todayStr;
     }, [isCalibrated, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate]);
 
+    // Record today's celebration as shown immediately so page reloads do not replay it
+    useEffect(() => {
+        if (shouldCelebrate) {
+            dismissCelebration();
+        }
+    }, [shouldCelebrate, dismissCelebration]);
+
     useEffect(() => {
         if (!isSupabaseConfigured) return;
 
