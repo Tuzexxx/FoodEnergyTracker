@@ -42,17 +42,27 @@ function consumeRateLimit(key: string, limit: number): boolean {
 }
 
 async function authenticate(req: ApiRequest): Promise<AuthResult> {
-    const authorization = header(req, 'authorization');
-    if (!authorization) return { userId: null, invalidToken: false };
+    try {
+        const authorization = header(req, 'authorization');
+        if (!authorization) return { userId: null, invalidToken: false };
 
-    const token = authorization.replace(/^Bearer\s+/i, '').trim();
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    if (!token || !supabaseUrl || !supabaseAnonKey) return { userId: null, invalidToken: true };
+        const token = authorization.replace(/^Bearer\s+/i, '').trim();
+        if (!token) return { userId: null, invalidToken: false };
 
-    const client = createClient(supabaseUrl, supabaseAnonKey);
-    const { data, error } = await client.auth.getUser(token);
-    return { userId: error || !data.user ? null : data.user.id, invalidToken: Boolean(error || !data.user) };
+        const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseAnonKey) return { userId: null, invalidToken: false };
+
+        const client = createClient(supabaseUrl, supabaseAnonKey);
+        const { data, error } = await client.auth.getUser(token);
+        if (error || !data?.user) {
+            return { userId: null, invalidToken: true };
+        }
+        return { userId: data.user.id, invalidToken: false };
+    } catch (err) {
+        console.warn('[auth] Error checking token:', err);
+        return { userId: null, invalidToken: false };
+    }
 }
 
 /** Apply lightweight abuse protection while retaining the app's guest mode. */
