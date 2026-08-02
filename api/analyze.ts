@@ -208,9 +208,6 @@ CLARIFICATION FORMAT:
         };
 
         // Google Search Grounding tool is only supported for text inputs, NOT multimodal/image inputs
-        if (!image) {
-            requestBodyObj.tools = [{ googleSearch: {} }];
-        }
 
         const requestBody = JSON.stringify(requestBodyObj);
 

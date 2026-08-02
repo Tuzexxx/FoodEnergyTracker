@@ -185,7 +185,6 @@ SUCCESS FORMAT:
             contents: [{
                 parts: [{ text: prompt }]
             }],
-            tools: [{ googleSearch: {} }],
             generationConfig: { responseMimeType: 'application/json' },
         });
 

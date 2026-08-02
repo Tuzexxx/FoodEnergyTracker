@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useStore } from './store/useStore';
-import { FlaskConical, Settings, Sparkles } from 'lucide-react';
+import { FlaskConical, Settings, Sparkles, Loader2 } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
@@ -19,6 +19,7 @@ function App() {
     const [manualCelebrate, setManualCelebrate] = useState(false);
 
     // Day rollover: detect new day and move consumed → yesterday
+        // Day rollover: detect new day and move consumed -> yesterday
     useEffect(() => {
         checkDayRollover();
         const handleVisibility = () => {
@@ -43,17 +44,26 @@ function App() {
         }
     }, [shouldCelebrate, dismissCelebration]);
 
+    const [isAuthLoading, setIsAuthLoading] = useState(isSupabaseConfigured);
+
     useEffect(() => {
-        if (!isSupabaseConfigured) return;
+        if (!isSupabaseConfigured) {
+            setIsAuthLoading(false);
+            return;
+        }
 
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
+            setIsAuthLoading(false);
+        }).catch(() => {
+            setIsAuthLoading(false);
         });
 
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
+            setIsAuthLoading(false);
         });
 
         return () => subscription.unsubscribe();
@@ -128,7 +138,12 @@ function App() {
             </nav>
 
             <main className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-40 flex flex-col gap-8">
-                {(!session && !isGuest) ? (
+                {isAuthLoading ? (
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 opacity-60">
+                        <Loader2 className="w-8 h-8 animate-spin text-brutal-black" />
+                        <span className="font-sans text-xs uppercase tracking-widest font-bold">Initializing telemetry...</span>
+                    </div>
+                ) : (!session && !isGuest) ? (
                     <AuthScreen />
                 ) : !isCalibrated ? (
                     <OnboardingModal />
