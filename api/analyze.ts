@@ -17,7 +17,7 @@ interface AuthResult {
 
 const MAX_INPUT_LENGTH = 2000;
 const MAX_MESSAGE_LENGTH = 500;
-const MAX_IMAGE_LENGTH = 5000000;
+const MAX_IMAGE_LENGTH = 15000000;
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
 
 function header(req: ApiRequest, name: string): string {
@@ -93,7 +93,7 @@ export function validateAnalyzeBody(body: unknown): { input: string; image?: str
     if (input.length > MAX_INPUT_LENGTH) return { error: 'Input must be ' + MAX_INPUT_LENGTH + ' characters or fewer.' };
     if (image) {
         if (image.length > MAX_IMAGE_LENGTH) return { error: 'Image is too large.' };
-        if (!/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(image)) {
+        if (!/^data:image\/[a-zA-Z0-9.-]+;base64,/i.test(image)) {
             return { error: 'Only JPEG, PNG, and WebP data images are supported.' };
         }
     }
@@ -199,14 +199,20 @@ CLARIFICATION FORMAT:
             'gemini-3.5-flash-lite',
         ];
 
-        const requestBody = JSON.stringify({
+        const requestBodyObj: any = {
             system_instruction: {
                 parts: [{ text: prompt }]
             },
             contents: [{ parts }],
-            tools: [{ googleSearch: {} }],
             generationConfig: { responseMimeType: 'application/json' },
-        });
+        };
+
+        // Google Search Grounding tool is only supported for text inputs, NOT multimodal/image inputs
+        if (!image) {
+            requestBodyObj.tools = [{ googleSearch: {} }];
+        }
+
+        const requestBody = JSON.stringify(requestBodyObj);
 
         let geminiResponse: Response | null = null;
         let lastError = '';

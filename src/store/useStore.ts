@@ -163,20 +163,7 @@ export const useStore = create<AppState>()(
                 if (!session?.user) return;
                 const userId = session.user.id;
 
-                // Clear account-scoped state before hydration so stale data from a
-                // previous account cannot remain visible during the fetch.
-                set({
-                    isCalibrated: false,
-                    profile: null,
-                    targetKcal: 0,
-                    targetProtein: 0,
-                    consumedKcal: 0,
-                    consumedProtein: 0,
-                    yesterdayKcal: 0,
-                    yesterdayProtein: 0,
-                    historicalDays: [],
-                    dailyLog: [],
-                });
+                // Keep persisted local state visible during cloud hydration to prevent UI reset/flicker.
 
                 // Fetch profile
                 const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
