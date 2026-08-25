@@ -118,15 +118,16 @@ export const useStore = create<AppState>()(
                 const previousUserId = get().session?.user.id;
                 const nextUserId = session?.user.id;
                 const previousPersistedScope = get().persistedScope;
-                const canReusePersistedFavorites = Boolean(session?.user.id && previousPersistedScope === session.user.id);
-                const userChanged = previousUserId !== nextUserId && (previousUserId !== undefined || nextUserId !== undefined);
 
-                if (userChanged) {
+                // An actual user switch happens ONLY when we had an active user ID previously AND now have a DIFFERENT user ID.
+                const isRealUserSwitch = Boolean(previousUserId && nextUserId && previousUserId !== nextUserId);
+
+                if (isRealUserSwitch) {
                     void clearAllPending();
                     set({
                         session,
                         isGuest: false,
-                        persistedScope: nextUserId ?? null,
+                        persistedScope: nextUserId,
                         isCalibrated: false,
                         profile: null,
                         targetKcal: 0,
@@ -137,16 +138,17 @@ export const useStore = create<AppState>()(
                         yesterdayProtein: 0,
                         historicalDays: [],
                         dailyLog: [],
-                        // On a fresh app load the session is restored after
-                        // persisted state. Keep this user's cached favorites
-                        // while cloud hydration runs; discard other accounts.
-                        favorites: canReusePersistedFavorites ? get().favorites : [],
+                        favorites: [],
                         historicalExerciseDays: [],
                         exerciseDay: false,
                         viewedHistoryDate: null,
                     });
                 } else {
-                    set({ session, persistedScope: nextUserId ?? previousPersistedScope });
+                    set({
+                        session,
+                        persistedScope: nextUserId ?? previousPersistedScope,
+                        ...(session?.user ? { isGuest: false } : {})
+                    });
                 }
                 if (session) {
                     void get().fetchCloudData();
@@ -286,13 +288,32 @@ export const useStore = create<AppState>()(
 
                 if (!favoritesError) {
                     const parsedFavorites = (favoritesData || []).map(f => ({
-                            name: f.name,
-                            kcal: Math.round(Number(f.kcal)),
-                            protein: Math.round(Number(f.protein)),
-                            carbs: Math.round(Number(f.carbs)),
-                            fat: Math.round(Number(f.fat))
+                        name: f.name,
+                        kcal: Math.round(Number(f.kcal)),
+                        protein: Math.round(Number(f.protein)),
+                        carbs: Math.round(Number(f.carbs)),
+                        fat: Math.round(Number(f.fat))
                     }));
-                    set({ favorites: parsedFavorites });
+
+                    if (parsedFavorites.length > 0) {
+                        set({ favorites: parsedFavorites });
+                    } else {
+                        // If cloud returns empty favorites but user has local favorites, push local favorites to cloud
+                        const localFavs = get().favorites;
+                        if (localFavs && localFavs.length > 0) {
+                            for (const fav of localFavs) {
+                                void supabase.from('favorites').upsert({
+                                    user_id: userId,
+                                    name: fav.name,
+                                    kcal: fav.kcal,
+                                    protein: fav.protein,
+                                    carbs: fav.carbs,
+                                    fat: fav.fat,
+                                    updated_at: new Date().toISOString()
+                                }, { onConflict: 'user_id,name' });
+                            }
+                        }
+                    }
                 }
             },
 
@@ -808,7 +829,6 @@ export const useStore = create<AppState>()(
                 isGuest: state.isGuest,
                 persistedScope: state.session?.user.id ?? state.persistedScope ?? (state.isGuest ? 'guest' : null),
                 favorites: state.favorites,
-                ...(state.isGuest ? {
                 isCalibrated: state.isCalibrated,
                 profile: state.profile,
                 targetKcal: state.targetKcal,
@@ -823,7 +843,6 @@ export const useStore = create<AppState>()(
                 historicalExerciseDays: state.historicalExerciseDays,
                 celebrationDismissedDate: state.celebrationDismissedDate,
                 lastActiveDate: state.lastActiveDate,
-                } : {}),
             }),
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {

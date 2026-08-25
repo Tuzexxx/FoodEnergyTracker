@@ -138,16 +138,7 @@ function App() {
             </nav>
 
             <main className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-40 flex flex-col gap-8">
-                {isAuthLoading ? (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 opacity-60">
-                        <Loader2 className="w-8 h-8 animate-spin text-brutal-black" />
-                        <span className="font-sans text-xs uppercase tracking-widest font-bold">Initializing telemetry...</span>
-                    </div>
-                ) : (!session && !isGuest) ? (
-                    <AuthScreen />
-                ) : !isCalibrated ? (
-                    <OnboardingModal />
-                ) : (
+                {isCalibrated ? (
                     <>
                         {isGuest && (
                             <div className="w-full bg-indigo-50/80 backdrop-blur-md border border-indigo-200/50 text-indigo-900 p-4 rounded-3xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
@@ -164,6 +155,15 @@ function App() {
                         <DailyLog />
                         <CalendarHeatmap />
                     </>
+                ) : isAuthLoading ? (
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 opacity-60">
+                        <Loader2 className="w-8 h-8 animate-spin text-brutal-black" />
+                        <span className="font-sans text-xs uppercase tracking-widest font-bold">Initializing telemetry...</span>
+                    </div>
+                ) : (!session && !isGuest) ? (
+                    <AuthScreen />
+                ) : (
+                    <OnboardingModal />
                 )}
             </main>
 
