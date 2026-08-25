@@ -213,3 +213,55 @@ export function calculateWeeklyDeficitTelemetry({
         isSmartwatchOverride,
     };
 }
+
+export interface MacroDistribution {
+    proteinKcal: number;
+    proteinGrams: number;
+    proteinPercent: number;
+    fatKcal: number;
+    fatGrams: number;
+    fatPercent: number;
+    carbsKcal: number;
+    carbsGrams: number;
+    carbsPercent: number;
+}
+
+/**
+ * Calculate optimal macronutrient targets (Protein, Carbs, Fats) for a given daily caloric target.
+ * - Protein: fixed target from profile (4 kcal/g)
+ * - Fat: standard healthy dietary baseline ~28% of total calories (9 kcal/g)
+ * - Carbs: remaining calories for muscular glycogen & daily energy (4 kcal/g)
+ */
+export function calculateMacroDistribution(targetKcal: number, targetProtein: number): MacroDistribution {
+    if (!targetKcal || targetKcal <= 0) {
+        return {
+            proteinKcal: 0,
+            proteinGrams: 0,
+            proteinPercent: 30,
+            fatKcal: 0,
+            fatGrams: 0,
+            fatPercent: 30,
+            carbsKcal: 0,
+            carbsGrams: 0,
+            carbsPercent: 40,
+        };
+    }
+
+    const proteinKcal = targetProtein * 4;
+    const fatKcal = Math.round(targetKcal * 0.28);
+    const fatGrams = Math.round(fatKcal / 9);
+    const carbsKcal = Math.max(0, targetKcal - proteinKcal - fatKcal);
+    const carbsGrams = Math.round(carbsKcal / 4);
+
+    return {
+        proteinKcal,
+        proteinGrams: targetProtein,
+        proteinPercent: Math.round((proteinKcal / targetKcal) * 100),
+        fatKcal,
+        fatGrams,
+        fatPercent: Math.round((fatKcal / targetKcal) * 100),
+        carbsKcal,
+        carbsGrams,
+        carbsPercent: Math.round((carbsKcal / targetKcal) * 100),
+    };
+}

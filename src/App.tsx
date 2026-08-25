@@ -3,7 +3,7 @@ import { useStore } from './store/useStore';
 import { FlaskConical, Settings, Sparkles, Loader2 } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
-import WeeklyDeficitCard from './components/WeeklyDeficitCard';
+import WeeklyFatBurnModal from './components/WeeklyFatBurnModal';
 import DailyLog from './components/DailyLog';
 import CalendarHeatmap from './components/CalendarHeatmap';
 import SmartLogging from './components/SmartLogging';
@@ -153,7 +153,7 @@ function App() {
                             </div>
                         )}
                         <MacroDashboard />
-                        <WeeklyDeficitCard />
+                        <WeeklyFatBurnModal />
                         <DailyLog />
                         <CalendarHeatmap />
                     </>
