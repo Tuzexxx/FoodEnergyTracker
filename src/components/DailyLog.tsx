@@ -126,7 +126,7 @@ const DailyLog = () => {
         const el = cardRefs.current[id];
         if (el) el.style.transform = `translateX(${dampened}px)`;
 
-        // Progressive icon reveal — scale & opacity grow toward threshold
+        // Progressive icon reveal - scale & opacity grow toward threshold
         const THRESHOLD = 70;
         const progress = Math.min(Math.abs(dampened) / THRESHOLD, 1);
         const scale = 0.5 + progress * 0.7; // 0.5 → 1.2
@@ -230,7 +230,7 @@ const DailyLog = () => {
 
     const activeHistoryDay = viewedHistoryDate ? historicalDays?.find(d => d.dateStr === viewedHistoryDate) : null;
     const entriesToDisplay = activeHistoryDay ? activeHistoryDay.entries : dailyLog;
-    const headerTitle = activeHistoryDay ? `History — ${viewedHistoryDate}` : 'Timeline';
+    const headerTitle = activeHistoryDay ? `History - ${viewedHistoryDate}` : 'Timeline';
 
     return (
         <div ref={containerRef} className="flex flex-col gap-4 mt-8 pb-32">
@@ -311,7 +311,7 @@ const DailyLog = () => {
 
                                 {/* Swipe container */}
                                 <div className="relative overflow-hidden rounded-2xl">
-                                    {/* Action areas — fully hidden at rest, revealed on swipe */}
+                                    {/* Action areas - fully hidden at rest, revealed on swipe */}
                                     <div className="absolute inset-0 pointer-events-none z-0 flex">
                                         <div className="flex-1 bg-emerald-500 flex items-center pl-5">
                                             <div ref={el => { actionLeftRefs.current[entry.id] = el; }} className="flex items-center gap-2" style={{ transform: 'scale(0.5)', opacity: 0, transition: 'none' }}>
@@ -375,14 +375,14 @@ const DailyLog = () => {
 
                                             {/* Collapsed 1-row view */}
                                             {expandedId !== entry.id && (
-                                                <div className="flex items-center justify-between w-full gap-4">
+                                                <div className="flex items-center justify-between w-full gap-3">
                                                     <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
                                                         <span className="font-sans text-[12px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                                                             {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
-                                                        <span className="font-sans font-semibold text-lg leading-tight text-brutal-black capitalize truncate">
+                                                        <span className="font-sans font-semibold text-base sm:text-lg leading-tight text-brutal-black capitalize truncate">
                                                             {displayTitle}
                                                         </span>
                                                         {displayDetails && (
@@ -390,15 +390,19 @@ const DailyLog = () => {
                                                                 {displayDetails}
                                                             </span>
                                                         )}
+                                                        {/* Direct instant macros visible at first glance */}
+                                                        <div className="flex items-center gap-1.5 text-[9px] font-sans font-bold uppercase tracking-wider text-brutal-black/40 mt-1">
+                                                            <span className="text-violet-900/70">{entry.protein ?? 0}g Pro</span>
+                                                            <span className="opacity-30">�</span>
+                                                            <span>{entry.carbs ?? 0}g Carb</span>
+                                                            <span className="opacity-30">�</span>
+                                                            <span>{entry.fat ?? 0}g Fat</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-col items-end shrink-0">
+                                                    <div className="flex flex-col items-end shrink-0 pl-1">
                                                         <div className="flex items-baseline gap-1">
                                                             <span className="font-data text-2xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
                                                             <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
-                                                        </div>
-                                                        <div className="flex items-baseline gap-1 mt-0.5">
-                                                            <span className="font-data text-[11px] font-bold tracking-tighter leading-none text-brutal-black/50">{entry.protein}g</span>
-                                                            <span className="text-[8px] uppercase font-semibold text-brutal-black/25 font-sans">Pro</span>
                                                         </div>
                                                     </div>
                                                 </div>
