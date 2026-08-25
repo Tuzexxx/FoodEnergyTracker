@@ -143,3 +143,73 @@ export function calculateTargets({ weight, height, age, gender, goal, activityLe
         targetProtein: Math.round(weight * proteinPerKg),
     };
 }
+
+export interface WeeklyTelemetryInput {
+    weight: number;
+    height: number;
+    age: number;
+    gender: string;
+    activityLevel: string;
+    weeklyConsumedKcal: number;
+    exerciseDaysCount: number;
+    smartwatchBurnKcal?: number | null;
+}
+
+export interface WeeklyTelemetryResult {
+    dailyMaintenanceTDEE: number;
+    weeklyMaintenanceTDEE: number;
+    totalWeeklyBurn: number;
+    weeklyConsumedKcal: number;
+    netDeficitKcal: number;
+    isDeficit: boolean;
+    fatGrams: number;
+    isSmartwatchOverride: boolean;
+}
+
+/**
+ * Calculate weekly energy balance, deficit/surplus, and estimated fat loss/gain in grams.
+ * 7.7 kcal deficit = approx. 1 g of body fat tissue (Helms et al. / Hall et al.).
+ */
+export function calculateWeeklyDeficitTelemetry({
+    weight,
+    height,
+    age,
+    gender,
+    activityLevel,
+    weeklyConsumedKcal,
+    exerciseDaysCount,
+    smartwatchBurnKcal,
+}: WeeklyTelemetryInput): WeeklyTelemetryResult {
+    // 1. Calculate Mifflin-St Jeor BMR
+    const bmr = gender === 'MALE'
+        ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+        : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+
+    // 2. Base Daily TDEE (Maintenance)
+    const dailyMaintenanceTDEE = Math.round(bmr * getPAL(activityLevel));
+
+    // 3. Weekly Maintenance (7 days baseline + exercise days bonus)
+    const calculatedWeeklyBurn = (dailyMaintenanceTDEE * 7) + (exerciseDaysCount * EXERCISE_BONUS_KCAL);
+
+    // 4. Effective Weekly Burn (Smartwatch or Model)
+    const isSmartwatchOverride = typeof smartwatchBurnKcal === 'number' && smartwatchBurnKcal > 0;
+    const totalWeeklyBurn = isSmartwatchOverride ? smartwatchBurnKcal : calculatedWeeklyBurn;
+
+    // 5. Net Deficit: Positive = Deficit (burned > eaten), Negative = Surplus (eaten > burned)
+    const netDeficitKcal = totalWeeklyBurn - weeklyConsumedKcal;
+    const isDeficit = netDeficitKcal >= 0;
+
+    // 6. Fat grams (7.7 kcal per 1g fat)
+    const fatGrams = Math.round(Math.abs(netDeficitKcal) / 7.7);
+
+    return {
+        dailyMaintenanceTDEE,
+        weeklyMaintenanceTDEE: calculatedWeeklyBurn,
+        totalWeeklyBurn,
+        weeklyConsumedKcal,
+        netDeficitKcal,
+        isDeficit,
+        fatGrams,
+        isSmartwatchOverride,
+    };
+}

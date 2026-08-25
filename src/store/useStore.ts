@@ -64,6 +64,8 @@ export interface ProcessingLog {
 
 interface AppState {
     historicalExerciseDays: string[];
+    smartwatchWeeklyBurn: number | null;
+    setSmartwatchWeeklyBurn: (burn: number | null) => void;
     session: Session | null;
     // Identifies which account owns the locally cached favorites. The session
     // itself is intentionally not persisted by Zustand.
@@ -114,6 +116,8 @@ export const useStore = create<AppState>()(
             persistedScope: null,
             viewedHistoryDate: null,
             setViewedHistoryDate: (date) => set({ viewedHistoryDate: date }),
+            smartwatchWeeklyBurn: null,
+            setSmartwatchWeeklyBurn: (burn) => set({ smartwatchWeeklyBurn: burn }),
             setSession: (session) => {
                 const previousUserId = get().session?.user.id;
                 const nextUserId = session?.user.id;
@@ -140,6 +144,8 @@ export const useStore = create<AppState>()(
                         dailyLog: [],
                         favorites: [],
                         historicalExerciseDays: [],
+            smartwatchWeeklyBurn: null,
+            setSmartwatchWeeklyBurn: (burn) => set({ smartwatchWeeklyBurn: burn }),
                         exerciseDay: false,
                         viewedHistoryDate: null,
                     });
@@ -843,6 +849,7 @@ export const useStore = create<AppState>()(
                 historicalExerciseDays: state.historicalExerciseDays,
                 celebrationDismissedDate: state.celebrationDismissedDate,
                 lastActiveDate: state.lastActiveDate,
+                smartwatchWeeklyBurn: state.smartwatchWeeklyBurn,
             }),
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {
