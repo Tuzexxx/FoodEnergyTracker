@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2 } from 'lucide-react';
 import BatchUpload from './BatchUpload';
+import { WeeklyFatBurnTrigger } from './WeeklyFatBurnModal';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -509,6 +510,9 @@ const SmartLogging = () => {
                                 <Star size={20} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
                             </button>
                         )}
+                        <div className="ml-auto">
+                            <WeeklyFatBurnTrigger />
+                        </div>
                     </div>
 
                     {/* Selected Image Thumbnail */}

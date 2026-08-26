@@ -40,14 +40,18 @@ const MacroDashboard = () => {
     const kcalPercent = Math.min(kcalRawPercent, 100);
     const kcalOverflowPercent = Math.max(0, Math.min(kcalRawPercent - 100, 100));
 
-    // Macro percentages & overflow indicators
+    // True percentages (e.g. 120% when 20% over target)
     const isPOver = consumedProtein > effectiveProtein;
     const isCOver = consumedCarbs > optimalMacros.carbsGrams && optimalMacros.carbsGrams > 0;
     const isFOver = consumedFat > optimalMacros.fatGrams && optimalMacros.fatGrams > 0;
 
-    const pPercent = effectiveProtein > 0 ? Math.min(100, Math.round((consumedProtein / effectiveProtein) * 100)) : 0;
-    const cPercent = optimalMacros.carbsGrams > 0 ? Math.min(100, Math.round((consumedCarbs / optimalMacros.carbsGrams) * 100)) : 0;
-    const fPercent = optimalMacros.fatGrams > 0 ? Math.min(100, Math.round((consumedFat / optimalMacros.fatGrams) * 100)) : 0;
+    const pPercent = effectiveProtein > 0 ? Math.round((consumedProtein / effectiveProtein) * 100) : 0;
+    const cPercent = optimalMacros.carbsGrams > 0 ? Math.round((consumedCarbs / optimalMacros.carbsGrams) * 100) : 0;
+    const fPercent = optimalMacros.fatGrams > 0 ? Math.round((consumedFat / optimalMacros.fatGrams) * 100) : 0;
+
+    const pVisualWidth = Math.min(100, pPercent);
+    const cVisualWidth = Math.min(100, cPercent);
+    const fVisualWidth = Math.min(100, fPercent);
 
     useEffect(() => {
         // Number counter animation
@@ -155,18 +159,18 @@ const MacroDashboard = () => {
                     </div>
                 </div>
 
-                {/* Aligned Macro Distribution Rows (Left: Label & % | Middle: Line | Right: Grams & Overage) */}
-                <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2 opacity-85 hover:opacity-100 transition-opacity">
-                    {/* Protein Row */}
+                {/* Macro Rows: Protein (Full Width) on Top + Carbs & Fat (Side-by-Side) Below */}
+                <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2 opacity-90 hover:opacity-100 transition-opacity">
+                    {/* 1. Protein Row (Full Width Dedicated Line) */}
                     <div className="flex items-center gap-2.5 w-full text-[9px] font-sans">
-                        <div className="w-14 shrink-0 flex items-center justify-between text-emerald-400/80 font-bold uppercase tracking-wider">
+                        <div className="w-14 shrink-0 flex items-center justify-between text-emerald-400/90 font-bold uppercase tracking-wider">
                             <span>PRO</span>
-                            <span className="font-data text-[10px] text-white/70">{pPercent}%</span>
+                            <span className="font-data text-[10px] text-white/90">{pPercent}%</span>
                         </div>
                         <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300' : 'bg-emerald-500/70'}`}
-                                style={{ width: `${pPercent}%` }}
+                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.8)]' : 'bg-emerald-500/70'}`}
+                                style={{ width: `${pVisualWidth}%` }}
                             />
                         </div>
                         <div className="w-28 shrink-0 text-right font-data font-medium text-white/50 text-[10px]">
@@ -174,37 +178,40 @@ const MacroDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Carbs Row */}
-                    <div className="flex items-center gap-2.5 w-full text-[9px] font-sans">
-                        <div className="w-14 shrink-0 flex items-center justify-between text-amber-400/80 font-bold uppercase tracking-wider">
-                            <span>CARB</span>
-                            <span className="font-data text-[10px] text-white/70">{cPercent}%</span>
+                    {/* 2. Carbs & Fat Row (Side-by-Side on the bottom line) */}
+                    <div className="grid grid-cols-2 gap-3 w-full text-[9px] font-sans pt-0.5">
+                        {/* Carbs */}
+                        <div className="flex items-center gap-1.5">
+                            <div className="shrink-0 flex items-center gap-1 text-amber-400/90 font-bold uppercase tracking-wider">
+                                <span>CARB</span>
+                                <span className="font-data text-[10px] text-white/90">{cPercent}%</span>
+                            </div>
+                            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden min-w-[24px]">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-700 ${isCOver ? 'bg-amber-300 shadow-[0_0_6px_rgba(252,211,77,0.8)]' : 'bg-amber-500/70'}`}
+                                    style={{ width: `${cVisualWidth}%` }}
+                                />
+                            </div>
+                            <div className="shrink-0 font-data font-medium text-white/50 text-[9px]">
+                                {consumedCarbs}/{optimalMacros.carbsGrams}g {isCOver && <span className="text-amber-400 font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
+                            </div>
                         </div>
-                        <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full rounded-full transition-all duration-700 ${isCOver ? 'bg-amber-300' : 'bg-amber-500/70'}`}
-                                style={{ width: `${cPercent}%` }}
-                            />
-                        </div>
-                        <div className="w-28 shrink-0 text-right font-data font-medium text-white/50 text-[10px]">
-                            {consumedCarbs}/{optimalMacros.carbsGrams}g {isCOver && <span className="text-amber-400 font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
-                        </div>
-                    </div>
 
-                    {/* Fat Row */}
-                    <div className="flex items-center gap-2.5 w-full text-[9px] font-sans">
-                        <div className="w-14 shrink-0 flex items-center justify-between text-rose-400/80 font-bold uppercase tracking-wider">
-                            <span>FAT</span>
-                            <span className="font-data text-[10px] text-white/70">{fPercent}%</span>
-                        </div>
-                        <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full rounded-full transition-all duration-700 ${isFOver ? 'bg-rose-400' : 'bg-rose-500/70'}`}
-                                style={{ width: `${fPercent}%` }}
-                            />
-                        </div>
-                        <div className="w-28 shrink-0 text-right font-data font-medium text-white/50 text-[10px]">
-                            {consumedFat}/{optimalMacros.fatGrams}g {isFOver && <span className="text-rose-400 font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
+                        {/* Fat */}
+                        <div className="flex items-center gap-1.5">
+                            <div className="shrink-0 flex items-center gap-1 text-rose-400/90 font-bold uppercase tracking-wider">
+                                <span>FAT</span>
+                                <span className="font-data text-[10px] text-white/90">{fPercent}%</span>
+                            </div>
+                            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden min-w-[24px]">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-700 ${isFOver ? 'bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]' : 'bg-rose-500/70'}`}
+                                    style={{ width: `${fVisualWidth}%` }}
+                                />
+                            </div>
+                            <div className="shrink-0 font-data font-medium text-white/50 text-[9px]">
+                                {consumedFat}/{optimalMacros.fatGrams}g {isFOver && <span className="text-rose-400 font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
+                            </div>
                         </div>
                     </div>
                 </div>

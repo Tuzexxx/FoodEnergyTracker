@@ -80,8 +80,8 @@ export function useCompletedDaysTelemetry(period: '7d' | '30d'): CompletedDaysTe
     }, [profile, historicalDays, historicalExerciseDays, smartwatchWeeklyBurn, smartwatchMonthlyBurn, period]);
 }
 
-/** Floating badge and simplified telemetry popup modal */
-export const WeeklyFatBurnModal = () => {
+/** Live telemetry trigger button embedded into the food input toolbar */
+export const WeeklyFatBurnTrigger = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [timeframeMode, setTimeframeMode] = useState<'7d' | '30d'>('7d');
     const { daysCount, consumedKcal, exerciseDaysCount, dateRangeLabel, telemetry } = useCompletedDaysTelemetry(timeframeMode);
@@ -120,39 +120,24 @@ export const WeeklyFatBurnModal = () => {
 
     return (
         <>
-            {/* High-visibility Floating Button (Visible on both Mobile and Desktop) */}
-            <aside aria-label="Fat burn telemetry" className="fixed bottom-24 right-4 sm:right-6 z-50 pointer-events-auto">
-                <button
-                    onClick={() => {
-                        const activeVal = timeframeMode === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
-                        setSmartwatchInput(activeVal ? activeVal.toString() : '');
-                        setIsOpen(true);
-                    }}
-                    className="group flex items-center gap-2 px-3.5 py-2.5 rounded-full border-2 border-brutal-black shadow-2xl backdrop-blur-xl transition-all duration-300 active:scale-95 bg-gradient-to-r from-amber-400 to-orange-500 text-brutal-black hover:shadow-amber-500/30"
-                    title="Energy & Fat Deficit Telemetry"
-                >
-                    <div className="relative flex items-center justify-center">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping absolute" />
-                        <span className="p-1 bg-black text-amber-400 rounded-full group-hover:scale-110 transition-transform">
-                            <Flame size={14} className="animate-bounce" />
-                        </span>
-                    </div>
-
-                    <div className="flex flex-col items-start pr-1">
-                        <div className="flex items-center gap-1">
-                            <span className="font-data text-xs font-black tracking-tight leading-none">
-                                {badgeTelemetry.telemetry?.isDeficit ? `-${badgeTelemetry.telemetry.fatGrams}g` : `+${badgeTelemetry.telemetry?.fatGrams || 0}g`}
-                            </span>
-                            <span className="font-sans text-[8px] font-bold uppercase tracking-wider opacity-80 leading-none">
-                                {badgeTelemetry.telemetry?.isDeficit ? 'fat burned' : 'surplus'}
-                            </span>
-                        </div>
-                        <span className="font-sans text-[7px] uppercase font-bold tracking-widest opacity-60 leading-none mt-0.5">
-                            7d Recap
-                        </span>
-                    </div>
-                </button>
-            </aside>
+            {/* Toolbar Button beside Star Icon */}
+            <button
+                onClick={() => {
+                    const activeVal = timeframeMode === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
+                    setSmartwatchInput(activeVal ? activeVal.toString() : '');
+                    setIsOpen(true);
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400/20 via-orange-500/20 to-amber-500/20 text-brutal-black hover:bg-amber-100 transition-all active:scale-95 border border-amber-400/40 shrink-0"
+                title="Energy & Fat Deficit Telemetry"
+            >
+                <Flame size={13} className="text-orange-500 animate-bounce shrink-0" />
+                <span className="font-data font-bold tracking-tight leading-none text-xs text-brutal-black">
+                    {badgeTelemetry.telemetry?.isDeficit ? `-${badgeTelemetry.telemetry.fatGrams}g` : `+${badgeTelemetry.telemetry?.fatGrams || 0}g`}
+                </span>
+                <span className="font-sans text-[8px] font-bold uppercase tracking-wider opacity-60 leading-none">
+                    fat
+                </span>
+            </button>
 
             {/* Simplified Telemetry Popup Modal with Click-Outside Dismissal */}
             {isOpen && telemetry && (
@@ -346,4 +331,4 @@ export const WeeklyFatBurnModal = () => {
     );
 };
 
-export default WeeklyFatBurnModal;
+export default WeeklyFatBurnTrigger;
