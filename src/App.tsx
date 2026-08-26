@@ -3,7 +3,7 @@ import { useStore } from './store/useStore';
 import { FlaskConical, Settings, Sparkles, Loader2 } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
-import WeeklyFatBurnModal, { WeeklyFatBurnReport } from './components/WeeklyFatBurnModal';
+import WeeklyFatBurnModal from './components/WeeklyFatBurnModal';
 import DailyLog from './components/DailyLog';
 import CalendarHeatmap from './components/CalendarHeatmap';
 import SmartLogging from './components/SmartLogging';
@@ -18,7 +18,7 @@ function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [manualCelebrate, setManualCelebrate] = useState(false);
-    const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
+    const [timeframe, setTimeframe] = useState<'day' | 'month'>('day');
 
     // Day rollover: detect new day and move consumed → yesterday
         // Day rollover: detect new day and move consumed -> yesterday
@@ -157,44 +157,26 @@ function App() {
                             <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner">
                                 <button
                                     onClick={() => setTimeframe('day')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
-                                    Day
-                                </button>
-                                <button
-                                    onClick={() => setTimeframe('week')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'week' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
-                                >
-                                    Week
+                                    Day (Log)
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('month')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'month' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'month' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
-                                    Month
+                                    Month (Calendar)
                                 </button>
                             </div>
                         </div>
 
-                        {timeframe === 'day' && (
+                        {timeframe === 'day' ? (
                             <>
                                 <MacroDashboard />
                                 <DailyLog />
                             </>
-                        )}
-
-                        {timeframe === 'week' && (
-                            <>
-                                <WeeklyFatBurnReport />
-                                <DailyLog />
-                            </>
-                        )}
-
-                        {timeframe === 'month' && (
-                            <>
-                                <CalendarHeatmap />
-                                <WeeklyFatBurnReport />
-                            </>
+                        ) : (
+                            <CalendarHeatmap />
                         )}
 
                         <WeeklyFatBurnModal />

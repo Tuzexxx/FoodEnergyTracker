@@ -103,7 +103,7 @@ const MacroDashboard = () => {
                 style={{ width: '0%' }}
             />
 
-            <div className="relative z-10 p-6 pb-4 flex flex-col justify-between min-h-[15rem]">
+            <div className="relative z-10 p-6 flex flex-col justify-between">
                 {/* Card Top Row */}
                 <div className="flex items-center justify-between">
                     <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
@@ -127,9 +127,9 @@ const MacroDashboard = () => {
                     )}
                 </div>
 
-                {/* Main Calorie & Protein Display */}
-                <div className="flex flex-col gap-1 items-end mt-4 mb-2 w-full">
-                    {/* Calories Section */}
+                {/* Main Calorie & Protein Primary Counters */}
+                <div className="flex flex-col gap-1 items-end mt-4 mb-3 w-full">
+                    {/* Calories */}
                     <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
                         {isOverCalories && <AlertCircle className="text-signal-red animate-pulse" size={24} />}
                         {isExactCalories && <CheckCircle2 className="text-green-500" size={24} />}
@@ -144,56 +144,75 @@ const MacroDashboard = () => {
                         </span>
                     </div>
 
-                    {/* Protein Primary Counter */}
+                    {/* Protein Quick Summary */}
                     <div className="flex justify-end w-full items-baseline gap-2 opacity-90 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
-                        <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none text-violet-300">
+                        <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none text-emerald-400">
                             {consumedProtein}
                         </span>
-                        <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap text-violet-300/80">
+                        <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap text-emerald-400/80">
                             / {effectiveProtein}G PROTEIN
                         </span>
                     </div>
                 </div>
 
-                {/* Macro Details Row right above bottom edge */}
-                <div className="flex items-center justify-between text-[9px] font-sans font-semibold uppercase tracking-wider opacity-60 mb-1 pt-2 border-t border-white/5">
-                    <span className="text-violet-300 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
-                        P: {consumedProtein}/{effectiveProtein}g {isPOver && <span className="text-violet-400 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
-                    </span>
-                    <span className="text-amber-300 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                        C: {consumedCarbs}/{optimalMacros.carbsGrams}g {isCOver && <span className="text-amber-400 font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
-                    </span>
-                    <span className="text-emerald-300 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-                        F: {consumedFat}/{optimalMacros.fatGrams}g {isFOver && <span className="text-emerald-400 font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
-                    </span>
-                </div>
-            </div>
+                {/* Stacked Macro Bars (Protein = Green/White, Carbs = Amber, Fat = Red) */}
+                <div className="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2.5">
+                    {/* Protein Row */}
+                    <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-[10px] font-sans font-bold uppercase tracking-wider">
+                            <span className="text-emerald-400 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                Protein
+                            </span>
+                            <span className="text-white/80 font-data">
+                                {consumedProtein} / {effectiveProtein}g {isPOver && <span className="text-emerald-300 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.8)]' : 'bg-emerald-400'}`}
+                                style={{ width: `${pPercent}%` }}
+                            />
+                        </div>
+                    </div>
 
-            {/* Flush Bottom Multi-Segment Macro Progress Track (3px height) */}
-            <div className="w-full h-1 bg-white/10 grid grid-cols-3 gap-0.5 overflow-hidden">
-                {/* Protein Segment */}
-                <div className="h-full bg-white/5 overflow-hidden relative">
-                    <div
-                        className={`h-full transition-all duration-700 ${isPOver ? 'bg-violet-300 shadow-[0_0_8px_rgba(196,181,253,0.8)]' : 'bg-violet-400'}`}
-                        style={{ width: `${pPercent}%` }}
-                    />
-                </div>
-                {/* Carbs Segment */}
-                <div className="h-full bg-white/5 overflow-hidden relative">
-                    <div
-                        className={`h-full transition-all duration-700 ${isCOver ? 'bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.8)]' : 'bg-amber-400'}`}
-                        style={{ width: `${cPercent}%` }}
-                    />
-                </div>
-                {/* Fat Segment */}
-                <div className="h-full bg-white/5 overflow-hidden relative">
-                    <div
-                        className={`h-full transition-all duration-700 ${isFOver ? 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.8)]' : 'bg-emerald-400'}`}
-                        style={{ width: `${fPercent}%` }}
-                    />
+                    {/* Carbs Row */}
+                    <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-[10px] font-sans font-bold uppercase tracking-wider">
+                            <span className="text-amber-400 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                Carbs
+                            </span>
+                            <span className="text-white/80 font-data">
+                                {consumedCarbs} / {optimalMacros.carbsGrams}g {isCOver && <span className="text-amber-300 font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-700 ${isCOver ? 'bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.8)]' : 'bg-amber-400'}`}
+                                style={{ width: `${cPercent}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Fat Row */}
+                    <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-[10px] font-sans font-bold uppercase tracking-wider">
+                            <span className="text-rose-400 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                Fat
+                            </span>
+                            <span className="text-white/80 font-data">
+                                {consumedFat} / {optimalMacros.fatGrams}g {isFOver && <span className="text-rose-300 font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-700 ${isFOver ? 'bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-rose-500'}`}
+                                style={{ width: `${fPercent}%` }}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
