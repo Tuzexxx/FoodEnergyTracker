@@ -391,12 +391,18 @@ const DailyLog = () => {
                                                             </span>
                                                         )}
                                                         {/* Direct instant macros visible at first glance */}
-                                                        <div className="flex items-center gap-1.5 text-[9px] font-sans font-bold uppercase tracking-wider text-brutal-black/40 mt-1">
-                                                            <span>{entry.protein ?? 0}g Pro</span>
-                                                            <span className="opacity-30">/</span>
-                                                            <span>{entry.carbs ?? 0}g Carb</span>
-                                                            <span className="opacity-30">/</span>
-                                                            <span>{entry.fat ?? 0}g Fat</span>
+                                                        <div className="flex items-center gap-2 text-[10px] font-sans text-brutal-black/40 mt-1">
+                                                            <span>
+                                                                <strong className="font-bold text-brutal-black/75">{entry.protein ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">pro</span>
+                                                            </span>
+                                                            <span className="opacity-25">/</span>
+                                                            <span>
+                                                                <strong className="font-bold text-brutal-black/75">{entry.carbs ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">carb</span>
+                                                            </span>
+                                                            <span className="opacity-25">/</span>
+                                                            <span>
+                                                                <strong className="font-bold text-brutal-black/75">{entry.fat ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">fat</span>
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end shrink-0 pl-1">

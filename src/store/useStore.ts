@@ -66,6 +66,8 @@ interface AppState {
     historicalExerciseDays: string[];
     smartwatchWeeklyBurn: number | null;
     setSmartwatchWeeklyBurn: (burn: number | null) => void;
+    smartwatchMonthlyBurn: number | null;
+    setSmartwatchMonthlyBurn: (burn: number | null) => void;
     session: Session | null;
     // Identifies which account owns the locally cached favorites. The session
     // itself is intentionally not persisted by Zustand.
@@ -118,6 +120,8 @@ export const useStore = create<AppState>()(
             setViewedHistoryDate: (date) => set({ viewedHistoryDate: date }),
             smartwatchWeeklyBurn: null,
             setSmartwatchWeeklyBurn: (burn) => set({ smartwatchWeeklyBurn: burn }),
+            smartwatchMonthlyBurn: null,
+            setSmartwatchMonthlyBurn: (burn) => set({ smartwatchMonthlyBurn: burn }),
             setSession: (session) => {
                 const previousUserId = get().session?.user.id;
                 const nextUserId = session?.user.id;
@@ -850,6 +854,7 @@ export const useStore = create<AppState>()(
                 celebrationDismissedDate: state.celebrationDismissedDate,
                 lastActiveDate: state.lastActiveDate,
                 smartwatchWeeklyBurn: state.smartwatchWeeklyBurn,
+                smartwatchMonthlyBurn: state.smartwatchMonthlyBurn,
             }),
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {

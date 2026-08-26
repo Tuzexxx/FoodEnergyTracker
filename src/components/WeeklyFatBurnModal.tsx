@@ -17,12 +17,14 @@ export function useCompletedDaysTelemetry(period: '7d' | '30d'): CompletedDaysTe
         historicalDays,
         historicalExerciseDays,
         smartwatchWeeklyBurn,
+        smartwatchMonthlyBurn,
     } = useStore();
 
     return useMemo(() => {
         const sliceCount = period === '7d' ? 7 : 30;
-        // Last completed days strictly up to yesterday (excluding today)
-        const completedDays = (historicalDays || []).slice(0, sliceCount);
+        // Filter strictly to completed historical days where calories were logged (> 0)
+        const validLoggedDays = (historicalDays || []).filter(d => (d.kcal || 0) > 0);
+        const completedDays = validLoggedDays.slice(0, sliceCount);
         const daysCount = Math.max(1, completedDays.length);
 
         let sumKcal = 0;
@@ -35,16 +37,26 @@ export function useCompletedDaysTelemetry(period: '7d' | '30d'): CompletedDaysTe
             }
         });
 
-        // Date range label from oldest completed day to yesterday
+        // Date range label from oldest logged day in range to newest completed day
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        let dateRangeLabel = 'Last ' + daysCount + ' completed days';
+        let dateRangeLabel = `${daysCount} logged days`;
         if (completedDays.length > 0) {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const oldestDate = new Date();
-            oldestDate.setDate(oldestDate.getDate() - daysCount);
-            dateRangeLabel = `${months[oldestDate.getMonth()]} ${oldestDate.getDate()} - ${months[yesterday.getMonth()]} ${yesterday.getDate()}`;
+            const newest = completedDays[0];
+            const oldest = completedDays[completedDays.length - 1];
+            
+            const formatDate = (dateStr: string) => {
+                if (dateStr === 'Yesterday') {
+                    const y = new Date();
+                    y.setDate(y.getDate() - 1);
+                    return `${months[y.getMonth()]} ${y.getDate()}`;
+                }
+                return dateStr.replace(/, \d{4}$/, '');
+            };
+
+            dateRangeLabel = `${formatDate(oldest.dateStr)} - ${formatDate(newest.dateStr)} (${daysCount} logged days)`;
         }
+
+        const watchBurn = period === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
 
         const telemetry = profile ? calculateWeeklyDeficitTelemetry({
             weight: profile.weight,
@@ -54,8 +66,8 @@ export function useCompletedDaysTelemetry(period: '7d' | '30d'): CompletedDaysTe
             activityLevel: profile.activityLevel || 'LIGHT',
             weeklyConsumedKcal: sumKcal,
             exerciseDaysCount: gymCount,
-            daysCount: sliceCount, // Calculate full maintenance burn for 7 or 30 days
-            smartwatchBurnKcal: period === '7d' ? smartwatchWeeklyBurn : null,
+            daysCount: daysCount, // Accurately scales baseline maintenance burn to actual logged days
+            smartwatchBurnKcal: watchBurn,
         }) : null;
 
         return {
@@ -65,16 +77,23 @@ export function useCompletedDaysTelemetry(period: '7d' | '30d'): CompletedDaysTe
             dateRangeLabel,
             telemetry
         };
-    }, [profile, historicalDays, historicalExerciseDays, smartwatchWeeklyBurn, period]);
+    }, [profile, historicalDays, historicalExerciseDays, smartwatchWeeklyBurn, smartwatchMonthlyBurn, period]);
 }
 
 /** Floating badge and simplified telemetry popup modal */
 export const WeeklyFatBurnModal = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [timeframeMode, setTimeframeMode] = useState<'7d' | '30d'>('7d');
-    const { consumedKcal, exerciseDaysCount, dateRangeLabel, telemetry } = useCompletedDaysTelemetry(timeframeMode);
-    const { smartwatchWeeklyBurn, setSmartwatchWeeklyBurn } = useStore();
-    const [smartwatchInput, setSmartwatchInput] = useState(smartwatchWeeklyBurn ? smartwatchWeeklyBurn.toString() : '');
+    const { daysCount, consumedKcal, exerciseDaysCount, dateRangeLabel, telemetry } = useCompletedDaysTelemetry(timeframeMode);
+    const {
+        smartwatchWeeklyBurn,
+        setSmartwatchWeeklyBurn,
+        smartwatchMonthlyBurn,
+        setSmartwatchMonthlyBurn,
+    } = useStore();
+
+    const currentWatchBurn = timeframeMode === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
+    const [smartwatchInput, setSmartwatchInput] = useState(currentWatchBurn ? currentWatchBurn.toString() : '');
 
     // Floating 7d telemetry for badge
     const badgeTelemetry = useCompletedDaysTelemetry('7d');
@@ -82,20 +101,22 @@ export const WeeklyFatBurnModal = () => {
     const handleSaveWatch = () => {
         const val = Number(smartwatchInput.trim());
         if (val && val > 0) {
-            setSmartwatchWeeklyBurn(val);
+            if (timeframeMode === '7d') setSmartwatchWeeklyBurn(val);
+            else setSmartwatchMonthlyBurn(val);
         } else {
-            setSmartwatchWeeklyBurn(null);
+            if (timeframeMode === '7d') setSmartwatchWeeklyBurn(null);
+            else setSmartwatchMonthlyBurn(null);
         }
     };
 
     const handleResetWatch = () => {
-        setSmartwatchWeeklyBurn(null);
+        if (timeframeMode === '7d') setSmartwatchWeeklyBurn(null);
+        else setSmartwatchMonthlyBurn(null);
         setSmartwatchInput('');
     };
 
-    const divisor = timeframeMode === '7d' ? 7 : 30;
-    const dailyAvgIntake = telemetry ? Math.round(consumedKcal / divisor) : 0;
-    const dailyAvgBurn = telemetry ? Math.round(telemetry.totalWeeklyBurn / divisor) : 0;
+    const dailyAvgIntake = telemetry ? Math.round(consumedKcal / daysCount) : 0;
+    const dailyAvgBurn = telemetry ? Math.round(telemetry.totalWeeklyBurn / daysCount) : 0;
 
     return (
         <>
@@ -103,7 +124,8 @@ export const WeeklyFatBurnModal = () => {
             <aside aria-label="Fat burn telemetry" className="fixed bottom-24 right-4 sm:right-6 z-50 pointer-events-auto">
                 <button
                     onClick={() => {
-                        setSmartwatchInput(smartwatchWeeklyBurn ? smartwatchWeeklyBurn.toString() : '');
+                        const activeVal = timeframeMode === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
+                        setSmartwatchInput(activeVal ? activeVal.toString() : '');
                         setIsOpen(true);
                     }}
                     className="group flex items-center gap-2 px-3.5 py-2.5 rounded-full border-2 border-brutal-black shadow-2xl backdrop-blur-xl transition-all duration-300 active:scale-95 bg-gradient-to-r from-amber-400 to-orange-500 text-brutal-black hover:shadow-amber-500/30"
@@ -169,7 +191,10 @@ export const WeeklyFatBurnModal = () => {
                             {/* 7 Days / 30 Days Switcher inside popup */}
                             <div className="flex items-center gap-1 p-1 bg-black/5 rounded-full w-fit mt-1">
                                 <button
-                                    onClick={() => setTimeframeMode('7d')}
+                                    onClick={() => {
+                                        setTimeframeMode('7d');
+                                        setSmartwatchInput(smartwatchWeeklyBurn ? smartwatchWeeklyBurn.toString() : '');
+                                    }}
                                     className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${
                                         timeframeMode === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'
                                     }`}
@@ -177,7 +202,10 @@ export const WeeklyFatBurnModal = () => {
                                     7 Days (Week)
                                 </button>
                                 <button
-                                    onClick={() => setTimeframeMode('30d')}
+                                    onClick={() => {
+                                        setTimeframeMode('30d');
+                                        setSmartwatchInput(smartwatchMonthlyBurn ? smartwatchMonthlyBurn.toString() : '');
+                                    }}
                                     className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${
                                         timeframeMode === '30d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'
                                     }`}
@@ -227,7 +255,7 @@ export const WeeklyFatBurnModal = () => {
                                 <span>
                                     Baseline: <strong>7,700 kcal = 1 kg pure body fat</strong>
                                 </span>
-                                {telemetry.isSmartwatchOverride && timeframeMode === '7d' && (
+                                {telemetry.isSmartwatchOverride && (
                                     <span className="inline-flex items-center gap-1 font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
                                         <Watch size={10} /> Smartwatch Active
                                     </span>
@@ -239,7 +267,7 @@ export const WeeklyFatBurnModal = () => {
                         <div className="grid grid-cols-2 gap-3 mb-4">
                             <div className="bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-brutal-black/10">
                                 <span className="font-sans text-[9px] font-bold uppercase tracking-wider opacity-50 block mb-0.5">
-                                    Food Consumed
+                                    Food Consumed ({daysCount}d)
                                 </span>
                                 <div className="font-data text-lg font-bold text-brutal-black">
                                     {consumedKcal.toLocaleString()} <span className="text-xs font-normal opacity-60">kcal</span>
@@ -252,10 +280,10 @@ export const WeeklyFatBurnModal = () => {
                             <div className="bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-brutal-black/10">
                                 <div className="flex items-center justify-between">
                                     <span className="font-sans text-[9px] font-bold uppercase tracking-wider opacity-50 block mb-0.5">
-                                        Total Burn
+                                        Total Burn ({daysCount}d)
                                     </span>
                                     <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">
-                                        {telemetry.isSmartwatchOverride && timeframeMode === '7d' ? 'Watch' : 'Model'}
+                                        {telemetry.isSmartwatchOverride ? 'Watch' : 'Model'}
                                     </span>
                                 </div>
                                 <div className="font-data text-lg font-bold text-brutal-black">
@@ -267,45 +295,43 @@ export const WeeklyFatBurnModal = () => {
                             </div>
                         </div>
 
-                        {/* Smartwatch Refinement (7-Day mode) */}
-                        {timeframeMode === '7d' && (
-                            <div className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 mb-4">
-                                <div className="flex items-center gap-1.5 mb-1 text-indigo-900 font-bold font-sans text-xs">
-                                    <Watch size={13} className="text-indigo-600" />
-                                    <span>Refine 7-Day Burn with Smartwatch</span>
-                                </div>
-                                <div className="relative mb-2">
-                                    <input
-                                        type="number"
-                                        placeholder={telemetry.weeklyMaintenanceTDEE.toString()}
-                                        value={smartwatchInput}
-                                        onChange={(e) => setSmartwatchInput(e.target.value)}
-                                        className="w-full bg-white border-2 border-indigo-200 rounded-xl px-3.5 py-2 font-data text-base font-bold text-brutal-black focus:outline-none focus:border-indigo-600"
-                                    />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-sans text-xs font-bold text-indigo-900/40">
-                                        kcal
-                                    </span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={handleSaveWatch}
-                                        className="flex-1 py-2 bg-indigo-600 text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1"
-                                    >
-                                        <Sparkles size={12} className="text-amber-300" />
-                                        Save Watch Burn
-                                    </button>
-                                    {smartwatchWeeklyBurn !== null && (
-                                        <button
-                                            onClick={handleResetWatch}
-                                            className="px-3 py-2 bg-white text-indigo-950 font-sans text-xs font-bold uppercase tracking-wider rounded-xl border border-indigo-200 hover:bg-indigo-50 active:scale-95 transition-all flex items-center gap-1"
-                                        >
-                                            <RotateCcw size={11} />
-                                            Reset
-                                        </button>
-                                    )}
-                                </div>
+                        {/* Smartwatch Refinement for both 7-Day and 30-Day modes */}
+                        <div className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 mb-4">
+                            <div className="flex items-center gap-1.5 mb-1 text-indigo-900 font-bold font-sans text-xs">
+                                <Watch size={13} className="text-indigo-600" />
+                                <span>Refine {timeframeMode === '7d' ? '7-Day' : '30-Day'} Burn with Smartwatch</span>
                             </div>
-                        )}
+                            <div className="relative mb-2">
+                                <input
+                                    type="number"
+                                    placeholder={telemetry.weeklyMaintenanceTDEE.toString()}
+                                    value={smartwatchInput}
+                                    onChange={(e) => setSmartwatchInput(e.target.value)}
+                                    className="w-full bg-white border-2 border-indigo-200 rounded-xl px-3.5 py-2 font-data text-base font-bold text-brutal-black focus:outline-none focus:border-indigo-600"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 font-sans text-xs font-bold text-indigo-900/40">
+                                    kcal
+                                </span>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleSaveWatch}
+                                    className="flex-1 py-2 bg-indigo-600 text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1"
+                                >
+                                    <Sparkles size={12} className="text-amber-300" />
+                                    Save Watch Burn
+                                </button>
+                                {currentWatchBurn !== null && (
+                                    <button
+                                        onClick={handleResetWatch}
+                                        className="px-3 py-2 bg-white text-indigo-950 font-sans text-xs font-bold uppercase tracking-wider rounded-xl border border-indigo-200 hover:bg-indigo-50 active:scale-95 transition-all flex items-center gap-1"
+                                    >
+                                        <RotateCcw size={11} />
+                                        Reset
+                                    </button>
+                                )}
+                            </div>
+                        </div>
 
                         <button
                             onClick={() => setIsOpen(false)}
