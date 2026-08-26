@@ -103,7 +103,7 @@ const MacroDashboard = () => {
                 style={{ width: '0%' }}
             />
 
-            <div className="relative z-10 p-6 flex flex-col justify-between">
+            <div className="relative z-10 p-6 pb-4 flex flex-col justify-between">
                 {/* Card Top Row */}
                 <div className="flex items-center justify-between">
                     <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
@@ -128,7 +128,7 @@ const MacroDashboard = () => {
                 </div>
 
                 {/* Main Calorie & Protein Primary Counters */}
-                <div className="flex flex-col gap-1 items-end mt-4 mb-3 w-full">
+                <div className="flex flex-col gap-1 items-end mt-4 mb-4 w-full">
                     {/* Calories */}
                     <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
                         {isOverCalories && <AlertCircle className="text-signal-red animate-pulse" size={24} />}
@@ -155,60 +155,60 @@ const MacroDashboard = () => {
                     </div>
                 </div>
 
-                {/* Stacked Macro Bars (Protein = Green/White, Carbs = Amber, Fat = Red) */}
-                <div className="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2.5">
+                {/* Supplementary Subtle Macro Bars (Stacked at very bottom, muted colors) */}
+                <div className="mt-2 pt-2.5 border-t border-white/5 flex flex-col gap-2 opacity-75 hover:opacity-100 transition-opacity">
                     {/* Protein Row */}
-                    <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center text-[10px] font-sans font-bold uppercase tracking-wider">
-                            <span className="text-emerald-400 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center text-[9px] font-sans font-medium uppercase tracking-wider text-white/40">
+                            <span className="flex items-center gap-1 text-emerald-400/70">
+                                <span className="w-1 h-1 rounded-full bg-emerald-400/70" />
                                 Protein
                             </span>
-                            <span className="text-white/80 font-data">
-                                {consumedProtein} / {effectiveProtein}g {isPOver && <span className="text-emerald-300 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
+                            <span className="font-data text-white/50">
+                                {consumedProtein} / {effectiveProtein}g {isPOver && <span className="text-emerald-400 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
                             </span>
                         </div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.8)]' : 'bg-emerald-400'}`}
+                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-400' : 'bg-emerald-500/60'}`}
                                 style={{ width: `${pPercent}%` }}
                             />
                         </div>
                     </div>
 
                     {/* Carbs Row */}
-                    <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center text-[10px] font-sans font-bold uppercase tracking-wider">
-                            <span className="text-amber-400 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center text-[9px] font-sans font-medium uppercase tracking-wider text-white/40">
+                            <span className="flex items-center gap-1 text-amber-400/70">
+                                <span className="w-1 h-1 rounded-full bg-amber-400/70" />
                                 Carbs
                             </span>
-                            <span className="text-white/80 font-data">
-                                {consumedCarbs} / {optimalMacros.carbsGrams}g {isCOver && <span className="text-amber-300 font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
+                            <span className="font-data text-white/50">
+                                {consumedCarbs} / {optimalMacros.carbsGrams}g {isCOver && <span className="text-amber-400 font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
                             </span>
                         </div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${isCOver ? 'bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.8)]' : 'bg-amber-400'}`}
+                                className={`h-full rounded-full transition-all duration-700 ${isCOver ? 'bg-amber-400' : 'bg-amber-500/60'}`}
                                 style={{ width: `${cPercent}%` }}
                             />
                         </div>
                     </div>
 
                     {/* Fat Row */}
-                    <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center text-[10px] font-sans font-bold uppercase tracking-wider">
-                            <span className="text-rose-400 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center text-[9px] font-sans font-medium uppercase tracking-wider text-white/40">
+                            <span className="flex items-center gap-1 text-rose-400/70">
+                                <span className="w-1 h-1 rounded-full bg-rose-400/70" />
                                 Fat
                             </span>
-                            <span className="text-white/80 font-data">
-                                {consumedFat} / {optimalMacros.fatGrams}g {isFOver && <span className="text-rose-300 font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
+                            <span className="font-data text-white/50">
+                                {consumedFat} / {optimalMacros.fatGrams}g {isFOver && <span className="text-rose-400 font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
                             </span>
                         </div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${isFOver ? 'bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-rose-500'}`}
+                                className={`h-full rounded-full transition-all duration-700 ${isFOver ? 'bg-rose-400' : 'bg-rose-500/60'}`}
                                 style={{ width: `${fPercent}%` }}
                             />
                         </div>

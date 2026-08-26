@@ -54,6 +54,7 @@ export function useCompletedDaysTelemetry(period: '7d' | '30d'): CompletedDaysTe
             activityLevel: profile.activityLevel || 'LIGHT',
             weeklyConsumedKcal: sumKcal,
             exerciseDaysCount: gymCount,
+            daysCount: sliceCount, // Calculate full maintenance burn for 7 or 30 days
             smartwatchBurnKcal: period === '7d' ? smartwatchWeeklyBurn : null,
         }) : null;
 
@@ -92,8 +93,9 @@ export const WeeklyFatBurnModal = () => {
         setSmartwatchInput('');
     };
 
-    const dailyAvgIntake = telemetry ? Math.round(consumedKcal / (timeframeMode === '7d' ? 7 : 30)) : 0;
-    const dailyAvgBurn = telemetry ? Math.round(telemetry.totalWeeklyBurn / (timeframeMode === '7d' ? 7 : 30)) : 0;
+    const divisor = timeframeMode === '7d' ? 7 : 30;
+    const dailyAvgIntake = telemetry ? Math.round(consumedKcal / divisor) : 0;
+    const dailyAvgBurn = telemetry ? Math.round(telemetry.totalWeeklyBurn / divisor) : 0;
 
     return (
         <>
@@ -130,10 +132,16 @@ export const WeeklyFatBurnModal = () => {
                 </button>
             </aside>
 
-            {/* Simplified Telemetry Popup Modal */}
+            {/* Simplified Telemetry Popup Modal with Click-Outside Dismissal */}
             {isOpen && telemetry && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-off-white text-brutal-black border-2 border-brutal-black w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative max-h-[90vh] overflow-y-auto">
+                <div
+                    onClick={() => setIsOpen(false)}
+                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-off-white text-brutal-black border-2 border-brutal-black w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative max-h-[90vh] overflow-y-auto"
+                    >
                         {/* Close Button */}
                         <button
                             onClick={() => setIsOpen(false)}
@@ -179,28 +187,28 @@ export const WeeklyFatBurnModal = () => {
                             </div>
                         </div>
 
-                        {/* Hero Metric: Fat Burned / Surplus */}
+                        {/* Hero Metric: Fat Burned / Surplus (No line breaks) */}
                         <div className={`rounded-2xl p-5 border my-3 transition-all ${
                             telemetry.isDeficit
                                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-950'
                                 : 'bg-amber-500/10 border-amber-500/20 text-amber-950'
                         }`}>
                             <div className="flex items-start justify-between gap-3">
-                                <div>
+                                <div className="flex-1 min-w-0">
                                     <span className="font-sans text-[10px] font-bold uppercase tracking-widest opacity-60 block mb-1">
                                         {telemetry.isDeficit ? 'Estimated Pure Body Fat Burned' : 'Caloric Energy Surplus'}
                                     </span>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="font-drama text-5xl font-bold tracking-tight">
-                                            {telemetry.fatGrams} g
+                                    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                                        <span className="font-drama text-5xl sm:text-6xl font-bold tracking-tight">
+                                            {telemetry.fatGrams}g
                                         </span>
                                         <span className="font-sans text-xs font-bold uppercase opacity-70">
-                                            {telemetry.isDeficit ? 'body fat lost' : 'stored energy'}
+                                            {telemetry.isDeficit ? 'fat lost' : 'surplus'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="text-right">
+                                <div className="text-right shrink-0">
                                     <span className="font-sans text-[10px] font-bold uppercase tracking-widest opacity-60 block mb-1">
                                         Net Deficit
                                     </span>

@@ -392,7 +392,7 @@ const DailyLog = () => {
                                                         )}
                                                         {/* Direct instant macros visible at first glance */}
                                                         <div className="flex items-center gap-1.5 text-[9px] font-sans font-bold uppercase tracking-wider text-brutal-black/40 mt-1">
-                                                            <span className="text-violet-900/70">{entry.protein ?? 0}g Pro</span>
+                                                            <span>{entry.protein ?? 0}g Pro</span>
                                                             <span className="opacity-30">/</span>
                                                             <span>{entry.carbs ?? 0}g Carb</span>
                                                             <span className="opacity-30">/</span>

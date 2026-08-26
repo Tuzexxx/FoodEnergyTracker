@@ -152,6 +152,7 @@ export interface WeeklyTelemetryInput {
     activityLevel: string;
     weeklyConsumedKcal: number;
     exerciseDaysCount: number;
+    daysCount?: number;
     smartwatchBurnKcal?: number | null;
 }
 
@@ -178,6 +179,7 @@ export function calculateWeeklyDeficitTelemetry({
     activityLevel,
     weeklyConsumedKcal,
     exerciseDaysCount,
+    daysCount,
     smartwatchBurnKcal,
 }: WeeklyTelemetryInput): WeeklyTelemetryResult {
     // 1. Calculate Mifflin-St Jeor BMR
@@ -189,7 +191,8 @@ export function calculateWeeklyDeficitTelemetry({
     const dailyMaintenanceTDEE = Math.round(bmr * getPAL(activityLevel));
 
     // 3. Weekly Maintenance (7 days baseline + exercise days bonus)
-    const calculatedWeeklyBurn = (dailyMaintenanceTDEE * 7) + (exerciseDaysCount * EXERCISE_BONUS_KCAL);
+    const count = daysCount && daysCount > 0 ? daysCount : 7;
+    const calculatedWeeklyBurn = (dailyMaintenanceTDEE * count) + (exerciseDaysCount * EXERCISE_BONUS_KCAL);
 
     // 4. Effective Weekly Burn (Smartwatch or Model)
     const isSmartwatchOverride = typeof smartwatchBurnKcal === 'number' && smartwatchBurnKcal > 0;
