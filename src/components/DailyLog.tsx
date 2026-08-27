@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
+import { calculateMacroDistribution } from '../utils/calorieFormula';
 import { supabase } from '../utils/supabase';
 
 const DailyLog = () => {
@@ -566,6 +567,15 @@ const DailyLog = () => {
                         const kcalOver = day.kcal > effectiveTargetKcal;
                         const proteinHit = day.protein >= effectiveTargetProtein;
 
+                        // Carbs & Fat calculation
+                        const dayCarbs = Math.round(day.entries ? day.entries.reduce((sum, e) => sum + (e.carbs || 0), 0) : 0);
+                        const dayFat = Math.round(day.entries ? day.entries.reduce((sum, e) => sum + (e.fat || 0), 0) : 0);
+                        const dayMacros = calculateMacroDistribution(effectiveTargetKcal, effectiveTargetProtein);
+                        const isCOver = dayCarbs > dayMacros.carbsGrams && dayMacros.carbsGrams > 0;
+                        const isFOver = dayFat > dayMacros.fatGrams && dayMacros.fatGrams > 0;
+                        const cVisualWidth = dayMacros.carbsGrams > 0 ? Math.min(100, Math.round((dayCarbs / dayMacros.carbsGrams) * 100)) : 0;
+                        const fVisualWidth = dayMacros.fatGrams > 0 ? Math.min(100, Math.round((dayFat / dayMacros.fatGrams) * 100)) : 0;
+
                         const kcalPill = kcalHit 
                             ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 
                             : kcalOver ? 'bg-signal-red/5 text-red-900/70 border-signal-red/10' : 'bg-white/30 border-transparent text-brutal-black/70';
@@ -602,6 +612,24 @@ const DailyLog = () => {
                                         ) : (
                                             <ChevronDown size={14} className="opacity-20 group-hover:opacity-60 transition-opacity transform group-hover:translate-y-0.5" />
                                         )}
+                                    </div>
+
+                                    {/* Bottom flush progress tracks for Carbs & Fat */}
+                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-black/5 grid grid-cols-2 gap-0.5 pointer-events-none overflow-hidden">
+                                        {/* Carbs Bar (Amber) */}
+                                        <div className="h-full bg-black/5 overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all duration-500 ${isCOver ? 'bg-amber-400 shadow-[0_0_4px_rgba(252,211,77,0.8)]' : 'bg-amber-500/70'}`}
+                                                style={{ width: `${cVisualWidth}%` }}
+                                            />
+                                        </div>
+                                        {/* Fat Bar (Rose/Red) */}
+                                        <div className="h-full bg-black/5 overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all duration-500 ${isFOver ? 'bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.8)]' : 'bg-rose-500/70'}`}
+                                                style={{ width: `${fVisualWidth}%` }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                                 
