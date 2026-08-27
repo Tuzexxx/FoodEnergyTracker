@@ -440,11 +440,11 @@ const DailyLog = () => {
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-col min-w-0 flex-1">
-                                                    <span className="font-sans font-semibold text-base sm:text-lg leading-tight text-brutal-black capitalize truncate">
+                                                    <span className={`font-sans font-semibold text-base sm:text-lg leading-tight text-brutal-black capitalize ${expandedId === entry.id ? 'break-words' : 'truncate'}`}>
                                                         {displayTitle}
                                                     </span>
                                                     {displayDetails && (
-                                                        <span className="font-sans text-[11px] opacity-45 leading-snug truncate mt-0.5">
+                                                        <span className={`font-sans text-brutal-black ${expandedId === entry.id ? 'text-xs opacity-75 leading-relaxed mt-1 break-words whitespace-pre-wrap' : 'text-[11px] opacity-45 leading-snug truncate mt-0.5'}`}>
                                                             {displayDetails}
                                                         </span>
                                                     )}
