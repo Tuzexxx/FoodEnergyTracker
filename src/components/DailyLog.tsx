@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
@@ -91,6 +91,16 @@ const DailyLog = () => {
 
         updateEntry(id, finalData);
         setEditingId(null);
+    };
+
+    const handleDoublePortion = (entry: FoodEntry) => {
+        playSound('click');
+        updateEntry(entry.id, {
+            kcal: Math.round(entry.kcal * 2),
+            protein: Math.round(entry.protein * 2),
+            carbs: Math.round((entry.carbs ?? 0) * 2),
+            fat: Math.round((entry.fat ?? 0) * 2),
+        });
     };
 
     const handleDelete = (id: string) => {
@@ -375,102 +385,76 @@ const DailyLog = () => {
                                             )}
 
                                             {/* Collapsed 1-row view */}
-                                            {expandedId !== entry.id && (
-                                                <div className="flex items-center justify-between w-full gap-3">
-                                                    <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
-                                                        <span className="font-sans text-[12px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                                                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                            /* Top Row (Identical in both collapsed and expanded states) */
+                                            <div className="flex items-center justify-between w-full gap-3">
+                                                <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
+                                                    <span className="font-sans text-[12px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                                                        {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className="font-sans font-semibold text-base sm:text-lg leading-tight text-brutal-black capitalize truncate">
+                                                        {displayTitle}
+                                                    </span>
+                                                    {displayDetails && (
+                                                        <span className="font-sans text-[11px] opacity-45 leading-snug truncate mt-0.5">
+                                                            {displayDetails}
                                                         </span>
-                                                    </div>
-                                                    <div className="flex flex-col min-w-0 flex-1">
-                                                        <span className="font-sans font-semibold text-base sm:text-lg leading-tight text-brutal-black capitalize truncate">
-                                                            {displayTitle}
+                                                    )}
+                                                    {/* Direct instant macros visible at first glance */}
+                                                    <div className="flex items-center gap-2 text-[10px] font-sans text-brutal-black/40 mt-1">
+                                                        <span>
+                                                            <strong className="font-bold text-brutal-black/75">{entry.protein ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">pro</span>
                                                         </span>
-                                                        {displayDetails && (
-                                                            <span className="font-sans text-[11px] opacity-45 leading-snug truncate mt-0.5">
-                                                                {displayDetails}
-                                                            </span>
-                                                        )}
-                                                        {/* Direct instant macros visible at first glance */}
-                                                        <div className="flex items-center gap-2 text-[10px] font-sans text-brutal-black/40 mt-1">
-                                                            <span>
-                                                                <strong className="font-bold text-brutal-black/75">{entry.protein ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">pro</span>
-                                                            </span>
-                                                            <span className="opacity-25">/</span>
-                                                            <span>
-                                                                <strong className="font-bold text-brutal-black/75">{entry.carbs ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">carb</span>
-                                                            </span>
-                                                            <span className="opacity-25">/</span>
-                                                            <span>
-                                                                <strong className="font-bold text-brutal-black/75">{entry.fat ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">fat</span>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col items-end shrink-0 pl-1">
-                                                        <div className="flex items-baseline gap-1">
-                                                            <span className="font-data text-2xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
-                                                            <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
-                                                        </div>
+                                                        <span className="opacity-25">/</span>
+                                                        <span>
+                                                            <strong className="font-bold text-brutal-black/75">{entry.carbs ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">carb</span>
+                                                        </span>
+                                                        <span className="opacity-25">/</span>
+                                                        <span>
+                                                            <strong className="font-bold text-brutal-black/75">{entry.fat ?? 0}g</strong> <span className="text-[8px] font-normal uppercase opacity-45">fat</span>
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            )}
-
-                                            {/* Expanded 3-row view */}
-                                            {expandedId === entry.id && (
-                                                <div className="flex flex-col gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
-                                                    <div className="flex justify-between items-start gap-4">
-                                                        <div className="flex flex-col flex-1 min-w-0">
-                                                            <span className="font-sans text-[11px] font-medium opacity-50 bg-black/5 px-2 py-0.5 rounded-md w-fit mb-2">
-                                                                {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                            <span className="font-sans font-semibold text-xl leading-tight text-brutal-black break-words capitalize">
-                                                                {displayTitle}
-                                                            </span>
-                                                            {displayDetails && (
-                                                                <span className="font-sans text-sm opacity-70 leading-snug mt-1.5 italic text-brutal-black/90 whitespace-pre-wrap">
-                                                                    {displayDetails}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-baseline gap-1 shrink-0 pl-2">
-                                                            <span className="font-data text-3xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
-                                                            <span className="text-[10px] uppercase font-semibold text-brutal-black/40 font-sans">Kcal</span>
-                                                        </div>
+                                                <div className="flex flex-col items-end shrink-0 pl-1">
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="font-data text-2xl font-bold tracking-tighter leading-none text-brutal-black">{entry.kcal}</span>
+                                                        <span className="text-[10px] uppercase font-semibold text-brutal-black/30 font-sans">Kcal</span>
                                                     </div>
+                                                </div>
+                                            </div>
 
-                                                    {/* AI Estimation Legend Banner */}
+                                            {/* Expanded Action Menu Drawer */}
+                                            {expandedId === entry.id && (
+                                                <div className="mt-3 pt-2.5 border-t border-black/5 flex flex-col gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+                                                    {/* AI Review Banner */}
                                                     {entry.requiresReview && (
-                                                        <div className="mt-2 w-full flex items-center gap-2 p-2 bg-orange-50/50 rounded-lg border border-orange-200">
+                                                        <div className="flex items-center gap-2 p-2 bg-orange-50/70 rounded-xl border border-orange-200 text-orange-700 text-xs">
                                                             <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
-                                                            <span className="font-sans text-[10px] uppercase font-semibold text-orange-600 tracking-wider">
+                                                            <span className="font-sans text-[10px] uppercase font-semibold tracking-wider">
                                                                 AI Estimated Portion - Please check
                                                             </span>
                                                         </div>
                                                     )}
 
-                                                    <div className="flex flex-wrap justify-between items-center pt-3 border-t border-brutal-black/5 mt-1 gap-y-2">
-                                                        <div className="flex gap-2.5 font-sans font-semibold text-[11px] text-brutal-black/50 bg-black/5 px-2.5 py-1.5 rounded-lg border border-black/5 min-w-fit">
-                                                            <span className="flex gap-1.5 items-center">
-                                                                <span className="opacity-50 text-[9px] uppercase">Pro</span><span className="text-brutal-black/80">{entry.protein}</span>
-                                                            </span>
-                                                            <span className="w-[1px] h-3.5 bg-black/10" />
-                                                            <span className="flex gap-1.5 items-center">
-                                                                <span className="opacity-50 text-[9px] uppercase">Carb</span><span className="text-brutal-black/80">{entry.carbs}</span>
-                                                            </span>
-                                                            <span className="w-[1px] h-3.5 bg-black/10" />
-                                                            <span className="flex gap-1.5 items-center">
-                                                                <span className="opacity-50 text-[9px] uppercase">Fat</span><span className="text-brutal-black/80">{entry.fat}</span>
-                                                            </span>
-                                                        </div>
+                                                    {/* Action Buttons Row */}
+                                                    <div className="flex items-center justify-between gap-2 w-full pt-1">
+                                                        {/* Plus (+2x / Double portion) Button */}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDoublePortion(entry);
+                                                            }}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:scale-95 transition-all text-xs font-sans font-bold border border-emerald-200 shadow-sm shrink-0"
+                                                            title="Add 1 more portion (+100% calories & macros)"
+                                                        >
+                                                            <Plus size={14} strokeWidth={2.5} />
+                                                            <span>+2x Portion</span>
+                                                        </button>
 
-                                                        <div className="flex gap-1.5 shrink-0 ml-auto">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
-                                                                className="p-1.5 transition-colors rounded-full border text-brutal-black/30 hover:text-red-500 bg-white hover:bg-red-50 border-black/5"
-                                                                title="Delete Entry"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
+                                                        {/* Secondary Action Icons */}
+                                                        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                                                            {/* Favorite */}
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -479,26 +463,37 @@ const DailyLog = () => {
                                                                     if (isFav) removeFavorite(entry.name);
                                                                     else addFavorite({ name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat });
                                                                 }}
-                                                                className={`p-1.5 transition-colors rounded-full border ${(favorites || []).some(f => f.name === entry.name)
+                                                                className={`p-2 transition-colors rounded-full border ${(favorites || []).some(f => f.name === entry.name)
                                                                     ? 'bg-amber-50 text-amber-500 border-amber-200'
-                                                                    : 'text-brutal-black/30 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
+                                                                    : 'text-brutal-black/40 hover:text-amber-500 bg-white hover:bg-amber-50 border-black/5'
                                                                     }`}
                                                                 title="Favorite"
                                                             >
-                                                                <Star size={14} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
+                                                                <Star size={15} fill={(favorites || []).some(f => f.name === entry.name) ? 'currentColor' : 'none'} />
                                                             </button>
+
+                                                            {/* Edit */}
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); startEdit(entry); }}
-                                                                className="p-1.5 transition-colors rounded-full border text-brutal-black/30 hover:text-indigo-500 bg-white hover:bg-indigo-50 border-black/5"
+                                                                className="p-2 transition-colors rounded-full border text-brutal-black/40 hover:text-indigo-600 bg-white hover:bg-indigo-50 border-black/5"
                                                                 title="Edit Entry"
                                                             >
-                                                                <Edit2 size={14} />
+                                                                <Edit2 size={15} />
+                                                            </button>
+
+                                                            {/* Delete */}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
+                                                                className="p-2 transition-colors rounded-full border text-brutal-black/40 hover:text-red-500 bg-white hover:bg-red-50 border-black/5"
+                                                                title="Delete Entry"
+                                                            >
+                                                                <Trash2 size={15} />
                                                             </button>
                                                         </div>
                                                     </div>
 
                                                     {/* AI Brainstorm Chat UI */}
-                                                    <div className="mt-3 bg-black/5 rounded-xl overflow-hidden flex flex-col mx-[-8px] px-2 py-2">
+                                                    <div className="mt-2 bg-black/5 rounded-xl overflow-hidden flex flex-col px-2 py-2">
                                                         {chatMessages[entry.id] && (
                                                             <div className="mb-2 px-3 py-2 bg-indigo-100 text-indigo-800 text-xs font-sans rounded-lg flex items-start gap-2 animate-in fade-in zoom-in-95 duration-200">
                                                                 <MessageSquare size={14} className="mt-0.5 shrink-0" />
@@ -518,10 +513,9 @@ const DailyLog = () => {
                                                             <button
                                                                 type="submit"
                                                                 disabled={isChatting[entry.id] || !chatInputs[entry.id]?.trim()}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 transition-colors shrink-0"
+                                                                className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center shrink-0"
                                                             >
-                                                                {isChatting[entry.id] ? <Activity size={14} className="animate-spin" /> : <Send size={14} className="-ml-0.5 mt-0.5" />}
+                                                                {isChatting[entry.id] ? <Activity size={14} className="animate-spin" /> : <Send size={14} />}
                                                             </button>
                                                         </form>
                                                     </div>
