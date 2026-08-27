@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2 } from 'lucide-react';
+import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
 import BatchUpload from './BatchUpload';
 import { WeeklyFatBurnTrigger } from './WeeklyFatBurnModal';
 import gsap from 'gsap';
@@ -16,6 +16,8 @@ const SmartLogging = () => {
     const [editingFav, setEditingFav] = useState<any>(null);
     const [isFavAdjusting, setIsFavAdjusting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [showCameraPicker, setShowCameraPicker] = useState(false);
+    const [isListening, setIsListening] = useState(false);
     const [isBatchOpen, setIsBatchOpen] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const [telemetryError, setTelemetryError] = useState<string | null>(null);
@@ -26,9 +28,61 @@ const SmartLogging = () => {
 
     const interrogatePanelRef = useRef(null);
     const scannerRef = useRef(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
+    const recognitionRef = useRef<any>(null);
     const inFlightRequestsRef = useRef(new Set<string>());
     const queueScope = session?.user.id ?? 'guest';
+
+    // --- Voice Dictation (Web Speech API) ---
+    const toggleListening = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Voice speech recognition is not supported in this browser. Please try Google Chrome or Safari.");
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current?.stop();
+            setIsListening(false);
+            return;
+        }
+
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = navigator.language || 'cs-CZ';
+
+            recognition.onstart = () => {
+                setIsListening(true);
+                playSound('click');
+            };
+
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results)
+                    .map((result: any) => (result as any)[0].transcript)
+                    .join('');
+                setInput(transcript);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.warn("Speech recognition error:", event.error);
+                setIsListening(false);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+        } catch (err) {
+            console.error("Speech recognition startup error:", err);
+            setIsListening(false);
+        }
+    };
+
 
     // --- Background Queue: process a single pending item ---
     const processRequest = useCallback(async (id: string, prompt: string, image?: string, isRetry = false) => {
@@ -241,6 +295,7 @@ const SmartLogging = () => {
 
                 const base64Image = canvas.toDataURL('image/jpeg', 0.8);
                 setSelectedImage(base64Image);
+                setShowCameraPicker(false);
                 setIsFocused(true); // Open the box
             };
             img.src = reader.result as string;
@@ -282,9 +337,85 @@ const SmartLogging = () => {
                 </div>
             )}
 
-            {/* Native Camera Capture Input */}
+            {/* Native Camera Capture Input (Direct Camera, saves to local camera roll) */}
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                ref={cameraInputRef}
+                onChange={handleImageUpload}
+            />
+
             {/* Photo Gallery Selection Input */}
-            <input type="file" accept="image/*" className="hidden" ref={galleryInputRef} onChange={handleImageUpload} />
+            <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={galleryInputRef}
+                onChange={handleImageUpload}
+            />
+
+            {/* Unified Camera Choice Modal */}
+            {showCameraPicker && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setShowCameraPicker(false)}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-sm bg-white text-brutal-black border-2 border-brutal-black rounded-3xl p-5 shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-sans font-bold text-sm uppercase tracking-wider text-brutal-black/70">
+                                Add Food Photo
+                            </h3>
+                            <button
+                                onClick={() => setShowCameraPicker(false)}
+                                className="p-1 hover:bg-black/5 rounded-full"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-2.5">
+                            {/* 1. Direct Live Camera */}
+                            <button
+                                onClick={() => {
+                                    setShowCameraPicker(false);
+                                    cameraInputRef.current?.click();
+                                }}
+                                className="flex items-center gap-3 w-full p-3.5 bg-black/5 hover:bg-black/10 rounded-2xl font-sans font-bold text-sm transition-all active:scale-98 text-left"
+                            >
+                                <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-sm">
+                                    <Camera size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-brutal-black font-semibold">Take Live Photo</span>
+                                    <span className="text-[11px] font-normal opacity-50">Direct camera & saves to device gallery</span>
+                                </div>
+                            </button>
+
+                            {/* 2. Choose from Library */}
+                            <button
+                                onClick={() => {
+                                    setShowCameraPicker(false);
+                                    galleryInputRef.current?.click();
+                                }}
+                                className="flex items-center gap-3 w-full p-3.5 bg-black/5 hover:bg-black/10 rounded-2xl font-sans font-bold text-sm transition-all active:scale-98 text-left"
+                            >
+                                <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm">
+                                    <ImageIcon size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-brutal-black font-semibold">Choose from Gallery</span>
+                                    <span className="text-[11px] font-normal opacity-50">Select from already taken photos</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Frosted Glass Backdrop */}
             {showFavorites && favorites && favorites.length > 0 && (
@@ -485,31 +616,58 @@ const SmartLogging = () => {
                 <div className="flex flex-col relative z-10 w-full">
                     {/* Tool Bar Stacked Above */}
                     <div className="flex items-center gap-1 px-1 border-b border-black/5 pb-2 mb-1">
-<button
-                            onClick={() => galleryInputRef.current?.click()}
+                        {/* Unified Camera Button */}
+                        <button
+                            onClick={() => setShowCameraPicker(true)}
                             className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
-                            disabled={isProcessing} title="Add Photo"
+                            disabled={isProcessing}
+                            title="Add Photo (Camera or Gallery)"
                         >
-                            <Camera size={20} strokeWidth={2} />
+                            <Camera size={19} strokeWidth={2} />
                         </button>
+
+                        {/* Voice Speech Recognition Button */}
+                        <button
+                            onClick={toggleListening}
+                            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 relative ${
+                                isListening
+                                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/40 animate-pulse'
+                                    : 'text-brutal-black/50 hover:text-indigo-600 hover:bg-black/5'
+                            }`}
+                            disabled={isProcessing}
+                            title={isListening ? "Listening... (Tap to stop)" : "Voice Dictation"}
+                        >
+                            {isListening && (
+                                <span className="animate-ping absolute inset-0 rounded-full bg-rose-400 opacity-75 pointer-events-none" />
+                            )}
+                            <Mic size={19} strokeWidth={2} />
+                        </button>
+
+                        {/* Batch Day Recap Button */}
                         <button
                             onClick={() => setIsBatchOpen(true)}
                             className="relative w-10 h-10 flex items-center justify-center rounded-full text-violet-500 hover:text-violet-600 transition-all hover:bg-violet-50 active:scale-90"
-                            disabled={isProcessing} title="Day Recap"
+                            disabled={isProcessing}
+                            title="Day Recap"
                         >
-                            <LayoutGrid size={20} strokeWidth={2} />
+                            <LayoutGrid size={19} strokeWidth={2} />
                             <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">PRO</span>
                         </button>
-                        <div className="w-[1px] h-6 bg-black/10 mx-1"></div>
+
+                        <div className="w-[1px] h-6 bg-black/10 mx-1" />
+
+                        {/* Favorites Toggle */}
                         {favorites && favorites.length > 0 && (
                             <button
                                 onClick={() => setShowFavorites(!showFavorites)}
                                 className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                 title="Toggle Favorites"
                             >
-                                <Star size={20} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
+                                <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
                             </button>
                         )}
+
+                        {/* Fat Burn Telemetry Trigger Button */}
                         <div className="ml-auto">
                             <WeeklyFatBurnTrigger />
                         </div>
@@ -541,7 +699,13 @@ const SmartLogging = () => {
                                     handleSubmit();
                                 }
                             }}
-                            placeholder={selectedImage ? "Add a comment about the photo..." : "Log food... (e.g. eggs)"}
+                            placeholder={
+                                isListening
+                                    ? "Listening... Speak now..."
+                                    : selectedImage
+                                    ? "Add a comment about the photo..."
+                                    : "Log food or speak... (e.g. 2 eggs, toast)"
+                            }
                             rows={isFocused || input.trim().length > 0 || selectedImage ? 3 : 1}
                             className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none transition-all duration-300 ease-spring scrollbar-hide py-2 px-1
                                 ${isFocused || input.trim().length > 0 || selectedImage ? 'min-h-[76px]' : 'min-h-[28px]'}`}
