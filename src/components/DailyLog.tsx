@@ -693,12 +693,12 @@ const DailyLog = () => {
                                         {/* Carbs Bar (Amber) */}
                                         <div className="h-full bg-black/5 overflow-hidden relative">
                                             <div
-                                                className="h-full bg-amber-500/60 transition-all duration-500"
+                                                className="h-full bg-amber-500/25 transition-all duration-500"
                                                 style={{ width: `${dayCarbsPercent}%` }}
                                             />
                                             {dayCarbsOverflowPercent > 0 && (
                                                 <div
-                                                    className="absolute inset-y-0 left-0 h-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.7)] transition-all duration-500"
+                                                    className="absolute inset-y-0 left-0 h-full bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.9)] transition-all duration-500"
                                                     style={{ width: `${dayCarbsOverflowPercent}%` }}
                                                 />
                                             )}
@@ -706,12 +706,12 @@ const DailyLog = () => {
                                         {/* Fat Bar (Rose/Red) */}
                                         <div className="h-full bg-black/5 overflow-hidden relative">
                                             <div
-                                                className="h-full bg-rose-500/60 transition-all duration-500"
+                                                className="h-full bg-rose-500/25 transition-all duration-500"
                                                 style={{ width: `${dayFatPercent}%` }}
                                             />
                                             {dayFatOverflowPercent > 0 && (
                                                 <div
-                                                    className="absolute inset-y-0 left-0 h-full bg-rose-400 shadow-[0_0_4px_rgba(251,113,133,0.7)] transition-all duration-500"
+                                                    className="absolute inset-y-0 left-0 h-full bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.9)] transition-all duration-500"
                                                     style={{ width: `${dayFatOverflowPercent}%` }}
                                                 />
                                             )}
