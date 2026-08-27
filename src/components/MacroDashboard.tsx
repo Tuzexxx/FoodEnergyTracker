@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import gsap from 'gsap';
 import { AlertCircle, CheckCircle2, Flame } from 'lucide-react';
 import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
@@ -13,20 +13,31 @@ const MacroDashboard = () => {
     const effectiveProtein = targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
 
     // Sum consumed carbs and fats from daily log
-    const { consumedCarbs, consumedFat } = useMemo(() => {
-        let carbs = 0;
-        let fat = 0;
-        (dailyLog || []).forEach(item => {
-            carbs += (item.carbs || 0);
-            fat += (item.fat || 0);
-        });
-        return { consumedCarbs: Math.round(carbs), consumedFat: Math.round(fat) };
+    const consumedCarbs = useMemo(() => {
+        return Math.round(dailyLog.reduce((sum, item) => sum + (item.carbs || 0), 0));
+    }, [dailyLog]);
+
+    const consumedFat = useMemo(() => {
+        return Math.round(dailyLog.reduce((sum, item) => sum + (item.fat || 0), 0));
     }, [dailyLog]);
 
     // Optimal macro targets
     const optimalMacros = useMemo(() => {
         return calculateMacroDistribution(effectiveKcal, effectiveProtein);
     }, [effectiveKcal, effectiveProtein]);
+
+    const [showSecondaryMacros, setShowSecondaryMacros] = useState<boolean>(() => {
+        const saved = localStorage.getItem('macrotrack_show_secondary');
+        return saved !== null ? saved === 'true' : true;
+    });
+
+    const toggleSecondaryMacros = () => {
+        setShowSecondaryMacros((prev: boolean) => {
+            const next = !prev;
+            localStorage.setItem('macrotrack_show_secondary', String(next));
+            return next;
+        });
+    };
 
     const kcalRef = useRef<HTMLSpanElement>(null);
     const proteinRef = useRef<HTMLSpanElement>(null);
@@ -178,22 +189,28 @@ const MacroDashboard = () => {
                 </div>
             </div>
 
-            {/* Carbs & Fat Section: Information placed ABOVE (no percentages), Bars spanning 100% of the very bottom edge */}
-            <div className="relative z-10 flex flex-col w-full mt-1">
-                {/* Info Row Above Lines */}
-                <div className="flex items-center justify-between text-[9px] font-sans font-medium uppercase tracking-wider px-6 pb-1.5 w-full">
-                    <span className="text-amber-400/90 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                        CARB &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g
-                    </span>
-                    <span className="text-rose-400/90 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
-                        FAT &middot; {consumedFat}/{optimalMacros.fatGrams}g
-                    </span>
-                </div>
+            {/* Carbs & Fat Section: Clickable to toggle descriptions and subtlety */}
+            <div
+                onClick={toggleSecondaryMacros}
+                className="relative z-10 flex flex-col w-full mt-1 cursor-pointer select-none group/macros"
+                title={showSecondaryMacros ? "Click to minimize carbs & fat" : "Click to show carbs & fat details"}
+            >
+                {/* Info Row Above Lines (Collapsible) */}
+                {showSecondaryMacros && (
+                    <div className="flex items-center justify-between text-[9px] font-sans font-medium uppercase tracking-wider px-6 pb-1.5 w-full animate-in fade-in duration-200">
+                        <span className="text-amber-400/90 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+                            CARB &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g
+                        </span>
+                        <span className="text-rose-400/90 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
+                            FAT &middot; {consumedFat}/{optimalMacros.fatGrams}g
+                        </span>
+                    </div>
+                )}
 
                 {/* 100% Full-Width Flush Bottom Progress Bar */}
-                <div className="w-full h-1 bg-white/5 grid grid-cols-2 gap-0.5 overflow-hidden">
+                <div className={`w-full grid grid-cols-2 gap-0.5 overflow-hidden transition-all duration-300 ${showSecondaryMacros ? 'h-1 bg-white/5 opacity-100' : 'h-0.5 bg-white/5 opacity-25 hover:opacity-60'}`}>
                     {/* Carbs Bar (Left Half) */}
                     <div className="h-full bg-white/5 overflow-hidden relative">
                         <div
