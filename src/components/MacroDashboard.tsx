@@ -104,7 +104,11 @@ const MacroDashboard = () => {
     }, [consumedKcal, consumedProtein, kcalPercent, kcalOverflowPercent]);
 
     return (
-        <div className="brutal-card w-full shadow-2xl relative bg-black text-off-white group overflow-hidden border-2 border-brutal-black">
+        <div
+            onClick={toggleSecondaryMacros}
+            className="brutal-card w-full shadow-2xl relative bg-black text-off-white group overflow-hidden border-2 border-brutal-black cursor-pointer select-none"
+            title={showSecondaryMacros ? "Click anywhere on widget to minimize carbs & fat" : "Click anywhere on widget to show carbs & fat details"}
+        >
             {/* Red kcal progress fill */}
             <div
                 ref={kcalBarRef}
@@ -129,7 +133,10 @@ const MacroDashboard = () => {
                     {/* Exercise Day toggle */}
                     {showGymButton && (
                         <button
-                            onClick={toggleExerciseDay}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExerciseDay();
+                            }}
                             title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal` : 'Mark as exercise day'}
                             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
                                 ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
@@ -189,12 +196,8 @@ const MacroDashboard = () => {
                 </div>
             </div>
 
-            {/* Carbs & Fat Section: Clickable to toggle descriptions and subtlety */}
-            <div
-                onClick={toggleSecondaryMacros}
-                className="relative z-10 flex flex-col w-full mt-1 cursor-pointer select-none group/macros"
-                title={showSecondaryMacros ? "Click to minimize carbs & fat" : "Click to show carbs & fat details"}
-            >
+            {/* Carbs & Fat Section */}
+            <div className="relative z-10 flex flex-col w-full mt-1">
                 {/* Info Row Above Lines (Collapsible) */}
                 {showSecondaryMacros && (
                     <div className="flex items-center justify-between text-[9px] font-sans font-medium uppercase tracking-wider px-6 pb-1.5 w-full animate-in fade-in duration-200">
@@ -210,7 +213,7 @@ const MacroDashboard = () => {
                 )}
 
                 {/* 100% Full-Width Flush Bottom Progress Bar */}
-                <div className={`w-full grid grid-cols-2 gap-0.5 overflow-hidden transition-all duration-300 ${showSecondaryMacros ? 'h-1 bg-white/5 opacity-100' : 'h-0.5 bg-white/5 opacity-25 hover:opacity-60'}`}>
+                <div className={`w-full grid grid-cols-2 gap-0.5 overflow-hidden transition-all duration-300 ${showSecondaryMacros ? 'h-1.5 bg-white/10 opacity-100' : 'h-1 bg-white/10 opacity-60'}`}>
                     {/* Carbs Bar (Left Half) */}
                     <div className="h-full bg-white/5 overflow-hidden relative">
                         <div
