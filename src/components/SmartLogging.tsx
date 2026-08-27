@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
 import BatchUpload from './BatchUpload';
-import { WeeklyFatBurnTrigger } from './WeeklyFatBurnModal';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -297,6 +296,20 @@ const SmartLogging = () => {
                 setSelectedImage(base64Image);
                 setShowCameraPicker(false);
                 setIsFocused(true); // Open the box
+
+                // If taken directly via camera input, auto-save to device gallery/downloads
+                if (e.target === cameraInputRef.current) {
+                    try {
+                        const a = document.createElement('a');
+                        a.href = base64Image;
+                        a.download = `food_${Date.now()}.jpg`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch (err) {
+                        console.warn("Could not trigger gallery save:", err);
+                    }
+                }
             };
             img.src = reader.result as string;
         };
@@ -666,11 +679,6 @@ const SmartLogging = () => {
                                 <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
                             </button>
                         )}
-
-                        {/* Fat Burn Telemetry Trigger Button */}
-                        <div className="ml-auto">
-                            <WeeklyFatBurnTrigger />
-                        </div>
                     </div>
 
                     {/* Selected Image Thumbnail */}

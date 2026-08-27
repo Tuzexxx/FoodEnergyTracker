@@ -3,9 +3,9 @@ import { useStore } from './store/useStore';
 import { FlaskConical, Settings, Sparkles, Loader2 } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
-
 import DailyLog from './components/DailyLog';
 import CalendarHeatmap from './components/CalendarHeatmap';
+import ProgressView from './components/ProgressView';
 import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
@@ -18,10 +18,9 @@ function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [manualCelebrate, setManualCelebrate] = useState(false);
-    const [timeframe, setTimeframe] = useState<'day' | 'month'>('day');
+    const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'month'>('day');
 
-    // Day rollover: detect new day and move consumed → yesterday
-        // Day rollover: detect new day and move consumed -> yesterday
+    // Day rollover: detect new day and move consumed -> yesterday
     useEffect(() => {
         checkDayRollover();
         const handleVisibility = () => {
@@ -153,19 +152,27 @@ function App() {
                                 </button>
                             </div>
                         )}
-                                                <div className="w-full flex items-center justify-center -mb-2">
+
+                        {/* Top View Switcher */}
+                        <div className="w-full flex items-center justify-center -mb-2">
                             <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner">
                                 <button
                                     onClick={() => setTimeframe('day')}
-                                    className={`px-5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
-                                    Day (Log)
+                                    Day
+                                </button>
+                                <button
+                                    onClick={() => setTimeframe('progress')}
+                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'progress' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                >
+                                    Progress
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('month')}
-                                    className={`px-5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'month' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'month' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
-                                    Month (Calendar)
+                                    Month
                                 </button>
                             </div>
                         </div>
@@ -175,11 +182,11 @@ function App() {
                                 <MacroDashboard />
                                 <DailyLog />
                             </>
+                        ) : timeframe === 'progress' ? (
+                            <ProgressView />
                         ) : (
                             <CalendarHeatmap />
                         )}
-
-                        
                     </>
                 ) : isAuthLoading ? (
                     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 opacity-60">

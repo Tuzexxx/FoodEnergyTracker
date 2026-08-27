@@ -40,11 +40,6 @@ const MacroDashboard = () => {
     const kcalPercent = Math.min(kcalRawPercent, 100);
     const kcalOverflowPercent = Math.max(0, Math.min(kcalRawPercent - 100, 100));
 
-    // Overages
-    const isPOver = consumedProtein > effectiveProtein;
-    const isCOver = consumedCarbs > optimalMacros.carbsGrams && optimalMacros.carbsGrams > 0;
-    const isFOver = consumedFat > optimalMacros.fatGrams && optimalMacros.fatGrams > 0;
-
     // Protein, Carbs, Fat percentages & overflow math
     const pRawPercent = effectiveProtein > 0 ? (consumedProtein / effectiveProtein) * 100 : 0;
     const pPercent = Math.min(pRawPercent, 100);
@@ -156,11 +151,11 @@ const MacroDashboard = () => {
                     {/* Protein Counter & Dedicated Full-Width Progress Bar Directly Underneath */}
                     <div className="flex flex-col items-end w-full mt-1">
                         <div className="flex justify-end w-full items-baseline gap-2 opacity-90 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
-                            <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none text-emerald-400">
+                            <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none text-white">
                                 {consumedProtein}
                             </span>
-                            <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap text-emerald-400/80">
-                                / {effectiveProtein}G PROT {isPOver && <span className="text-emerald-300 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
+                            <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap text-white/80">
+                                / {effectiveProtein}G PROT
                             </span>
                         </div>
 
@@ -168,13 +163,13 @@ const MacroDashboard = () => {
                         <div className="-mx-6 w-[calc(100%+48px)] h-1 bg-white/10 overflow-hidden mt-3 relative">
                             {/* Base track (0 to 100%) */}
                             <div
-                                className="h-full bg-emerald-500/60 transition-all duration-700"
+                                className="h-full bg-white/40 transition-all duration-700"
                                 style={{ width: `${pPercent}%` }}
                             />
                             {/* Overflow track (>100% wrapping from 0%) */}
                             {pOverflowPercent > 0 && (
                                 <div
-                                    className="absolute inset-y-0 left-0 h-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)] transition-all duration-700"
+                                    className="absolute inset-y-0 left-0 h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] transition-all duration-700"
                                     style={{ width: `${pOverflowPercent}%` }}
                                 />
                             )}
@@ -189,11 +184,11 @@ const MacroDashboard = () => {
                 <div className="flex items-center justify-between text-[9px] font-sans font-medium uppercase tracking-wider px-6 pb-1.5 w-full">
                     <span className="text-amber-400/90 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                        CARB &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g {isCOver && <span className="font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
+                        CARB &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g
                     </span>
                     <span className="text-rose-400/90 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
-                        FAT &middot; {consumedFat}/{optimalMacros.fatGrams}g {isFOver && <span className="font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
+                        FAT &middot; {consumedFat}/{optimalMacros.fatGrams}g
                     </span>
                 </div>
 
