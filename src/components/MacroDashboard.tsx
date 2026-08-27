@@ -45,13 +45,18 @@ const MacroDashboard = () => {
     const isCOver = consumedCarbs > optimalMacros.carbsGrams && optimalMacros.carbsGrams > 0;
     const isFOver = consumedFat > optimalMacros.fatGrams && optimalMacros.fatGrams > 0;
 
-    const pPercent = effectiveProtein > 0 ? Math.round((consumedProtein / effectiveProtein) * 100) : 0;
-    const cPercent = optimalMacros.carbsGrams > 0 ? Math.round((consumedCarbs / optimalMacros.carbsGrams) * 100) : 0;
-    const fPercent = optimalMacros.fatGrams > 0 ? Math.round((consumedFat / optimalMacros.fatGrams) * 100) : 0;
+    // Protein, Carbs, Fat percentages & overflow math
+    const pRawPercent = effectiveProtein > 0 ? (consumedProtein / effectiveProtein) * 100 : 0;
+    const pPercent = Math.min(pRawPercent, 100);
+    const pOverflowPercent = Math.max(0, Math.min(pRawPercent - 100, 100));
 
-    const pVisualWidth = Math.min(100, pPercent);
-    const cVisualWidth = Math.min(100, cPercent);
-    const fVisualWidth = Math.min(100, fPercent);
+    const cRawPercent = optimalMacros.carbsGrams > 0 ? (consumedCarbs / optimalMacros.carbsGrams) * 100 : 0;
+    const cPercent = Math.min(cRawPercent, 100);
+    const cOverflowPercent = Math.max(0, Math.min(cRawPercent - 100, 100));
+
+    const fRawPercent = optimalMacros.fatGrams > 0 ? (consumedFat / optimalMacros.fatGrams) * 100 : 0;
+    const fPercent = Math.min(fRawPercent, 100);
+    const fOverflowPercent = Math.max(0, Math.min(fRawPercent - 100, 100));
 
     useEffect(() => {
         // Number counter animation
@@ -160,11 +165,19 @@ const MacroDashboard = () => {
                         </div>
 
                         {/* Full-width protein progress line directly below protein numbers */}
-                        <div className="-mx-6 w-[calc(100%+48px)] h-1 bg-white/10 overflow-hidden mt-3">
+                        <div className="-mx-6 w-[calc(100%+48px)] h-1 bg-white/10 overflow-hidden mt-3 relative">
+                            {/* Base track (0 to 100%) */}
                             <div
-                                className={`h-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.6)]' : 'bg-emerald-500/60'}`}
-                                style={{ width: `${pVisualWidth}%` }}
+                                className="h-full bg-emerald-500/60 transition-all duration-700"
+                                style={{ width: `${pPercent}%` }}
                             />
+                            {/* Overflow track (>100% wrapping from 0%) */}
+                            {pOverflowPercent > 0 && (
+                                <div
+                                    className="absolute inset-y-0 left-0 h-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)] transition-all duration-700"
+                                    style={{ width: `${pOverflowPercent}%` }}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -187,18 +200,30 @@ const MacroDashboard = () => {
                 {/* 100% Full-Width Flush Bottom Progress Bar */}
                 <div className="w-full h-1 bg-white/5 grid grid-cols-2 gap-0.5 overflow-hidden">
                     {/* Carbs Bar (Left Half) */}
-                    <div className="h-full bg-white/5 overflow-hidden">
+                    <div className="h-full bg-white/5 overflow-hidden relative">
                         <div
-                            className={`h-full transition-all duration-700 ${isCOver ? 'bg-amber-300 shadow-[0_0_6px_rgba(252,211,77,0.8)]' : 'bg-amber-400'}`}
-                            style={{ width: `${cVisualWidth}%` }}
+                            className="h-full bg-amber-500/70 transition-all duration-700"
+                            style={{ width: `${cPercent}%` }}
                         />
+                        {cOverflowPercent > 0 && (
+                            <div
+                                className="absolute inset-y-0 left-0 h-full bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.9)] transition-all duration-700"
+                                style={{ width: `${cOverflowPercent}%` }}
+                            />
+                        )}
                     </div>
                     {/* Fat Bar (Right Half) */}
-                    <div className="h-full bg-white/5 overflow-hidden">
+                    <div className="h-full bg-white/5 overflow-hidden relative">
                         <div
-                            className={`h-full transition-all duration-700 ${isFOver ? 'bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]' : 'bg-rose-500'}`}
-                            style={{ width: `${fVisualWidth}%` }}
+                            className="h-full bg-rose-500/70 transition-all duration-700"
+                            style={{ width: `${fPercent}%` }}
                         />
+                        {fOverflowPercent > 0 && (
+                            <div
+                                className="absolute inset-y-0 left-0 h-full bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.9)] transition-all duration-700"
+                                style={{ width: `${fOverflowPercent}%` }}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

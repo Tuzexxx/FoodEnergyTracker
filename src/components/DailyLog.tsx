@@ -637,14 +637,18 @@ const DailyLog = () => {
                         const kcalOver = day.kcal > effectiveTargetKcal;
                         const proteinHit = day.protein >= effectiveTargetProtein;
 
-                        // Carbs & Fat calculation
+                        // Carbs & Fat calculation & overflow wrap math
                         const dayCarbs = Math.round(day.entries ? day.entries.reduce((sum, e) => sum + (e.carbs || 0), 0) : 0);
                         const dayFat = Math.round(day.entries ? day.entries.reduce((sum, e) => sum + (e.fat || 0), 0) : 0);
                         const dayMacros = calculateMacroDistribution(effectiveTargetKcal, effectiveTargetProtein);
-                        const isCOver = dayCarbs > dayMacros.carbsGrams && dayMacros.carbsGrams > 0;
-                        const isFOver = dayFat > dayMacros.fatGrams && dayMacros.fatGrams > 0;
-                        const cVisualWidth = dayMacros.carbsGrams > 0 ? Math.min(100, Math.round((dayCarbs / dayMacros.carbsGrams) * 100)) : 0;
-                        const fVisualWidth = dayMacros.fatGrams > 0 ? Math.min(100, Math.round((dayFat / dayMacros.fatGrams) * 100)) : 0;
+                        
+                        const dayCarbsRawPercent = dayMacros.carbsGrams > 0 ? (dayCarbs / dayMacros.carbsGrams) * 100 : 0;
+                        const dayCarbsPercent = Math.min(dayCarbsRawPercent, 100);
+                        const dayCarbsOverflowPercent = Math.max(0, Math.min(dayCarbsRawPercent - 100, 100));
+
+                        const dayFatRawPercent = dayMacros.fatGrams > 0 ? (dayFat / dayMacros.fatGrams) * 100 : 0;
+                        const dayFatPercent = Math.min(dayFatRawPercent, 100);
+                        const dayFatOverflowPercent = Math.max(0, Math.min(dayFatRawPercent - 100, 100));
 
                         const kcalPill = kcalHit 
                             ? 'bg-green-400/5 text-green-900/70 border-green-400/20' 
@@ -687,18 +691,30 @@ const DailyLog = () => {
                                     {/* Bottom flush progress tracks for Carbs & Fat */}
                                     <div className="absolute inset-x-0 bottom-0 h-1 bg-black/5 grid grid-cols-2 gap-0.5 pointer-events-none overflow-hidden">
                                         {/* Carbs Bar (Amber) */}
-                                        <div className="h-full bg-black/5 overflow-hidden">
+                                        <div className="h-full bg-black/5 overflow-hidden relative">
                                             <div
-                                                className={`h-full transition-all duration-500 ${isCOver ? 'bg-amber-400 shadow-[0_0_4px_rgba(252,211,77,0.8)]' : 'bg-amber-500/70'}`}
-                                                style={{ width: `${cVisualWidth}%` }}
+                                                className="h-full bg-amber-500/70 transition-all duration-500"
+                                                style={{ width: `${dayCarbsPercent}%` }}
                                             />
+                                            {dayCarbsOverflowPercent > 0 && (
+                                                <div
+                                                    className="absolute inset-y-0 left-0 h-full bg-amber-400 shadow-[0_0_4px_rgba(252,211,77,0.9)] transition-all duration-500"
+                                                    style={{ width: `${dayCarbsOverflowPercent}%` }}
+                                                />
+                                            )}
                                         </div>
                                         {/* Fat Bar (Rose/Red) */}
-                                        <div className="h-full bg-black/5 overflow-hidden">
+                                        <div className="h-full bg-black/5 overflow-hidden relative">
                                             <div
-                                                className={`h-full transition-all duration-500 ${isFOver ? 'bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.8)]' : 'bg-rose-500/70'}`}
-                                                style={{ width: `${fVisualWidth}%` }}
+                                                className="h-full bg-rose-500/70 transition-all duration-500"
+                                                style={{ width: `${dayFatPercent}%` }}
                                             />
+                                            {dayFatOverflowPercent > 0 && (
+                                                <div
+                                                    className="absolute inset-y-0 left-0 h-full bg-rose-400 shadow-[0_0_4px_rgba(244,63,94,0.9)] transition-all duration-500"
+                                                    style={{ width: `${dayFatOverflowPercent}%` }}
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                 </div>
