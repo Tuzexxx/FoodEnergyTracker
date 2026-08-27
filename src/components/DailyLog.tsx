@@ -1,12 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, FoodEntry } from '../store/useStore';
-import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { Edit2, X, Trash2, Star, Activity, MessageSquare, Send, ChevronLeft, ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react';
 import gsap from 'gsap';
 import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 import { calculateMacroDistribution } from '../utils/calorieFormula';
 import { supabase } from '../utils/supabase';
+
+function parsePortionMultiplier(name: string): { multiplier: number; cleanName: string } {
+    let multiplier = 1;
+    let cleanName = name;
+
+    // Pattern 1: Starts with digits + x (e.g. "2x Banana" or "*2x Banana*" or "2x Banana || ...")
+    const prefixMatch = name.match(/^(\*?)(\d+(?:\.\d+)?)\s*x\s+(.*)/i);
+    if (prefixMatch) {
+        multiplier = Math.max(1, parseFloat(prefixMatch[2]) || 1);
+        cleanName = prefixMatch[1] + prefixMatch[3];
+        return { multiplier, cleanName };
+    }
+
+    // Pattern 2: Parentheses with Nx (e.g. "Banana (2x)" or "*Banana (2x)* || ...")
+    const parenMatch = name.match(/^(.*?)\s*\((\d+(?:\.\d+)?)x\)(.*)/i);
+    if (parenMatch) {
+        multiplier = Math.max(1, parseFloat(parenMatch[2]) || 1);
+        cleanName = (parenMatch[1] + parenMatch[3]).trim();
+        return { multiplier, cleanName };
+    }
+
+    return { multiplier: 1, cleanName: name };
+}
+
+function formatPortionName(cleanName: string, multiplier: number): string {
+    if (multiplier <= 1) return cleanName;
+    
+    // If star format: *Melon* || 300g -> *2x Melon* || 300g
+    if (cleanName.startsWith('*') && cleanName.includes('*')) {
+        return cleanName.replace(/^\*([^\*]+)\*/, `*${multiplier}x $1*`);
+    }
+    
+    // Standard format: 2x Banana
+    return `${multiplier}x ${cleanName}`;
+}
 
 const DailyLog = () => {
     const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein, historicalExerciseDays } = useStore();
@@ -93,13 +128,26 @@ const DailyLog = () => {
         setEditingId(null);
     };
 
-    const handleDoublePortion = (entry: FoodEntry) => {
+    const handleAdjustPortion = (entry: FoodEntry, delta: number) => {
         playSound('click');
+        const { multiplier: currentMult, cleanName } = parsePortionMultiplier(entry.name);
+        const nextMult = Math.max(1, currentMult + delta);
+        if (nextMult === currentMult) return;
+
+        // Base unit calories and macros
+        const baseKcal = entry.kcal / currentMult;
+        const baseProtein = entry.protein / currentMult;
+        const baseCarbs = (entry.carbs ?? 0) / currentMult;
+        const baseFat = (entry.fat ?? 0) / currentMult;
+
+        const updatedName = formatPortionName(cleanName, nextMult);
+
         updateEntry(entry.id, {
-            kcal: Math.round(entry.kcal * 2),
-            protein: Math.round(entry.protein * 2),
-            carbs: Math.round((entry.carbs ?? 0) * 2),
-            fat: Math.round((entry.fat ?? 0) * 2),
+            name: updatedName,
+            kcal: Math.round(baseKcal * nextMult),
+            protein: Math.round(baseProtein * nextMult),
+            carbs: Math.round(baseCarbs * nextMult),
+            fat: Math.round(baseFat * nextMult),
         });
     };
 
@@ -438,18 +486,47 @@ const DailyLog = () => {
 
                                                     {/* Action Buttons Row */}
                                                     <div className="flex items-center justify-between gap-2 w-full pt-1">
-                                                        {/* Plus (+2x / Double portion) Button */}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDoublePortion(entry);
-                                                            }}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:scale-95 transition-all text-xs font-sans font-bold border border-emerald-200 shadow-sm shrink-0"
-                                                            title="Add 1 more portion (+100% calories & macros)"
-                                                        >
-                                                            <Plus size={14} strokeWidth={2.5} />
-                                                            <span>+2x Portion</span>
-                                                        </button>
+                                                        {/* Portion Stepper Controls: [ - ] [ Nx ] [ + ] */}
+                                                        {(() => {
+                                                            const { multiplier: currentMultiplier } = parsePortionMultiplier(entry.name);
+                                                            return (
+                                                                <div className="flex items-center gap-1.5 p-1 bg-black/5 rounded-full border border-black/5 shrink-0">
+                                                                    {/* Minus button */}
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleAdjustPortion(entry, -1);
+                                                                        }}
+                                                                        disabled={currentMultiplier <= 1}
+                                                                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                                                                            currentMultiplier <= 1
+                                                                                ? 'opacity-25 cursor-not-allowed text-brutal-black'
+                                                                                : 'bg-white hover:bg-black/10 text-brutal-black active:scale-90 shadow-xs'
+                                                                        }`}
+                                                                        title="Decrease portion (-1x)"
+                                                                    >
+                                                                        <Minus size={13} strokeWidth={2.5} />
+                                                                    </button>
+
+                                                                    {/* Current multiplier badge */}
+                                                                    <span className="font-data font-bold text-xs text-brutal-black px-1 min-w-[22px] text-center">
+                                                                        {currentMultiplier}x
+                                                                    </span>
+
+                                                                    {/* Plus button */}
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleAdjustPortion(entry, 1);
+                                                                        }}
+                                                                        className="w-7 h-7 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all active:scale-90 shadow-sm"
+                                                                        title="Add 1 more portion (+1x)"
+                                                                    >
+                                                                        <Plus size={13} strokeWidth={2.5} />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })()}
 
                                                         {/* Secondary Action Icons */}
                                                         <div className="flex items-center gap-1.5 ml-auto shrink-0">
