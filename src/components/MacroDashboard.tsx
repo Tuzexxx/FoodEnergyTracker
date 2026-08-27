@@ -40,7 +40,7 @@ const MacroDashboard = () => {
     const kcalPercent = Math.min(kcalRawPercent, 100);
     const kcalOverflowPercent = Math.max(0, Math.min(kcalRawPercent - 100, 100));
 
-    // True percentages (e.g. 120% when 20% over target)
+    // Overages
     const isPOver = consumedProtein > effectiveProtein;
     const isCOver = consumedCarbs > optimalMacros.carbsGrams && optimalMacros.carbsGrams > 0;
     const isFOver = consumedFat > optimalMacros.fatGrams && optimalMacros.fatGrams > 0;
@@ -132,7 +132,7 @@ const MacroDashboard = () => {
                 </div>
 
                 {/* Main Calorie & Protein Counters */}
-                <div className="flex flex-col gap-1 items-end mt-4 mb-4 w-full">
+                <div className="flex flex-col gap-1 items-end mt-4 mb-3 w-full">
                     {/* Calories */}
                     <div className="flex items-baseline gap-2 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
                         {isOverCalories && <AlertCircle className="text-signal-red animate-pulse" size={24} />}
@@ -148,21 +148,21 @@ const MacroDashboard = () => {
                         </span>
                     </div>
 
-                    {/* Protein Counter & Dedicated Single Progress Bar Directly Underneath */}
+                    {/* Protein Counter & Dedicated Full-Width Progress Bar Directly Underneath */}
                     <div className="flex flex-col items-end w-full mt-1">
                         <div className="flex justify-end w-full items-baseline gap-2 opacity-90 group-hover:scale-[1.02] transition-transform duration-500 origin-right">
                             <span ref={proteinRef} className="font-data text-3xl tracking-tighter leading-none text-emerald-400">
                                 {consumedProtein}
                             </span>
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap text-emerald-400/80">
-                                / {effectiveProtein}G PROTEIN ({pPercent}%) {isPOver && <span className="text-emerald-300 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
+                                / {effectiveProtein}G PROT {isPOver && <span className="text-emerald-300 font-bold">(+{consumedProtein - effectiveProtein}g)</span>}
                             </span>
                         </div>
 
-                        {/* Protein Progress Line directly below protein numbers */}
-                        <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden mt-1.5 self-end">
+                        {/* Full-width protein progress line directly below protein numbers */}
+                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mt-2">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.8)]' : 'bg-emerald-400'}`}
+                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.6)]' : 'bg-emerald-500/60'}`}
                                 style={{ width: `${pVisualWidth}%` }}
                             />
                         </div>
@@ -170,17 +170,17 @@ const MacroDashboard = () => {
                 </div>
             </div>
 
-            {/* Carbs & Fat Section: Information placed ABOVE, Bars spanning 100% of the very bottom edge */}
+            {/* Carbs & Fat Section: Information placed ABOVE (no percentages), Bars spanning 100% of the very bottom edge */}
             <div className="relative z-10 flex flex-col w-full mt-1">
                 {/* Info Row Above Lines */}
                 <div className="flex items-center justify-between text-[9px] font-sans font-medium uppercase tracking-wider px-6 pb-1.5 w-full">
                     <span className="text-amber-400/90 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                        CARB {cPercent}% &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g {isCOver && <span className="font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
+                        CARB &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g {isCOver && <span className="font-bold">(+{consumedCarbs - optimalMacros.carbsGrams}g)</span>}
                     </span>
                     <span className="text-rose-400/90 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
-                        FAT {fPercent}% &middot; {consumedFat}/{optimalMacros.fatGrams}g {isFOver && <span className="font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
+                        FAT &middot; {consumedFat}/{optimalMacros.fatGrams}g {isFOver && <span className="font-bold">(+{consumedFat - optimalMacros.fatGrams}g)</span>}
                     </span>
                 </div>
 
