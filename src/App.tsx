@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useStore } from './store/useStore';
 import { FlaskConical, Settings, Loader2 } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
@@ -18,6 +18,49 @@ function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'month'>('day');
+
+    const touchStartX = useRef<number | null>(null);
+    const touchStartY = useRef<number | null>(null);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('input, textarea, select, button, .log-card')) {
+            touchStartX.current = null;
+            touchStartY.current = null;
+            return;
+        }
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (touchStartX.current === null || touchStartY.current === null) return;
+
+        const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+
+        touchStartX.current = null;
+        touchStartY.current = null;
+
+        // Must be predominantly horizontal swipe with at least 50px delta
+        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+            if (deltaX < 0) {
+                // Swiping Left (finger moves left) -> advance: Day -> Progress -> Month
+                setTimeframe(prev => {
+                    if (prev === 'day') return 'progress';
+                    if (prev === 'progress') return 'month';
+                    return prev;
+                });
+            } else {
+                // Swiping Right (finger moves right) -> go back: Month -> Progress -> Day
+                setTimeframe(prev => {
+                    if (prev === 'month') return 'progress';
+                    if (prev === 'progress') return 'day';
+                    return prev;
+                });
+            }
+        }
+    };
 
     // Day rollover: detect new day and move consumed -> yesterday
     useEffect(() => {
@@ -128,7 +171,11 @@ function App() {
                 </div>
             </nav>
 
-            <main className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-40 flex flex-col gap-8">
+            <main
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                className="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-40 flex flex-col gap-8 select-none"
+            >
                 {isCalibrated ? (
                     <>
                         {isGuest && (
