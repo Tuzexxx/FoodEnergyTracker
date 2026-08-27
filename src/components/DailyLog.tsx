@@ -385,8 +385,7 @@ const DailyLog = () => {
                                             )}
 
                                             {/* Collapsed 1-row view */}
-                                            /* Top Row (Identical in both collapsed and expanded states) */
-                                            <div className="flex items-center justify-between w-full gap-3">
+                                                                                        <div className="flex items-center justify-between w-full gap-3">
                                                 <div className="bg-black/5 rounded-md shrink-0 flex items-center justify-center py-2 px-1 min-h-[50px] w-7">
                                                     <span className="font-sans text-[12px] font-bold opacity-40 leading-none whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                                                         {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}

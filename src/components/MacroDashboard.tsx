@@ -160,9 +160,9 @@ const MacroDashboard = () => {
                         </div>
 
                         {/* Full-width protein progress line directly below protein numbers */}
-                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mt-2">
+                        <div className="-mx-6 w-[calc(100%+48px)] h-1 bg-white/10 overflow-hidden mt-3">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.6)]' : 'bg-emerald-500/60'}`}
+                                className={`h-full transition-all duration-700 ${isPOver ? 'bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.6)]' : 'bg-emerald-500/60'}`}
                                 style={{ width: `${pVisualWidth}%` }}
                             />
                         </div>
