@@ -217,12 +217,12 @@ const MacroDashboard = () => {
                     {/* Carbs Bar (Left Half) */}
                     <div className="h-full bg-white/5 overflow-hidden relative">
                         <div
-                            className="h-full bg-amber-500/70 transition-all duration-700"
+                            className="h-full bg-amber-500/60 transition-all duration-700"
                             style={{ width: `${cPercent}%` }}
                         />
                         {cOverflowPercent > 0 && (
                             <div
-                                className="absolute inset-y-0 left-0 h-full bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.9)] transition-all duration-700"
+                                className="absolute inset-y-0 left-0 h-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)] transition-all duration-700"
                                 style={{ width: `${cOverflowPercent}%` }}
                             />
                         )}
@@ -230,12 +230,12 @@ const MacroDashboard = () => {
                     {/* Fat Bar (Right Half) */}
                     <div className="h-full bg-white/5 overflow-hidden relative">
                         <div
-                            className="h-full bg-rose-500/70 transition-all duration-700"
+                            className="h-full bg-rose-500/60 transition-all duration-700"
                             style={{ width: `${fPercent}%` }}
                         />
                         {fOverflowPercent > 0 && (
                             <div
-                                className="absolute inset-y-0 left-0 h-full bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.9)] transition-all duration-700"
+                                className="absolute inset-y-0 left-0 h-full bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.8)] transition-all duration-700"
                                 style={{ width: `${fOverflowPercent}%` }}
                             />
                         )}
