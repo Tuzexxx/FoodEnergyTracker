@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useStore } from './store/useStore';
-import { FlaskConical, Settings, Sparkles, Loader2 } from 'lucide-react';
+import { FlaskConical, Settings, Loader2 } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
@@ -17,7 +17,6 @@ import { isSupabaseConfigured, supabase } from './utils/supabase';
 function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [manualCelebrate, setManualCelebrate] = useState(false);
     const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'month'>('day');
 
     // Day rollover: detect new day and move consumed -> yesterday
@@ -118,22 +117,13 @@ function App() {
                 <div className="flex items-center gap-4 text-brutal-black">
                     <PWAInstall />
                     {isCalibrated && (
-                        <>
-                            <button
-                                onClick={() => setManualCelebrate(true)}
-                                className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
-                                title="Celebrate"
-                            >
-                                <Sparkles size={18} strokeWidth={2} />
-                            </button>
-                            <button
-                                onClick={() => setIsSettingsOpen(true)}
-                                className="p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
-                                title="Settings"
-                            >
-                                <Settings size={18} strokeWidth={2} />
-                            </button>
-                        </>
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
+                            title="Settings"
+                        >
+                            <Settings size={18} strokeWidth={2} />
+                        </button>
                     )}
                 </div>
             </nav>
@@ -211,7 +201,6 @@ function App() {
 
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
             {shouldCelebrate && <GlitterCelebration onDismiss={dismissCelebration} />}
-            {manualCelebrate && <GlitterCelebration onDismiss={() => setManualCelebrate(false)} />}
             <Analytics />
         </div>
     );
