@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useStore } from './store/useStore';
-import { FlaskConical, Settings, Loader2 } from 'lucide-react';
+import { FlaskConical, Settings, Loader2, Flame } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
@@ -17,7 +17,7 @@ import { isSupabaseConfigured, supabase } from './utils/supabase';
 function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'month'>('day');
+    const [timeframe, setTimeframe] = useState<'day' | 'progress'>('day');
 
     const touchStartX = useRef<number | null>(null);
     const touchStartY = useRef<number | null>(null);
@@ -45,19 +45,11 @@ function App() {
         // Must be predominantly horizontal swipe with at least 50px delta
         if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
             if (deltaX < 0) {
-                // Swiping Left (finger moves left) -> advance: Day -> Progress -> Month
-                setTimeframe(prev => {
-                    if (prev === 'day') return 'progress';
-                    if (prev === 'progress') return 'month';
-                    return prev;
-                });
+                // Swiping Left (finger moves left) -> advance: Day -> Progress
+                setTimeframe('progress');
             } else {
-                // Swiping Right (finger moves right) -> go back: Month -> Progress -> Day
-                setTimeframe(prev => {
-                    if (prev === 'month') return 'progress';
-                    if (prev === 'progress') return 'day';
-                    return prev;
-                });
+                // Swiping Right (finger moves right) -> go back: Progress -> Day
+                setTimeframe('day');
             }
         }
     };
@@ -195,21 +187,23 @@ function App() {
                             <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner">
                                 <button
                                     onClick={() => setTimeframe('day')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
                                     Day
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('progress')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'progress' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                                        timeframe === 'progress'
+                                            ? 'bg-brutal-black text-off-white shadow-md'
+                                            : 'text-brutal-black/70 hover:text-brutal-black'
+                                    }`}
                                 >
+                                    <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-60" />
+                                        <Flame size={13} className="relative text-amber-500 fill-amber-500 animate-pulse shrink-0" />
+                                    </span>
                                     Progress
-                                </button>
-                                <button
-                                    onClick={() => setTimeframe('month')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'month' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
-                                >
-                                    Month
                                 </button>
                             </div>
                         </div>
@@ -218,11 +212,10 @@ function App() {
                             <>
                                 <MacroDashboard />
                                 <DailyLog />
+                                <CalendarHeatmap />
                             </>
-                        ) : timeframe === 'progress' ? (
-                            <ProgressView />
                         ) : (
-                            <CalendarHeatmap />
+                            <ProgressView />
                         )}
                     </>
                 ) : isAuthLoading ? (
