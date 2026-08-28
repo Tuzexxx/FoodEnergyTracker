@@ -671,6 +671,19 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                             <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">PRO</span>
                         </button>
 
+                        {/* Favorites Toggle */}
+                        {favorites && favorites.length > 0 && (
+                            <button
+                                onClick={() => setShowFavorites(!showFavorites)}
+                                className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                title="Toggle Favorites"
+                            >
+                                <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
+                            </button>
+                        )}
+
+                        <div className="w-[1px] h-6 bg-black/10 mx-1" />
+
                         {/* Progress Direct Trigger with burning pulsing flame */}
                         {onOpenProgress && (
                             <button
@@ -686,19 +699,6 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
                                     <Flame size={18} className="relative text-amber-500 fill-amber-500 animate-pulse shrink-0" />
                                 </span>
-                            </button>
-                        )}
-
-                        <div className="w-[1px] h-6 bg-black/10 mx-1" />
-
-                        {/* Favorites Toggle */}
-                        {favorites && favorites.length > 0 && (
-                            <button
-                                onClick={() => setShowFavorites(!showFavorites)}
-                                className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
-                                title="Toggle Favorites"
-                            >
-                                <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
                             </button>
                         )}
                     </div>
