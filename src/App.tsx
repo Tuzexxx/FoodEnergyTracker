@@ -234,7 +234,7 @@ function App() {
             {(session || isGuest) && isCalibrated && (
                 <div className="fixed bottom-6 left-0 right-0 px-4 z-40 w-full max-w-md mx-auto pointer-events-none">
                     <div className="pointer-events-auto">
-                        <SmartLogging />
+                        <SmartLogging onOpenProgress={() => setTimeframe('progress')} />
                     </div>
                 </div>
             )}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
+import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon, Flame } from 'lucide-react';
 import BatchUpload from './BatchUpload';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
@@ -7,7 +7,11 @@ import { playSound } from '../utils/audio';
 import { getAiResponse } from '../utils/ai';
 import { savePending, removePending, getAllPending } from '../utils/pendingQueue';
 
-const SmartLogging = () => {
+interface SmartLoggingProps {
+    onOpenProgress?: () => void;
+}
+
+const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const [showFavorites, setShowFavorites] = useState(false);
@@ -667,6 +671,24 @@ const SmartLogging = () => {
                             <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">PRO</span>
                         </button>
 
+                        {/* Progress Direct Trigger with burning pulsing flame */}
+                        {onOpenProgress && (
+                            <button
+                                onClick={() => {
+                                    onOpenProgress();
+                                    playSound('click');
+                                }}
+                                className="w-10 h-10 flex items-center justify-center rounded-full text-amber-500 hover:text-orange-500 hover:bg-orange-50/80 transition-all active:scale-90 relative"
+                                disabled={isProcessing}
+                                title="View Deficit & Progress"
+                            >
+                                <span className="relative flex h-4 w-4 items-center justify-center">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                                    <Flame size={18} className="relative text-amber-500 fill-amber-500 animate-pulse shrink-0" />
+                                </span>
+                            </button>
+                        )}
+
                         <div className="w-[1px] h-6 bg-black/10 mx-1" />
 
                         {/* Favorites Toggle */}
@@ -715,8 +737,8 @@ const SmartLogging = () => {
                                     : "Log food or speak... (e.g. 2 eggs, toast)"
                             }
                             rows={isFocused || input.trim().length > 0 || selectedImage ? 3 : 1}
-                            className={`bg-transparent border-none outline-none font-sans text-[17px] leading-snug placeholder:text-brutal-black/30 w-full resize-none transition-all duration-300 ease-spring scrollbar-hide py-2 px-1
-                                ${isFocused || input.trim().length > 0 || selectedImage ? 'min-h-[76px]' : 'min-h-[28px]'}`}
+                            className={`bg-transparent border-none outline-none font-sans text-[16px] leading-snug placeholder:text-brutal-black/30 w-full resize-none transition-all duration-300 ease-spring py-2 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden
+                                ${isFocused || input.trim().length > 0 || selectedImage ? 'min-h-[72px] overflow-y-auto' : 'min-h-[28px] overflow-hidden'}`}
                         />
 
                         {/* Submit Button */}
