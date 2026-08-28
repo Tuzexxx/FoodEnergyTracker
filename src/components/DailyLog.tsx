@@ -6,7 +6,7 @@ import { getAiResponse } from '../utils/ai';
 import { playSound } from '../utils/audio';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 import { calculateMacroDistribution } from '../utils/calorieFormula';
-import { supabase } from '../utils/supabase';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 function parsePortionMultiplier(name: string): { multiplier: number; cleanName: string } {
     let multiplier = 1;
@@ -250,15 +250,20 @@ const DailyLog = () => {
         }
     };
 
-    const handleBrainstorm = async (entry: FoodEntry, e: React.FormEvent) => {
-        e.preventDefault();
+    const handleBrainstorm = async (entry: FoodEntry, e?: React.FormEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         const message = chatInputs[entry.id];
         if (!message || !message.trim()) return;
 
         setIsChatting(prev => ({ ...prev, [entry.id]: true }));
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = isSupabaseConfigured
+                ? await supabase.auth.getSession()
+                : { data: { session: null } };
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
             else headers['X-Client-Mode'] = 'guest';
@@ -272,12 +277,13 @@ const DailyLog = () => {
 
             if (data.type === 'success' && data.data) {
                 // Instantly update the parent store
-                updateEntry(entry.id, data.data);
+                await updateEntry(entry.id, data.data);
+                playSound('log');
                 // Clear input, set confirmation message
                 setChatInputs(prev => ({ ...prev, [entry.id]: '' }));
                 setChatMessages(prev => ({ ...prev, [entry.id]: data.aiMessage || 'Macros updated.' }));
             } else {
-                alert("Failed to update entry.");
+                alert(data.error || "Failed to update entry.");
             }
         } catch (err) {
             console.error(err);
@@ -473,7 +479,10 @@ const DailyLog = () => {
 
                                             {/* Expanded Action Menu Drawer */}
                                             {expandedId === entry.id && (
-                                                <div className="mt-3 pt-2.5 border-t border-black/5 flex flex-col gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="mt-3 pt-2.5 border-t border-black/5 flex flex-col gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-200"
+                                                >
                                                     {/* AI Review Banner */}
                                                     {entry.requiresReview && (
                                                         <div className="flex items-center gap-2 p-2 bg-orange-50/70 rounded-xl border border-orange-200 text-orange-700 text-xs">
@@ -569,14 +578,14 @@ const DailyLog = () => {
                                                     </div>
 
                                                     {/* AI Brainstorm Chat UI */}
-                                                    <div className="mt-2 bg-black/5 rounded-xl overflow-hidden flex flex-col px-2 py-2">
+                                                    <div onClick={(e) => e.stopPropagation()} className="mt-2 bg-black/5 rounded-xl overflow-hidden flex flex-col px-2 py-2">
                                                         {chatMessages[entry.id] && (
                                                             <div className="mb-2 px-3 py-2 bg-indigo-100 text-indigo-800 text-xs font-sans rounded-lg flex items-start gap-2 animate-in fade-in zoom-in-95 duration-200">
                                                                 <MessageSquare size={14} className="mt-0.5 shrink-0" />
                                                                 <span>{chatMessages[entry.id]}</span>
                                                             </div>
                                                         )}
-                                                        <form onSubmit={(e) => handleBrainstorm(entry, e)} className="flex items-center gap-2 relative z-20">
+                                                        <form onSubmit={(e) => handleBrainstorm(entry, e)} className="flex items-center gap-2 relative z-20" onClick={(e) => e.stopPropagation()}>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Ask AI to adjust recipe/amounts..."
@@ -588,6 +597,7 @@ const DailyLog = () => {
                                                             />
                                                             <button
                                                                 type="submit"
+                                                                onClick={(e) => e.stopPropagation()}
                                                                 disabled={isChatting[entry.id] || !chatInputs[entry.id]?.trim()}
                                                                 className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center shrink-0"
                                                             >
