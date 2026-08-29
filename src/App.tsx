@@ -194,17 +194,17 @@ function App() {
 
                         {/* Top View Switcher */}
                         <div className="w-full flex items-center justify-center -mb-2">
-                            <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner">
+                            <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-0.5 sm:gap-1 shadow-inner">
                                 <button
                                     onClick={() => setTimeframe('day')}
-                                    className={`px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/70 hover:text-brutal-black'}`}
+                                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-full font-sans text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 sm:gap-1.5 ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/70 hover:text-brutal-black'}`}
                                 >
                                     <span className="text-xs leading-none shrink-0" role="img" aria-label="Day">🍩</span>
                                     {t.tabs.day}
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('progress')}
-                                    className={`px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-full font-sans text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 sm:gap-1.5 ${
                                         timeframe === 'progress'
                                             ? 'bg-brutal-black text-off-white shadow-md'
                                             : 'text-brutal-black/70 hover:text-brutal-black'
@@ -215,7 +215,7 @@ function App() {
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('coaching')}
-                                    className={`relative px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                                    className={`relative px-2.5 sm:px-3.5 py-1.5 rounded-full font-sans text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 sm:gap-1.5 ${
                                         timeframe === 'coaching'
                                             ? 'bg-brutal-black text-off-white shadow-md'
                                             : 'text-brutal-black/70 hover:text-brutal-black'

@@ -275,11 +275,11 @@ const CoachingView: React.FC = () => {
         <div className="w-full flex flex-col gap-6 animate-in fade-in duration-300">
             {/* Header & 3-Way Timeframe Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                        <h2 className="font-drama text-3xl text-brutal-black tracking-tight">{t.coaching.title}</h2>
+                        <h2 className="font-drama text-2xl sm:text-3xl text-brutal-black tracking-tight leading-tight">{t.coaching.title}</h2>
                         {isVip && (
-                            <span className="inline-flex items-center gap-1 bg-amber-400/20 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1 bg-amber-400/20 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0">
                                 <Crown size={11} className="text-amber-600 fill-amber-500" />
                                 VIP
                             </span>
@@ -294,19 +294,19 @@ const CoachingView: React.FC = () => {
                 <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-0.5 shadow-inner shrink-0 self-start sm:self-auto">
                     <button
                         onClick={() => setPeriod('yesterday')}
-                        className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === 'yesterday' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                        className={`px-2.5 sm:px-3 py-1 rounded-full font-sans text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all ${period === 'yesterday' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
                         {t.coaching.yesterday}
                     </button>
                     <button
                         onClick={() => setPeriod('today')}
-                        className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === 'today' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                        className={`px-2.5 sm:px-3 py-1 rounded-full font-sans text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all ${period === 'today' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
                         {t.coaching.today}
                     </button>
                     <button
                         onClick={() => setPeriod('7d')}
-                        className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                        className={`px-2.5 sm:px-3 py-1 rounded-full font-sans text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all ${period === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
                         {t.coaching.sevenDays}
                     </button>

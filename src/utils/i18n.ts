@@ -138,6 +138,12 @@ export interface Translations {
         clarifying: string;
         favEmpty: string;
         editFavorites: string;
+        takePhoto: string;
+        takePhotoSub: string;
+        chooseGallery: string;
+        chooseGallerySub: string;
+        batchUpload: string;
+        batchUploadSub: string;
     };
     progress: {
         title: string;
@@ -323,6 +329,12 @@ export const translations: Record<Language, Translations> = {
             clarifying: 'Clarifying with AI...',
             favEmpty: 'No favorites saved yet. Star a meal to add it here.',
             editFavorites: 'Edit Favorites',
+            takePhoto: 'Take Live Photo',
+            takePhotoSub: 'Capture your meal or nutrition label directly',
+            chooseGallery: 'Choose from Gallery',
+            chooseGallerySub: 'Select from already taken photos',
+            batchUpload: 'Day Recap / Batch Upload',
+            batchUploadSub: 'Paste a full day log, multi-item text, or recap',
         },
         progress: {
             title: 'Fat Burn & Deficit',
@@ -506,6 +518,12 @@ export const translations: Record<Language, Translations> = {
             clarifying: 'Upřesňuji s AI...',
             favEmpty: 'Zatím nemáte žádná oblíbená jídla. Označte jídlo hvězdičkou.',
             editFavorites: 'Upravit oblíbené',
+            takePhoto: 'Vyfotit jídlo živě',
+            takePhotoSub: 'Vyfoťte přímo talíř nebo nutriční štítek',
+            chooseGallery: 'Vybrat z galerie',
+            chooseGallerySub: 'Zvolit z již pořízených fotografií',
+            batchUpload: 'Denní rekapitulace / Dávkové nahrání',
+            batchUploadSub: 'Vložte jídelníček celého dne nebo více fotek',
         },
         progress: {
             title: 'Spalování tuků a deficit',
@@ -689,6 +707,12 @@ export const translations: Record<Language, Translations> = {
             clarifying: 'Präzisiere mit KI...',
             favEmpty: 'Noch keine Favoriten gespeichert. Markieren Sie Mahlzeiten mit einem Stern.',
             editFavorites: 'Favoriten bearbeiten',
+            takePhoto: 'Live-Foto aufnehmen',
+            takePhotoSub: 'Mahlzeit oder Nährwerttabelle fotografieren',
+            chooseGallery: 'Aus Galerie wählen',
+            chooseGallerySub: 'Bereits aufgenommenes Foto auswählen',
+            batchUpload: 'Tages-Recap / Batch-Upload',
+            batchUploadSub: 'Mehrere Fotos oder Mahlzeiten auf einmal hochladen',
         },
         progress: {
             title: 'Fettverbrennung & Defizit',
