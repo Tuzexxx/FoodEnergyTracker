@@ -116,6 +116,12 @@ export interface Translations {
         surplusBadge: string;
         pureFatBurned: string;
         estimatedFatStored: string;
+        sugarCubesEquivalent: string;
+        sugarCubesLabel: string;
+        optimalPlanTitle: string;
+        optimalPlanDesc: string;
+        planEfficiency: string;
+        actualVsOptimal: string;
         netEnergy: string;
         gymDays: string;
         totalConsumed: string;
@@ -280,6 +286,12 @@ export const translations: Record<Language, Translations> = {
             surplusBadge: 'Caloric Surplus',
             pureFatBurned: 'Pure Fat Mass Burned',
             estimatedFatStored: 'Estimated Fat Stored',
+            sugarCubesEquivalent: 'sugar cubes',
+            sugarCubesLabel: 'Equivalent in sugar cubes',
+            optimalPlanTitle: 'Optimal Plan Potential',
+            optimalPlanDesc: 'Target fat burn if daily calories were met 100% on plan',
+            planEfficiency: 'Plan Efficiency',
+            actualVsOptimal: 'Actual vs Target Potential',
             netEnergy: 'Net Energy',
             gymDays: 'Gym Days',
             totalConsumed: 'Total Consumed',
@@ -442,6 +454,12 @@ export const translations: Record<Language, Translations> = {
             surplusBadge: 'Kalorický přebytek',
             pureFatBurned: 'Spálená čistá tuková hmota',
             estimatedFatStored: 'Odhadovaný uložený tuk',
+            sugarCubesEquivalent: 'kostek cukru',
+            sugarCubesLabel: 'Ekvivalent v kostkách cukru',
+            optimalPlanTitle: 'Potenciál optimálního plánu',
+            optimalPlanDesc: 'Cílový úbytek tuku při 100% dodržení denního kalorického limitu',
+            planEfficiency: 'Efektivita plánu',
+            actualVsOptimal: 'Skutečnost vs Cílový potenciál',
             netEnergy: 'Čistá energie',
             gymDays: 'Tréninkové dny',
             totalConsumed: 'Celkem přijato',
@@ -604,6 +622,12 @@ export const translations: Record<Language, Translations> = {
             surplusBadge: 'Kalorienüberschuss',
             pureFatBurned: 'Reine Fettmasse verbrannt',
             estimatedFatStored: 'Geschätztes Fett gespeichert',
+            sugarCubesEquivalent: 'Zuckerwürfel',
+            sugarCubesLabel: 'Äquivalent in Zuckerwürfeln',
+            optimalPlanTitle: 'Optimales Planpotenzial',
+            optimalPlanDesc: 'Ziel-Fettabbau bei 100%iger Einhaltung des Kalorienplans',
+            planEfficiency: 'Planeffizienz',
+            actualVsOptimal: 'Ist vs Zielpotenzial',
             netEnergy: 'Nettoenergie',
             gymDays: 'Trainingstage',
             totalConsumed: 'Gesamt aufgenommen',

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Watch, RotateCcw, TrendingDown, TrendingUp, Activity } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Watch, RotateCcw, TrendingDown, TrendingUp, Activity, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useCompletedDaysTelemetry } from './WeeklyFatBurnModal';
 import { getTranslation } from '../utils/i18n';
@@ -13,6 +13,7 @@ const ProgressView = () => {
         smartwatchMonthlyBurn,
         setSmartwatchMonthlyBurn,
         profile,
+        targetKcal,
         language
     } = useStore();
     const t = getTranslation(language);
@@ -39,6 +40,26 @@ const ProgressView = () => {
 
     const dailyAvgIntake = telemetry ? Math.round(consumedKcal / daysCount) : 0;
     const dailyAvgBurn = telemetry ? Math.round(telemetry.totalWeeklyBurn / daysCount) : 0;
+
+    // Sugar cubes equivalent calculation (1 standard cube ≈ 4g)
+    const sugarCubesCount = useMemo(() => {
+        if (!telemetry) return 0;
+        return Math.max(1, Math.round(telemetry.fatGrams / 4));
+    }, [telemetry]);
+
+    // Optimal plan projection calculation
+    const { optimalFatGrams, adherenceEfficiency } = useMemo(() => {
+        if (!telemetry || !targetKcal || targetKcal === 0) {
+            return { optimalFatGrams: 0, adherenceEfficiency: 100 };
+        }
+        const expectedDailyDeficit = Math.max(0, Math.round(dailyAvgBurn - targetKcal));
+        const optimalDeficitKcal = expectedDailyDeficit * daysCount;
+        const optGrams = Math.max(0, Math.round(optimalDeficitKcal / 7.7));
+        const efficiency = optGrams > 0
+            ? Math.min(150, Math.round((telemetry.fatGrams / optGrams) * 100))
+            : 100;
+        return { optimalFatGrams: optGrams, adherenceEfficiency: efficiency };
+    }, [telemetry, targetKcal, dailyAvgBurn, daysCount]);
 
     if (!telemetry || !profile) {
         return (
@@ -82,7 +103,7 @@ const ProgressView = () => {
                 </div>
             </div>
 
-            {/* Hero Card: Primary Fat Burn Grams */}
+            {/* Hero Card: Primary Fat Burn Grams & Animated Sugar Cubes */}
             <div className={`p-6 sm:p-8 rounded-3xl border-2 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 ${
                 telemetry.isDeficit 
                     ? 'bg-gradient-to-b from-orange-500 to-amber-600 text-white border-orange-600 shadow-orange-500/20' 
@@ -104,7 +125,33 @@ const ProgressView = () => {
                     {telemetry.isDeficit ? t.progress.pureFatBurned : t.progress.estimatedFatStored}
                 </span>
 
-                <div className="mt-4 pt-3 border-t border-white/20 w-full flex justify-around text-center text-xs">
+                {/* Animated Sugar Cubes Cascade Pill */}
+                <div className="flex items-center gap-2 my-3 py-1.5 px-3.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/25 shadow-inner animate-in fade-in zoom-in duration-500">
+                    {/* Animated cubes pouring in */}
+                    <div className="flex items-center -space-x-1 overflow-visible py-0.5">
+                        {Array.from({ length: Math.min(sugarCubesCount, 7) }).map((_, i) => (
+                            <span
+                                key={i}
+                                style={{
+                                    animationDelay: `${i * 80}ms`,
+                                }}
+                                className="inline-block w-3.5 h-3.5 bg-white/95 rounded-sm shadow-md border border-white/40 transform rotate-12 animate-in zoom-in-50 slide-in-from-top-3 duration-500 ease-out"
+                                title="1 cube ≈ 4g"
+                            />
+                        ))}
+                        {sugarCubesCount > 7 && (
+                            <span className="text-[10px] font-sans font-bold pl-1.5 opacity-90">
+                                +{sugarCubesCount - 7}
+                            </span>
+                        )}
+                    </div>
+                    <span className="text-xs font-sans font-bold tracking-tight">
+                        &asymp; {sugarCubesCount} {t.progress.sugarCubesEquivalent}
+                    </span>
+                </div>
+
+                {/* Sub Telemetry Grid */}
+                <div className="mt-3 pt-3 border-t border-white/20 w-full flex justify-around text-center text-xs">
                     <div>
                         <span className="opacity-60 block text-[10px] uppercase font-bold">{t.progress.netEnergy}</span>
                         <strong className="font-data text-base font-bold">{telemetry.netDeficitKcal > 0 ? `-${telemetry.netDeficitKcal}` : `+${Math.abs(telemetry.netDeficitKcal)}`} {t.common.kcal}</strong>
@@ -116,6 +163,52 @@ const ProgressView = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Optimal Plan Potential Card */}
+            {optimalFatGrams > 0 && (
+                <div className="p-5 rounded-3xl bg-white border-2 border-brutal-black/20 shadow-sm flex flex-col gap-3 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl border border-amber-200/60">
+                                <Sparkles size={16} />
+                            </div>
+                            <div>
+                                <h3 className="font-sans font-bold text-xs uppercase tracking-wider text-brutal-black">
+                                    {t.progress.optimalPlanTitle}
+                                </h3>
+                                <span className="text-[11px] text-brutal-black/50 font-sans block">
+                                    {t.progress.optimalPlanDesc}
+                                </span>
+                            </div>
+                        </div>
+                        <span className={`text-xs font-data font-bold px-2.5 py-1 rounded-full border ${
+                            adherenceEfficiency >= 90
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : adherenceEfficiency >= 65
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}>
+                            {adherenceEfficiency}% {t.progress.planEfficiency}
+                        </span>
+                    </div>
+
+                    {/* Comparison Meter */}
+                    <div className="flex flex-col gap-1.5 pt-1">
+                        <div className="flex justify-between text-xs font-sans font-semibold text-brutal-black/80">
+                            <span>{t.progress.pureFatBurned}: <strong>-{telemetry.fatGrams} g</strong></span>
+                            <span>{t.progress.optimalPlanTitle}: <strong>-{optimalFatGrams} g</strong></span>
+                        </div>
+                        <div className="w-full bg-black/5 h-3 rounded-full overflow-hidden p-0.5 border border-black/5">
+                            <div
+                                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                                    adherenceEfficiency >= 90 ? 'bg-emerald-500' : adherenceEfficiency >= 65 ? 'bg-amber-500' : 'bg-rose-500'
+                                }`}
+                                style={{ width: `${Math.min(100, adherenceEfficiency)}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Telemetry Breakdown Grid */}
             <div className="grid grid-cols-2 gap-3 w-full">
