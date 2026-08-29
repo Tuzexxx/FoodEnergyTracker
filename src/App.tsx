@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useStore } from './store/useStore';
-import { FlaskConical, Settings, Loader2, Flame } from 'lucide-react';
+import { FlaskConical, Settings, Loader2, Flame, BrainCircuit } from 'lucide-react';
 import OnboardingModal from './components/OnboardingModal';
 import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
 import CalendarHeatmap from './components/CalendarHeatmap';
 import ProgressView from './components/ProgressView';
+import AnalysisView from './components/AnalysisView';
 import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
@@ -17,7 +18,7 @@ import { isSupabaseConfigured, supabase } from './utils/supabase';
 function App() {
     const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [timeframe, setTimeframe] = useState<'day' | 'progress'>('day');
+    const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'analysis'>('day');
 
     const touchStartX = useRef<number | null>(null);
     const touchStartY = useRef<number | null>(null);
@@ -45,11 +46,19 @@ function App() {
         // Must be predominantly horizontal swipe with at least 50px delta
         if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
             if (deltaX < 0) {
-                // Swiping Left (finger moves left) -> advance: Day -> Progress
-                setTimeframe('progress');
+                // Swiping Left (finger moves left) -> advance: Day -> Progress -> Analysis
+                setTimeframe(prev => {
+                    if (prev === 'day') return 'progress';
+                    if (prev === 'progress') return 'analysis';
+                    return prev;
+                });
             } else {
-                // Swiping Right (finger moves right) -> go back: Progress -> Day
-                setTimeframe('day');
+                // Swiping Right (finger moves right) -> go back: Analysis -> Progress -> Day
+                setTimeframe(prev => {
+                    if (prev === 'analysis') return 'progress';
+                    if (prev === 'progress') return 'day';
+                    return prev;
+                });
             }
         }
     };
@@ -187,13 +196,13 @@ function App() {
                             <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner">
                                 <button
                                     onClick={() => setTimeframe('day')}
-                                    className={`px-5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
                                     Day
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('progress')}
-                                    className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                                    className={`px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                                         timeframe === 'progress'
                                             ? 'bg-brutal-black text-off-white shadow-md'
                                             : 'text-brutal-black/70 hover:text-brutal-black'
@@ -205,6 +214,17 @@ function App() {
                                     </span>
                                     Progress
                                 </button>
+                                <button
+                                    onClick={() => setTimeframe('analysis')}
+                                    className={`px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                                        timeframe === 'analysis'
+                                            ? 'bg-brutal-black text-off-white shadow-md'
+                                            : 'text-brutal-black/70 hover:text-brutal-black'
+                                    }`}
+                                >
+                                    <BrainCircuit size={13} className={timeframe === 'analysis' ? 'text-indigo-400' : 'opacity-60'} />
+                                    Analysis
+                                </button>
                             </div>
                         </div>
 
@@ -214,8 +234,10 @@ function App() {
                                 <DailyLog />
                                 <CalendarHeatmap />
                             </>
-                        ) : (
+                        ) : timeframe === 'progress' ? (
                             <ProgressView />
+                        ) : (
+                            <AnalysisView />
                         )}
                     </>
                 ) : isAuthLoading ? (

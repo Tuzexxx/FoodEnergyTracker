@@ -373,7 +373,7 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                 onChange={handleImageUpload}
             />
 
-            {/* Unified Camera Choice Modal */}
+            {/* Unified Media & Batch Choice Modal */}
             {showCameraPicker && (
                 <div
                     className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
@@ -385,7 +385,7 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                     >
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-sans font-bold text-sm uppercase tracking-wider text-brutal-black/70">
-                                Add Food Photo
+                                Log Food / Media
                             </h3>
                             <button
                                 onClick={() => setShowCameraPicker(false)}
@@ -427,6 +427,26 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                                 <div className="flex flex-col">
                                     <span className="text-brutal-black font-semibold">Choose from Gallery</span>
                                     <span className="text-[11px] font-normal opacity-50">Select from already taken photos</span>
+                                </div>
+                            </button>
+
+                            {/* 3. Day Recap / Batch Upload */}
+                            <button
+                                onClick={() => {
+                                    setShowCameraPicker(false);
+                                    setIsBatchOpen(true);
+                                }}
+                                className="flex items-center gap-3 w-full p-3.5 bg-black/5 hover:bg-black/10 rounded-2xl font-sans font-bold text-sm transition-all active:scale-98 text-left"
+                            >
+                                <div className="p-2.5 bg-violet-600 text-white rounded-xl shadow-sm">
+                                    <LayoutGrid size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-brutal-black font-semibold">Day Recap / Batch Upload</span>
+                                        <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider">PRO</span>
+                                    </div>
+                                    <span className="text-[11px] font-normal opacity-50">Paste a full day log, multi-item text, or recap</span>
                                 </div>
                             </button>
                         </div>
@@ -660,16 +680,6 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                             <Mic size={19} strokeWidth={2} />
                         </button>
 
-                        {/* Batch Day Recap Button */}
-                        <button
-                            onClick={() => setIsBatchOpen(true)}
-                            className="relative w-10 h-10 flex items-center justify-center rounded-full text-violet-500 hover:text-violet-600 transition-all hover:bg-violet-50 active:scale-90"
-                            disabled={isProcessing}
-                            title="Day Recap"
-                        >
-                            <LayoutGrid size={19} strokeWidth={2} />
-                            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">PRO</span>
-                        </button>
 
                         {/* Favorites Toggle */}
                         {favorites && favorites.length > 0 && (
