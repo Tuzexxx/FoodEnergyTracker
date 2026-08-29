@@ -7,6 +7,7 @@ import { playSound } from '../utils/audio';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 import { calculateMacroDistribution } from '../utils/calorieFormula';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
+import { getTranslation } from '../utils/i18n';
 
 function parsePortionMultiplier(name: string): { multiplier: number; cleanName: string } {
     let multiplier = 1;
@@ -44,7 +45,8 @@ function formatPortionName(cleanName: string, multiplier: number): string {
 }
 
 const DailyLog = () => {
-    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein, historicalExerciseDays } = useStore();
+    const { dailyLog, updateEntry, deleteEntry, favorites, addFavorite, removeFavorite, historicalDays, processingLogs, viewedHistoryDate, setViewedHistoryDate, targetKcal, targetProtein, historicalExerciseDays, language } = useStore();
+    const t = getTranslation(language);
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -152,7 +154,7 @@ const DailyLog = () => {
     };
 
     const handleDelete = (id: string) => {
-        if (confirm("Are you sure you want to delete this entry?")) {
+        if (confirm(t.dailyLog.deleteConfirm)) {
             deleteEntry(id);
             setEditingId(null);
             setExpandedId(null);
@@ -295,7 +297,7 @@ const DailyLog = () => {
 
     const activeHistoryDay = viewedHistoryDate ? historicalDays?.find(d => d.dateStr === viewedHistoryDate) : null;
     const entriesToDisplay = activeHistoryDay ? activeHistoryDay.entries : dailyLog;
-    const headerTitle = activeHistoryDay ? `History - ${viewedHistoryDate}` : 'Timeline';
+    const headerTitle = activeHistoryDay ? (activeHistoryDay.dateStr === 'Yesterday' ? t.dailyLog.yesterdayLog : activeHistoryDay.dateStr) : t.dailyLog.todayLog;
 
     return (
         <div ref={containerRef} className="flex flex-col gap-4 mt-8 pb-32">
@@ -312,9 +314,9 @@ const DailyLog = () => {
                     </div>
                     {activeHistoryDay ? (
                         <div className="flex items-center gap-2 text-[10px] tabular-nums tracking-wider opacity-60">
-                            <span>{activeHistoryDay.kcal} kcal</span>
-                            <span></span>
-                            <span>{activeHistoryDay.protein}g</span>
+                            <span>{activeHistoryDay.kcal} {t.common.kcal}</span>
+                            <span>&middot;</span>
+                            <span>{activeHistoryDay.protein}g {t.common.protein}</span>
                         </div>
                     ) : (
                         <span className="w-1.5 h-1.5 rounded-full bg-brutal-black/30" />
@@ -324,7 +326,10 @@ const DailyLog = () => {
 
             {entriesToDisplay.length === 0 ? (
                 <div className="p-8 border-dashed border-brutal-black/20 rounded-2xl bg-black/5 text-center">
-                    <p className="font-sans text-sm tracking-widest opacity-60">{activeHistoryDay ? "No entries for this day." : "No entries yet."}</p>
+                    <p className="font-sans text-sm tracking-widest opacity-60">{activeHistoryDay ? t.calendar.noData : t.dailyLog.noMeals}</p>
+                    {!activeHistoryDay && (
+                        <p className="font-sans text-xs opacity-40 mt-1">{t.dailyLog.noMealsSub}</p>
+                    )}
                 </div>
             ) : (
                 <div className="relative flex flex-col gap-4 z-10 pl-4">
@@ -418,15 +423,15 @@ const DailyLog = () => {
                                             </div>
                                             <div className="flex flex-wrap justify-between items-center mt-2 border-t border-black/5 pt-3 gap-2">
                                                 <button onClick={() => handleDelete(entry.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider shrink-0">
-                                                    <Trash2 size={16} /> Delete
+                                                    <Trash2 size={16} /> {t.common.delete}
                                                 </button>
                                                 <div className="flex gap-1.5 flex-1 justify-end min-w-fit">
                                                     <button onClick={() => setEditingId(null)} className="p-2 bg-black/5 rounded-xl hover:bg-black/10 transition-colors shrink-0"><X size={18} /></button>
-                                                    <button title="Save Name Only" onClick={() => saveEdit(entry.id, entry.timestamp, false)} disabled={isProcessing} className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0">
-                                                        Save
+                                                    <button title="Save" onClick={() => saveEdit(entry.id, entry.timestamp, false)} disabled={isProcessing} className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0">
+                                                        {t.common.save}
                                                     </button>
-                                                    <button title="Recalculate Macros" onClick={() => saveEdit(entry.id, entry.timestamp, true)} disabled={isProcessing} className="px-2.5 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0">
-                                                        {isProcessing ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} <span>Auto-Adjust</span>
+                                                    <button title={t.common.recalculate} onClick={() => saveEdit(entry.id, entry.timestamp, true)} disabled={isProcessing} className="px-2.5 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0">
+                                                        {isProcessing ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} <span>{t.common.adjust}</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -588,7 +593,7 @@ const DailyLog = () => {
                                                         <form onSubmit={(e) => handleBrainstorm(entry, e)} className="flex items-center gap-2 relative z-20" onClick={(e) => e.stopPropagation()}>
                                                             <input
                                                                 type="text"
-                                                                placeholder="Ask AI to adjust recipe/amounts..."
+                                                                placeholder={t.dailyLog.askCoach}
                                                                 className="flex-1 bg-white/60 text-brutal-black font-sans text-xs px-3 py-2 rounded-lg outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 placeholder:opacity-50 transition-colors"
                                                                 value={chatInputs[entry.id] || ''}
                                                                 onChange={(e) => setChatInputs(prev => ({ ...prev, [entry.id]: e.target.value }))}

@@ -6,19 +6,22 @@ import MacroDashboard from './components/MacroDashboard';
 import DailyLog from './components/DailyLog';
 import CalendarHeatmap from './components/CalendarHeatmap';
 import ProgressView from './components/ProgressView';
-import AnalysisView from './components/AnalysisView';
+import CoachingView from './components/CoachingView';
 import SmartLogging from './components/SmartLogging';
 import PWAInstall from './components/PWAInstall';
 import SettingsPanel from './components/SettingsPanel';
 import AuthScreen from './components/AuthScreen';
 import GlitterCelebration from './components/GlitterCelebration';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { getTranslation } from './utils/i18n';
 import { Analytics } from '@vercel/analytics/react';
 import { isSupabaseConfigured, supabase } from './utils/supabase';
 
 function App() {
-    const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover } = useStore();
+    const { isCalibrated, session, setSession, isGuest, setGuestMode, yesterdayKcal, yesterdayProtein, targetKcal, targetProtein, celebrationDismissedDate, dismissCelebration, checkDayRollover, language } = useStore();
+    const t = getTranslation(language);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'analysis'>('day');
+    const [timeframe, setTimeframe] = useState<'day' | 'progress' | 'coaching'>('day');
 
     const touchStartX = useRef<number | null>(null);
     const touchStartY = useRef<number | null>(null);
@@ -46,16 +49,16 @@ function App() {
         // Must be predominantly horizontal swipe with at least 50px delta
         if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
             if (deltaX < 0) {
-                // Swiping Left (finger moves left) -> advance: Day -> Progress -> Analysis
+                // Swiping Left (finger moves left) -> advance: Day -> Progress -> Coaching
                 setTimeframe(prev => {
                     if (prev === 'day') return 'progress';
-                    if (prev === 'progress') return 'analysis';
+                    if (prev === 'progress') return 'coaching';
                     return prev;
                 });
             } else {
-                // Swiping Right (finger moves right) -> go back: Analysis -> Progress -> Day
+                // Swiping Right (finger moves right) -> go back: Coaching -> Progress -> Day
                 setTimeframe(prev => {
-                    if (prev === 'analysis') return 'progress';
+                    if (prev === 'coaching') return 'progress';
                     if (prev === 'progress') return 'day';
                     return prev;
                 });
@@ -158,13 +161,14 @@ function App() {
                         by MiHo
                     </span>
                 </h1>
-                <div className="flex items-center gap-4 text-brutal-black">
+                <div className="flex items-center gap-2.5 text-brutal-black">
+                    <LanguageSwitcher />
                     <PWAInstall />
                     {isCalibrated && (
                         <button
                             onClick={() => setIsSettingsOpen(true)}
                             className="p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
-                            title="Settings"
+                            title={t.common.settings}
                         >
                             <Settings size={18} strokeWidth={2} />
                         </button>
@@ -181,12 +185,12 @@ function App() {
                     <>
                         {isGuest && (
                             <div className="w-full bg-indigo-50/80 backdrop-blur-md border border-indigo-200/50 text-indigo-900 p-4 rounded-3xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
-                                <span className="text-xs font-sans font-bold uppercase tracking-wider opacity-80">Guest Mode</span>
+                                <span className="text-xs font-sans font-bold uppercase tracking-wider opacity-80">{t.common.guestMode}</span>
                                 <button
                                     onClick={() => setGuestMode(false)}
                                     className="bg-indigo-600 text-[10px] tracking-widest uppercase text-white px-4 py-2 rounded-full font-bold hover:bg-indigo-700 transition active:scale-95 shadow-md shadow-indigo-600/20"
                                 >
-                                    Log In / Save
+                                    {t.common.logInSave}
                                 </button>
                             </div>
                         )}
@@ -198,7 +202,7 @@ function App() {
                                     onClick={() => setTimeframe('day')}
                                     className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${timeframe === 'day' ? 'bg-brutal-black text-off-white shadow-md' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                                 >
-                                    Day
+                                    {t.tabs.day}
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('progress')}
@@ -212,18 +216,18 @@ function App() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-60" />
                                         <Flame size={13} className="relative text-amber-500 fill-amber-500 animate-pulse shrink-0" />
                                     </span>
-                                    Progress
+                                    {t.tabs.progress}
                                 </button>
                                 <button
-                                    onClick={() => setTimeframe('analysis')}
+                                    onClick={() => setTimeframe('coaching')}
                                     className={`px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                                        timeframe === 'analysis'
+                                        timeframe === 'coaching'
                                             ? 'bg-brutal-black text-off-white shadow-md'
                                             : 'text-brutal-black/70 hover:text-brutal-black'
                                     }`}
                                 >
-                                    <BrainCircuit size={13} className={timeframe === 'analysis' ? 'text-indigo-400' : 'opacity-60'} />
-                                    Analysis
+                                    <BrainCircuit size={13} className={timeframe === 'coaching' ? 'text-indigo-400' : 'opacity-60'} />
+                                    {t.tabs.coaching}
                                 </button>
                             </div>
                         </div>
@@ -237,7 +241,7 @@ function App() {
                         ) : timeframe === 'progress' ? (
                             <ProgressView />
                         ) : (
-                            <AnalysisView />
+                            <CoachingView />
                         )}
                     </>
                 ) : isAuthLoading ? (
@@ -256,7 +260,7 @@ function App() {
             {(session || isGuest) && isCalibrated && (
                 <div className="fixed bottom-6 left-0 right-0 px-4 z-40 w-full max-w-md mx-auto pointer-events-none">
                     <div className="pointer-events-auto">
-                        <SmartLogging onOpenProgress={() => setTimeframe('progress')} />
+                        <SmartLogging />
                     </div>
                 </div>
             )}

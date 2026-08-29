@@ -1,9 +1,11 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../utils/calorieFormula';
 import { clearAllPending } from '../utils/pendingQueue';
+import { Language } from '../utils/i18n';
 
 export { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN };
 
@@ -69,8 +71,6 @@ interface AppState {
     smartwatchMonthlyBurn: number | null;
     setSmartwatchMonthlyBurn: (burn: number | null) => void;
     session: Session | null;
-    // Identifies which account owns the locally cached favorites. The session
-    // itself is intentionally not persisted by Zustand.
     persistedScope: string | null;
     setSession: (session: Session | null) => void;
     isGuest: boolean;
@@ -109,11 +109,15 @@ interface AppState {
     checkDayRollover: () => void;
     viewedHistoryDate: string | null;
     setViewedHistoryDate: (date: string | null) => void;
+    language: Language;
+    setLanguage: (language: Language) => void;
 }
 
 export const useStore = create<AppState>()(
     persist(
     (set, get) => ({
+            language: 'en',
+            setLanguage: (language) => set({ language }),
             session: null,
             persistedScope: null,
             viewedHistoryDate: null,

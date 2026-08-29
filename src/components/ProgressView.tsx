@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Watch, RotateCcw, TrendingDown, TrendingUp, Activity } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useCompletedDaysTelemetry } from './WeeklyFatBurnModal';
+import { getTranslation } from '../utils/i18n';
 
 const ProgressView = () => {
     const [period, setPeriod] = useState<'7d' | '30d'>('7d');
@@ -12,7 +13,9 @@ const ProgressView = () => {
         smartwatchMonthlyBurn,
         setSmartwatchMonthlyBurn,
         profile,
+        language
     } = useStore();
+    const t = getTranslation(language);
 
     const currentWatchBurn = period === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
     const [smartwatchInput, setSmartwatchInput] = useState(currentWatchBurn ? currentWatchBurn.toString() : '');
@@ -41,8 +44,8 @@ const ProgressView = () => {
         return (
             <div className="w-full flex flex-col items-center justify-center p-8 text-center bg-white rounded-3xl border border-black/5 shadow-sm">
                 <Activity size={32} className="text-orange-500 animate-pulse mb-3" />
-                <h3 className="font-drama text-2xl mb-1">Calibrating Progress...</h3>
-                <p className="font-sans text-xs opacity-50">Log at least one completed day to view your deficit & fat burn telemetry.</p>
+                <h3 className="font-drama text-2xl mb-1">{t.progress.calibratingTitle}</h3>
+                <p className="font-sans text-xs opacity-50">{t.progress.calibratingDesc}</p>
             </div>
         );
     }
@@ -52,7 +55,7 @@ const ProgressView = () => {
             {/* Header & Period Switcher */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="font-drama text-3xl text-brutal-black tracking-tight">Fat Burn & Deficit</h2>
+                    <h2 className="font-drama text-3xl text-brutal-black tracking-tight">{t.progress.title}</h2>
                     <p className="font-sans text-xs text-brutal-black/50 tracking-wide mt-0.5">{dateRangeLabel}</p>
                 </div>
 
@@ -65,7 +68,7 @@ const ProgressView = () => {
                         }}
                         className={`px-3.5 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
-                        7 Days
+                        {t.progress.sevenDays}
                     </button>
                     <button
                         onClick={() => {
@@ -74,7 +77,7 @@ const ProgressView = () => {
                         }}
                         className={`px-3.5 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === '30d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
-                        30 Days
+                        {t.progress.thirtyDays}
                     </button>
                 </div>
             </div>
@@ -87,28 +90,28 @@ const ProgressView = () => {
             }`}>
                 <div className="flex items-center gap-2 mb-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest">
                     {telemetry.isDeficit ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
-                    <span>{telemetry.isDeficit ? 'True Caloric Deficit' : 'Caloric Surplus'}</span>
+                    <span>{telemetry.isDeficit ? t.progress.deficitBadge : t.progress.surplusBadge}</span>
                 </div>
 
                 <div className="flex items-baseline gap-1 my-2">
                     <span className="font-drama text-6xl sm:text-7xl font-bold tracking-tighter leading-none">
                         {telemetry.isDeficit ? `-${telemetry.fatGrams}` : `+${telemetry.fatGrams}`}
                     </span>
-                    <span className="font-sans text-2xl font-bold opacity-80">g</span>
+                    <span className="font-sans text-2xl font-bold opacity-80">{t.common.grams}</span>
                 </div>
 
                 <span className="font-sans text-xs uppercase font-bold tracking-widest opacity-90">
-                    {telemetry.isDeficit ? 'Pure Fat Mass Burned' : 'Estimated Fat Stored'}
+                    {telemetry.isDeficit ? t.progress.pureFatBurned : t.progress.estimatedFatStored}
                 </span>
 
                 <div className="mt-4 pt-3 border-t border-white/20 w-full flex justify-around text-center text-xs">
                     <div>
-                        <span className="opacity-60 block text-[10px] uppercase font-bold">Net Energy</span>
-                        <strong className="font-data text-base font-bold">{telemetry.netDeficitKcal > 0 ? `-${telemetry.netDeficitKcal}` : `+${Math.abs(telemetry.netDeficitKcal)}`} kcal</strong>
+                        <span className="opacity-60 block text-[10px] uppercase font-bold">{t.progress.netEnergy}</span>
+                        <strong className="font-data text-base font-bold">{telemetry.netDeficitKcal > 0 ? `-${telemetry.netDeficitKcal}` : `+${Math.abs(telemetry.netDeficitKcal)}`} {t.common.kcal}</strong>
                     </div>
                     <div className="w-[1px] bg-white/20" />
                     <div>
-                        <span className="opacity-60 block text-[10px] uppercase font-bold">Gym Days</span>
+                        <span className="opacity-60 block text-[10px] uppercase font-bold">{t.progress.gymDays}</span>
                         <strong className="font-data text-base font-bold">{exerciseDaysCount} / {daysCount}</strong>
                     </div>
                 </div>
@@ -117,21 +120,21 @@ const ProgressView = () => {
             {/* Telemetry Breakdown Grid */}
             <div className="grid grid-cols-2 gap-3 w-full">
                 <div className="p-4 rounded-2xl bg-white border border-black/5 shadow-sm flex flex-col justify-between">
-                    <span className="font-sans text-[10px] uppercase font-bold text-brutal-black/50 tracking-wider">Total Consumed</span>
+                    <span className="font-sans text-[10px] uppercase font-bold text-brutal-black/50 tracking-wider">{t.progress.totalConsumed}</span>
                     <div className="flex items-baseline gap-1 mt-2">
                         <span className="font-data text-2xl font-bold text-brutal-black">{consumedKcal}</span>
-                        <span className="text-[10px] uppercase font-semibold text-brutal-black/40 font-sans">kcal</span>
+                        <span className="text-[10px] uppercase font-semibold text-brutal-black/40 font-sans">{t.common.kcal}</span>
                     </div>
-                    <span className="font-sans text-[10px] text-brutal-black/40 mt-1">Avg {dailyAvgIntake} kcal/day</span>
+                    <span className="font-sans text-[10px] text-brutal-black/40 mt-1">{t.progress.avgPerDay}: {dailyAvgIntake} {t.common.kcal}</span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white border border-black/5 shadow-sm flex flex-col justify-between">
-                    <span className="font-sans text-[10px] uppercase font-bold text-brutal-black/50 tracking-wider">Total Burned</span>
+                    <span className="font-sans text-[10px] uppercase font-bold text-brutal-black/50 tracking-wider">{t.progress.totalBurned}</span>
                     <div className="flex items-baseline gap-1 mt-2">
                         <span className="font-data text-2xl font-bold text-orange-600">{telemetry.totalWeeklyBurn}</span>
-                        <span className="text-[10px] uppercase font-semibold text-brutal-black/40 font-sans">kcal</span>
+                        <span className="text-[10px] uppercase font-semibold text-brutal-black/40 font-sans">{t.common.kcal}</span>
                     </div>
-                    <span className="font-sans text-[10px] text-brutal-black/40 mt-1">Avg {dailyAvgBurn} kcal/day</span>
+                    <span className="font-sans text-[10px] text-brutal-black/40 mt-1">{t.progress.avgPerDay}: {dailyAvgBurn} {t.common.kcal}</span>
                 </div>
             </div>
 
@@ -139,10 +142,10 @@ const ProgressView = () => {
             <div className="p-5 rounded-3xl bg-white border border-black/5 shadow-sm flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-brutal-black/80 font-sans font-bold text-xs uppercase tracking-wider">
                     <Watch size={16} className="text-orange-500" />
-                    <span>Smartwatch Sync Refinement ({period === '7d' ? '7-Day' : '30-Day'})</span>
+                    <span>{t.progress.smartwatchTitle} ({period === '7d' ? t.progress.sevenDays : t.progress.thirtyDays})</span>
                 </div>
                 <p className="font-sans text-xs text-brutal-black/60 leading-relaxed">
-                    Enter the total active + resting burn from Apple Watch or Garmin for this period to calibrate your true biological deficit.
+                    {t.progress.smartwatchDesc}
                 </p>
 
                 <div className="flex items-center gap-2 mt-1">
@@ -157,13 +160,13 @@ const ProgressView = () => {
                         onClick={handleSaveWatch}
                         className="px-4 py-2.5 bg-brutal-black text-off-white hover:bg-brutal-black/90 active:scale-95 transition-all rounded-2xl font-sans font-bold text-xs uppercase tracking-wider shadow-sm"
                     >
-                        Apply
+                        {t.common.apply}
                     </button>
                     {(period === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn) && (
                         <button
                             onClick={handleResetWatch}
                             className="p-2.5 bg-black/5 hover:bg-black/10 text-brutal-black/60 rounded-2xl active:scale-95 transition-all"
-                            title="Reset to formula default"
+                            title={t.common.reset}
                         >
                             <RotateCcw size={16} />
                         </button>

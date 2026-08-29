@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getTranslation } from '../utils/i18n';
 
 const CalendarHeatmap = () => {
-    const { historicalDays, historicalExerciseDays, targetKcal, targetProtein, consumedKcal, consumedProtein, setViewedHistoryDate, exerciseDay } = useStore();
+    const { historicalDays, historicalExerciseDays, targetKcal, targetProtein, consumedKcal, consumedProtein, setViewedHistoryDate, exerciseDay, language } = useStore();
+    const t = getTranslation(language);
 
     const [viewMonth, setViewMonth] = useState(new Date());
 
@@ -17,7 +19,9 @@ const CalendarHeatmap = () => {
     const firstDaySun = new Date(year, month, 1).getDay(); // 0=Sun
     const firstDay = firstDaySun === 0 ? 6 : firstDaySun - 1; // Convert to Mon=0
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const monthName = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const localeStr = language === 'cs' ? 'cs-CZ' : language === 'de' ? 'de-DE' : 'en-US';
+    const monthName = viewMonth.toLocaleDateString(localeStr, { month: 'long', year: 'numeric' });
 
     const handlePrevMonth = () => {
         setViewMonth(new Date(year, month - 1, 1));
@@ -47,7 +51,11 @@ const CalendarHeatmap = () => {
         }
     });
 
-    const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const weekDays = language === 'cs'
+        ? ['P', 'Ú', 'S', 'Č', 'P', 'S', 'N']
+        : language === 'de'
+        ? ['M', 'D', 'M', 'D', 'F', 'S', 'S']
+        : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     const getColor = (dayNum: number): string => {
         const data = dayMap.get(dayNum);
@@ -90,7 +98,7 @@ const CalendarHeatmap = () => {
         const startOfYesterday = new Date(startOfDay);
         startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
-        let dateStr = clickedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        let dateStr = clickedDate.toLocaleDateString(localeStr, { month: 'short', day: 'numeric', year: 'numeric' });
         if (clickedDate.getTime() >= startOfYesterday.getTime()) {
             dateStr = 'Yesterday';
         }
@@ -103,7 +111,7 @@ const CalendarHeatmap = () => {
 
     // Empty cells before first day
     for (let i = 0; i < firstDay; i++) {
-        cells.push(<div key={`empty-${i}`} className="w-full aspect-square" />);
+        cells.push(<div key={"empty-" + i} className="w-full aspect-square" />);
     }
 
     // Day cells
@@ -125,7 +133,7 @@ const CalendarHeatmap = () => {
                     isFuture ? '' :
                         hasData
                             ? `${dayMap.get(d)!.kcal} kcal / ${dayMap.get(d)!.protein}g protein`
-                            : 'No data'
+                            : t.calendar.noData
                 }
             >
                 <span className={`font-sans text-[8px] font-bold ${isFuture ? 'opacity-15' : 'opacity-40'}`}>{d}</span>
@@ -154,15 +162,11 @@ const CalendarHeatmap = () => {
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-[2px] bg-green-400/60" />
-                        <span className="text-[8px] font-sans opacity-40">Both</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-[2px] bg-brutal-black/15" />
-                        <span className="text-[8px] font-sans opacity-40">One</span>
+                        <span className="text-[8px] font-sans opacity-40">{t.macro.targetHit}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-[2px] bg-signal-red/40" />
-                        <span className="text-[8px] font-sans opacity-40">None</span>
+                        <span className="text-[8px] font-sans opacity-40">{t.macro.exceeded}</span>
                     </div>
                 </div>
             </div>

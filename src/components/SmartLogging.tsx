@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon, Flame } from 'lucide-react';
+import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
 import BatchUpload from './BatchUpload';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
@@ -7,11 +7,13 @@ import { playSound } from '../utils/audio';
 import { getAiResponse } from '../utils/ai';
 import { savePending, removePending, getAllPending } from '../utils/pendingQueue';
 
+import { getTranslation } from '../utils/i18n';
+
 interface SmartLoggingProps {
     onOpenProgress?: () => void;
 }
 
-const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
+const SmartLogging = (_props: SmartLoggingProps = {}) => {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const [showFavorites, setShowFavorites] = useState(false);
@@ -24,7 +26,8 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
     const [isBatchOpen, setIsBatchOpen] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const [telemetryError, setTelemetryError] = useState<string | null>(null);
-    const { isCalibrated, session, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs } = useStore();
+    const { isCalibrated, session, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs, language } = useStore();
+    const t = getTranslation(language);
 
     // Only lock the SmartLogging UI if actively recording voice dictation
     const isProcessing = processingLogs.some(log => log.type === 'voice');
@@ -658,7 +661,7 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                             onClick={() => setShowCameraPicker(true)}
                             className="w-10 h-10 flex items-center justify-center rounded-full text-brutal-black/50 hover:text-indigo-600 transition-all hover:bg-black/5 active:scale-90"
                             disabled={isProcessing}
-                            title="Add Photo (Camera or Gallery)"
+                            title={t.smartLogging.addPhoto}
                         >
                             <Camera size={19} strokeWidth={2} />
                         </button>
@@ -672,7 +675,7 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                                     : 'text-brutal-black/50 hover:text-indigo-600 hover:bg-black/5'
                             }`}
                             disabled={isProcessing}
-                            title={isListening ? "Listening... (Tap to stop)" : "Voice Dictation"}
+                            title={isListening ? t.smartLogging.voiceListening : t.smartLogging.voiceDictation}
                         >
                             {isListening && (
                                 <span className="animate-ping absolute inset-0 rounded-full bg-rose-400 opacity-75 pointer-events-none" />
@@ -680,35 +683,14 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                             <Mic size={19} strokeWidth={2} />
                         </button>
 
-
                         {/* Favorites Toggle */}
                         {favorites && favorites.length > 0 && (
                             <button
                                 onClick={() => setShowFavorites(!showFavorites)}
                                 className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
-                                title="Toggle Favorites"
+                                title={t.smartLogging.favorites}
                             >
                                 <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
-                            </button>
-                        )}
-
-                        <div className="w-[1px] h-6 bg-black/10 mx-1" />
-
-                        {/* Progress Direct Trigger with burning pulsing flame */}
-                        {onOpenProgress && (
-                            <button
-                                onClick={() => {
-                                    onOpenProgress();
-                                    playSound('click');
-                                }}
-                                className="w-10 h-10 flex items-center justify-center rounded-full text-amber-500 hover:text-orange-500 hover:bg-orange-50/80 transition-all active:scale-90 relative"
-                                disabled={isProcessing}
-                                title="View Deficit & Progress"
-                            >
-                                <span className="relative flex h-4 w-4 items-center justify-center">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                                    <Flame size={18} className="relative text-amber-500 fill-amber-500 animate-pulse shrink-0" />
-                                </span>
                             </button>
                         )}
                     </div>
@@ -741,10 +723,10 @@ const SmartLogging = ({ onOpenProgress }: SmartLoggingProps = {}) => {
                             }}
                             placeholder={
                                 isListening
-                                    ? "Listening... Speak now..."
+                                    ? t.smartLogging.placeholderListening
                                     : selectedImage
-                                    ? "Add a comment about the photo..."
-                                    : "Log food or speak... (e.g. 2 eggs, toast)"
+                                    ? t.smartLogging.placeholderImage
+                                    : t.smartLogging.placeholderNormal
                             }
                             rows={isFocused || input.trim().length > 0 || selectedImage ? 3 : 1}
                             className={`bg-transparent border-none outline-none font-sans text-[16px] leading-snug placeholder:text-brutal-black/30 w-full resize-none transition-all duration-300 ease-spring py-2 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden

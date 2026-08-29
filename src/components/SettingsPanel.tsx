@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
-import { X, Save, RefreshCw, LogOut, Info, ChevronDown } from 'lucide-react';
+import { X, Save, RefreshCw, LogOut, Info, ChevronDown, Globe } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { calculateTargets, ACTIVITY_LEVELS } from '../utils/calorieFormula';
+import { getTranslation } from '../utils/i18n';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
-    const { profile, targetKcal, targetProtein, resetAll, calibrateUser, resetDaily, session, isGuest } = useStore();
+    const { profile, targetKcal, targetProtein, resetAll, calibrateUser, resetDaily, session, isGuest, language } = useStore();
+    const t = getTranslation(language);
+
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
     const [height, setHeight] = useState(profile?.height?.toString() || '');
     const [age, setAge] = useState(profile?.age?.toString() || '');
@@ -62,14 +66,14 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleWipe = () => {
-        if (confirm("System Wipe: Are you sure you want to delete all local telemetry?")) {
+        if (confirm(t.settings.wipeConfirm)) {
             resetAll();
             handleClose();
         }
     };
 
     const handleSignOut = async () => {
-        if (confirm("Are you sure you want to sign out? Your cloud data is safe.")) {
+        if (confirm(t.settings.signOutConfirm)) {
             await supabase.auth.signOut();
             resetAll();
             handleClose();
@@ -80,17 +84,25 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm" onClick={handleClose}>
             <div ref={panelRef} className="w-full max-w-sm h-full bg-paper shadow-2xl flex flex-col pt-12" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b-2 border-brutal-black/10">
-                    <h2 className="font-drama text-2xl tracking-wide">System Config</h2>
+                    <h2 className="font-drama text-2xl tracking-wide">{t.settings.title}</h2>
                     <button onClick={handleClose} className="p-2 hover:bg-brutal-black/5 rounded-full transition-colors">
                         <X size={24} />
                     </button>
                 </div>
 
                 <div className="p-6 flex flex-col gap-5 flex-1 overflow-y-auto">
+                    {/* Language Selector */}
+                    <div className="p-3 bg-black/5 rounded-2xl border border-black/5 flex flex-col gap-2">
+                        <div className="flex items-center gap-1.5 opacity-60">
+                            <Globe size={14} />
+                            <label className="font-sans text-xs uppercase tracking-widest font-bold">{t.settings.language}</label>
+                        </div>
+                        <LanguageSwitcher variant="pill" />
+                    </div>
 
                     {/* Gender */}
                     <div>
-                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Biological Sex</label>
+                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">{t.settings.sex}</label>
                         <div className="flex gap-2">
                             {['MALE', 'FEMALE'].map(g => (
                                 <button
@@ -98,7 +110,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                     onClick={() => setGender(g)}
                                     className={`flex-1 py-2 text-xs font-sans tracking-widest border transition-all ${gender === g ? 'bg-brutal-black text-off-white border-brutal-black' : 'border-brutal-black/20 hover:border-brutal-black/50'}`}
                                 >
-                                    {g}
+                                    {g === 'MALE' ? t.settings.male : t.settings.female}
                                 </button>
                             ))}
                         </div>
@@ -107,7 +119,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                     {/* Age + Height */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Age</label>
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">{t.settings.age}</label>
                             <input
                                 type="number"
                                 value={age}
@@ -116,7 +128,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             />
                         </div>
                         <div>
-                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Height (CM)</label>
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">{t.settings.height}</label>
                             <input
                                 type="number"
                                 value={height}
@@ -128,7 +140,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
 
                     {/* Weight — prominent, changes often */}
                     <div>
-                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">Mass Update (KG)</label>
+                        <label className="font-sans text-xs uppercase tracking-widest opacity-60 block mb-2">{t.settings.weight}</label>
                         <input
                             type="number"
                             value={weight}
@@ -143,7 +155,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             onClick={() => setShowActivity(v => !v)}
                             className="flex items-center justify-between w-full py-1 group hover:opacity-80 transition-opacity"
                         >
-                            <span className="font-sans text-xs uppercase tracking-widest opacity-60">Baseline Activity</span>
+                            <span className="font-sans text-xs uppercase tracking-widest opacity-60">{t.settings.activityLevel}</span>
                             <div className="flex items-center gap-2">
                                 <span className="font-sans text-xs opacity-40 group-hover:opacity-60 transition-opacity">
                                     {ACTIVITY_LEVELS.find(a => a.value === activityLevel)?.label}
@@ -196,7 +208,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             onClick={() => setShowGoal(v => !v)}
                             className="flex items-center justify-between w-full py-1 group hover:opacity-80 transition-opacity"
                         >
-                            <span className="font-sans text-xs uppercase tracking-widest opacity-60">Primary Objective</span>
+                            <span className="font-sans text-xs uppercase tracking-widest opacity-60">{t.settings.objective}</span>
                             <div className="flex items-center gap-2">
                                 <span className="font-sans text-xs opacity-40 group-hover:opacity-60 transition-opacity">
                                     {goal.split(' ')[0]}
@@ -225,17 +237,17 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             onClick={() => setShowCustom(v => !v)}
                             className="flex items-center justify-between w-full mb-2"
                         >
-                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 pointer-events-none">Custom Daily Targets</label>
+                            <label className="font-sans text-xs uppercase tracking-widest opacity-60 pointer-events-none">{t.settings.customTargets}</label>
                             <Info size={13} className={`transition-opacity ${showCustom ? 'opacity-60' : 'opacity-30'}`} />
                         </button>
                         {showCustom && (
                             <>
                                 <p className="font-sans text-[10px] opacity-50 leading-relaxed mb-3 border-l-2 border-brutal-black/10 pl-3">
-                                    Override the formula. Leave blank to use Mifflin-St Jeor auto values.
+                                    {t.settings.customTargetsDesc}
                                 </p>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Kcal / day</label>
+                                        <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">{t.common.kcal} / {t.tabs.day.toLowerCase()}</label>
                                         <input
                                             type="number"
                                             placeholder={`auto: ${targetKcal}`}
@@ -245,7 +257,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">Protein (g) / day</label>
+                                        <label className="font-sans text-[10px] uppercase opacity-40 block mb-1">{t.common.protein} (g) / {t.tabs.day.toLowerCase()}</label>
                                         <input
                                             type="number"
                                             placeholder={`auto: ${targetProtein}`}
@@ -263,7 +275,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             onClick={handleSave}
                             className="w-full brutal-card p-4 bg-signal-red text-off-white font-sans text-lg tracking-wide flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
                         >
-                            <Save size={20} /> Update Parameters
+                            <Save size={20} /> {t.common.save}
                         </button>
 
                         <div className="flex gap-4">
@@ -271,13 +283,13 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                 onClick={() => { resetDaily(); handleClose(); }}
                                 className="flex-1 py-3 text-xs tracking-widest uppercase font-sans border-2 border-brutal-black/10 hover:bg-brutal-black/5 flex items-center justify-center gap-2"
                             >
-                                <RefreshCw size={14} /> Clear Day
+                                <RefreshCw size={14} /> {t.common.reset} {t.tabs.day}
                             </button>
                             <button
                                 onClick={handleWipe}
                                 className="flex-1 py-3 text-xs tracking-widest uppercase font-sans border-2 border-red-500/20 text-red-500 hover:bg-red-500/10"
                             >
-                                Wipe All
+                                {t.settings.wipeTitle}
                             </button>
                         </div>
 
@@ -286,19 +298,19 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                 onClick={handleSignOut}
                                 className="w-full mt-2 py-4 text-xs tracking-widest uppercase font-sans border-2 border-brutal-black hover:bg-brutal-black hover:text-off-white flex items-center justify-center gap-2 transition-colors"
                             >
-                                <LogOut size={14} /> Sign Out
+                                <LogOut size={14} /> {t.settings.signOut}
                             </button>
                         )}
 
                         {(session?.user?.email || isGuest) && (
                             <span className="text-[10px] font-sans text-center text-brutal-black/30 w-full truncate px-2">
-                                {isGuest ? 'Logged in as Guest User' : `Logged in as ${session?.user?.email}`}
+                                {isGuest ? `${t.common.guestMode}` : `${session?.user?.email}`}
                             </span>
                         )}
                     </div>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 

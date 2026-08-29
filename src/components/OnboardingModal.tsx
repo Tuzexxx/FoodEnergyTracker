@@ -3,6 +3,8 @@ import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { ArrowRight, Info, X } from 'lucide-react';
 import { calculateTargets, ACTIVITY_LEVELS } from '../utils/calorieFormula';
+import { getTranslation } from '../utils/i18n';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const goalOptions = [
     {
@@ -32,7 +34,7 @@ PAL tiers:
   Gym 3× / week : ×1.55
   Gym Freak     : ×1.725
 
-Exercise day bonus: +400 kcal / +25 g protein added manually.
+Exercise day bonus: +300 kcal added dynamically.
 
 Goal modifiers:
   SHRED  — ×0.80 kcal | 2.2 g/kg protein
@@ -42,21 +44,46 @@ Goal modifiers:
 Sources: Mifflin et al. (1990) AJCN; Helms et al. (2014) JISSN;
 Barakat et al. (2020) S&C Journal; Morton et al. (2017) BJSM.`;
 
-const steps = [
-    { id: 'gender', question: 'Identify primary physical blueprint:', options: ['MALE', 'FEMALE'] },
-    { id: 'age', question: 'Enter operational age (years):', type: 'number', placeholder: 'e.g. 28' },
-    { id: 'height', question: 'Enter vertical dimension (cm):', type: 'number', placeholder: 'e.g. 180' },
-    { id: 'weight', question: 'Enter exact mass (kg):', type: 'number', placeholder: 'e.g. 75' },
-    { id: 'activityLevel', question: 'Select baseline activity level:' },
-    { id: 'goal', question: 'Select primary objective:' },
-];
+const getSteps = (lang: string) => {
+    if (lang === 'cs') {
+        return [
+            { id: 'gender', question: 'Zvolte biologické pohlaví:', options: ['MALE', 'FEMALE'] },
+            { id: 'age', question: 'Zadejte věk (roky):', type: 'number', placeholder: 'např. 28' },
+            { id: 'height', question: 'Zadejte tělesnou výšku (cm):', type: 'number', placeholder: 'např. 180' },
+            { id: 'weight', question: 'Zadejte aktuální hmotnost (kg):', type: 'number', placeholder: 'např. 75' },
+            { id: 'activityLevel', question: 'Zvolte výchozí úroveň aktivity:' },
+            { id: 'goal', question: 'Zvolte hlavní cíl:' },
+        ];
+    }
+    if (lang === 'de') {
+        return [
+            { id: 'gender', question: 'Biologisches Geschlecht wählen:', options: ['MALE', 'FEMALE'] },
+            { id: 'age', question: 'Alter eingeben (Jahre):', type: 'number', placeholder: 'z.B. 28' },
+            { id: 'height', question: 'Körpergröße eingeben (cm):', type: 'number', placeholder: 'z.B. 180' },
+            { id: 'weight', question: 'Aktuelles Gewicht eingeben (kg):', type: 'number', placeholder: 'z.B. 75' },
+            { id: 'activityLevel', question: 'Grundaktivitätslevel wählen:' },
+            { id: 'goal', question: 'Hauptziel auswählen:' },
+        ];
+    }
+    return [
+        { id: 'gender', question: 'Identify primary physical blueprint:', options: ['MALE', 'FEMALE'] },
+        { id: 'age', question: 'Enter operational age (years):', type: 'number', placeholder: 'e.g. 28' },
+        { id: 'height', question: 'Enter vertical dimension (cm):', type: 'number', placeholder: 'e.g. 180' },
+        { id: 'weight', question: 'Enter exact mass (kg):', type: 'number', placeholder: 'e.g. 75' },
+        { id: 'activityLevel', question: 'Select baseline activity level:' },
+        { id: 'goal', question: 'Select primary objective:' },
+    ];
+};
 
 const OnboardingModal = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [showInfo, setShowInfo] = useState(false);
     const [sliderIndex, setSliderIndex] = useState(1); // default: LIGHT
-    const { calibrateUser } = useStore();
+    const { calibrateUser, language } = useStore();
+    const t = getTranslation(language);
+
+    const steps = getSteps(language);
 
     const questionRef = useRef(null);
     const inputRef = useRef(null);
@@ -121,18 +148,21 @@ const OnboardingModal = () => {
     return (
         <div className="fixed inset-0 z-50 bg-paper/95 backdrop-blur-xl flex flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm relative">
-                <div className="absolute -top-12 left-0 font-data text-xs tracking-widest opacity-40">
+                <div className="absolute -top-14 left-0 font-data text-xs tracking-widest opacity-40">
                     SEQ {currentStep + 1} / {steps.length}
                 </div>
 
-                {/* Info icon */}
-                <button
-                    onClick={() => setShowInfo(true)}
-                    className="absolute -top-12 right-0 p-1 opacity-30 hover:opacity-70 transition-opacity"
-                    title="Formula assumptions"
-                >
-                    <Info size={16} />
-                </button>
+                {/* Top Action Icons: Language + Info */}
+                <div className="absolute -top-14 right-0 flex items-center gap-2">
+                    <LanguageSwitcher />
+                    <button
+                        onClick={() => setShowInfo(true)}
+                        className="p-1 opacity-30 hover:opacity-70 transition-opacity"
+                        title="Formula assumptions"
+                    >
+                        <Info size={16} />
+                    </button>
+                </div>
 
                 <h2 ref={questionRef} className="font-drama text-4xl leading-tight mb-12">
                     {step.question}
@@ -186,7 +216,7 @@ const OnboardingModal = () => {
                                 onClick={() => handleNext(ACTIVITY_LEVELS[sliderIndex].value)}
                                 className="w-full brutal-card p-4 flex justify-between items-center hover:bg-brutal-black hover:text-off-white transition-colors duration-300 group"
                             >
-                                <span className="font-sans text-sm tracking-widest uppercase">Confirm</span>
+                                <span className="font-sans text-sm tracking-widest uppercase">{t.common.done}</span>
                                 <ArrowRight className="opacity-40 group-hover:opacity-100 transition-opacity" size={20} />
                             </button>
                         </div>
@@ -212,7 +242,7 @@ const OnboardingModal = () => {
                                 onClick={() => handleNext(opt)}
                                 className="brutal-card p-4 text-left font-sans text-xl tracking-wide hover:bg-brutal-black hover:text-off-white transition-colors duration-300 group flex justify-between items-center"
                             >
-                                {opt}
+                                {opt === 'MALE' ? t.settings.male : opt === 'FEMALE' ? t.settings.female : opt}
                                 <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
                             </button>
                         ))

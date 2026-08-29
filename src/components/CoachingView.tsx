@@ -3,6 +3,7 @@ import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/
 import { BrainCircuit, Activity, AlertTriangle, ShieldCheck, Zap, RefreshCw, CheckCircle2, Flame } from 'lucide-react';
 import { playSound } from '../utils/audio';
 import { isSupabaseConfigured, supabase } from '../utils/supabase';
+import { getTranslation } from '../utils/i18n';
 
 interface MetabolicLeak {
     title: string;
@@ -28,8 +29,9 @@ interface CoachAnalysisResult {
     directives: string[];
 }
 
-const AnalysisView: React.FC = () => {
-    const { dailyLog, consumedKcal, consumedProtein, targetKcal, targetProtein, exerciseDay, profile, historicalDays } = useStore();
+const CoachingView: React.FC = () => {
+    const { dailyLog, consumedKcal, consumedProtein, targetKcal, targetProtein, exerciseDay, profile, historicalDays, language } = useStore();
+    const t = getTranslation(language);
 
     const [loading, setLoading] = useState(false);
     const [analysis, setAnalysis] = useState<CoachAnalysisResult | null>(null);
@@ -48,8 +50,8 @@ const AnalysisView: React.FC = () => {
 
     const cacheKey = useMemo(() => {
         const todayStr = new Date().toDateString();
-        return `macrotrack_coach_analysis_${todayStr}_${dailyLog.length}_${consumedKcal}_${exerciseDay ? 'gym' : 'rest'}`;
-    }, [dailyLog.length, consumedKcal, exerciseDay]);
+        return `macrotrack_coach_analysis_${language}_${todayStr}_${dailyLog.length}_${consumedKcal}_${exerciseDay ? 'gym' : 'rest'}`;
+    }, [language, dailyLog.length, consumedKcal, exerciseDay]);
 
     // Load from local storage cache if available
     useEffect(() => {
@@ -93,7 +95,8 @@ const AnalysisView: React.FC = () => {
                     targetProtein: effectiveProtein,
                     exerciseDay,
                     profile,
-                    historicalSummary
+                    historicalSummary,
+                    language: language || 'en'
                 })
             });
 
@@ -108,16 +111,16 @@ const AnalysisView: React.FC = () => {
                 localStorage.setItem(cacheKey, JSON.stringify(data));
                 playSound('targetHit');
             } else {
-                throw new Error("Neplatná odpověď z analýzy.");
+                throw new Error(t.coaching.errorMessage);
             }
         } catch (err: any) {
             console.error('Coaching analysis error:', err);
-            setError(err.message || 'Nepodařilo se načíst analýzu. Zkuste to prosím znovu.');
+            setError(err.message || t.coaching.errorMessage);
             playSound('error');
         } finally {
             setLoading(false);
         }
-    }, [dailyLog, consumedKcal, consumedProtein, consumedCarbs, consumedFat, effectiveKcal, effectiveProtein, exerciseDay, profile, historicalDays, cacheKey]);
+    }, [dailyLog, consumedKcal, consumedProtein, consumedCarbs, consumedFat, effectiveKcal, effectiveProtein, exerciseDay, profile, historicalDays, language, cacheKey, t]);
 
     const getGradeStyle = (grade: string) => {
         if (grade.startsWith('A')) return 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/30';
@@ -161,10 +164,10 @@ const AnalysisView: React.FC = () => {
                         </div>
                         <div>
                             <span className="font-sans text-[9px] uppercase tracking-[0.25em] opacity-60 font-bold block">
-                                AI Strategic Coaching Telemetry
+                                {t.coaching.bannerTag}
                             </span>
                             <h2 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
-                                Analýza jídelníčku a koučing
+                                {t.coaching.title}
                             </h2>
                         </div>
                     </div>
@@ -175,17 +178,17 @@ const AnalysisView: React.FC = () => {
                         className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-sans font-bold uppercase tracking-wider transition-all active:scale-95 shadow-md flex items-center gap-1.5 disabled:opacity-50"
                     >
                         <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-                        <span>{loading ? "Analyzuji..." : analysis ? "Přepočítat" : "Spustit analýzu"}</span>
+                        <span>{loading ? t.coaching.analyzingButton : analysis ? t.coaching.recalculateButton : t.coaching.runButton}</span>
                     </button>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs opacity-75 font-sans pt-1 border-t border-white/10">
                     <span className="flex items-center gap-1">
                         {exerciseDay ? <Flame size={13} className="text-amber-400 fill-amber-400" /> : <Activity size={13} className="text-indigo-400" />}
-                        {exerciseDay ? "Tréninkový den (aktivní výdej)" : "Regenerační den (klidový režim)"}
+                        {exerciseDay ? t.coaching.activityModeGym : t.coaching.activityModeRest}
                     </span>
                     <span>&middot;</span>
-                    <span>{dailyLog.length} zaznamenaných jídel</span>
+                    <span>{dailyLog.length} {t.coaching.mealsLogged}</span>
                 </div>
             </div>
 
@@ -194,7 +197,7 @@ const AnalysisView: React.FC = () => {
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs font-sans flex items-start gap-2 animate-in fade-in">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0 text-rose-600" />
                     <div className="flex-1">
-                        <span className="font-bold block mb-0.5">Chyba při generování analýzy</span>
+                        <span className="font-bold block mb-0.5">{t.coaching.errorTitle}</span>
                         <span>{error}</span>
                     </div>
                 </div>
@@ -208,10 +211,10 @@ const AnalysisView: React.FC = () => {
                     </div>
                     <div className="max-w-xs">
                         <h3 className="font-sans font-bold text-base text-brutal-black mb-1">
-                            Přísný nutriční audit na 1 klik
+                            {t.coaching.emptyTitle}
                         </h3>
                         <p className="text-xs text-brutal-black/60 font-sans leading-relaxed">
-                            AI kouč prověří dnešní časování živin, poměr bílkovin, metabolické brzdy a připraví 3 striktní taktické pokyny na zítra.
+                            {t.coaching.emptyDescription}
                         </p>
                     </div>
                     <button
@@ -219,7 +222,7 @@ const AnalysisView: React.FC = () => {
                         className="px-6 py-3 bg-brutal-black hover:bg-black text-off-white rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-md flex items-center gap-2"
                     >
                         <Zap size={14} className="text-amber-400 fill-amber-400" />
-                        <span>Analyzovat dnešní telemetrii</span>
+                        <span>{t.coaching.emptyAction}</span>
                     </button>
                 </div>
             )}
@@ -233,10 +236,10 @@ const AnalysisView: React.FC = () => {
                     </div>
                     <div>
                         <span className="font-sans text-xs uppercase tracking-widest font-bold text-brutal-black block mb-1">
-                            Prověřuji metabolické úniky a časování...
+                            {t.coaching.loadingTitle}
                         </span>
                         <span className="text-[11px] text-brutal-black/50 font-sans">
-                            Kouč analyzuje poměry makroživin a tréninkovou regeneraci
+                            {t.coaching.loadingSubtitle}
                         </span>
                     </div>
                 </div>
@@ -254,10 +257,10 @@ const AnalysisView: React.FC = () => {
                                 </div>
                                 <div>
                                     <span className="font-sans text-[10px] uppercase tracking-widest opacity-40 font-bold block">
-                                        Celkové hodnocení dne
+                                        {t.coaching.overallScore}
                                     </span>
                                     <span className="font-data text-xl font-bold text-brutal-black">
-                                        {analysis.score} <span className="text-xs font-sans font-normal opacity-50">/ 100 bodů</span>
+                                        {analysis.score} <span className="text-xs font-sans font-normal opacity-50">{t.coaching.scoreOutOf}</span>
                                     </span>
                                 </div>
                             </div>
@@ -278,7 +281,7 @@ const AnalysisView: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <span className="font-sans text-xs font-bold uppercase tracking-wider text-brutal-black flex items-center gap-1.5">
                                     <Activity size={14} className="text-indigo-600" />
-                                    Makro Integrita & Hustota
+                                    {t.coaching.macroIntegrityTitle}
                                 </span>
                                 {getStatusBadge(analysis.macroIntegrity.status)}
                             </div>
@@ -292,7 +295,7 @@ const AnalysisView: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <span className="font-sans text-xs font-bold uppercase tracking-wider text-brutal-black flex items-center gap-1.5">
                                     <Zap size={14} className="text-amber-500" />
-                                    Časování živin & Regenerace
+                                    {t.coaching.nutrientTimingTitle}
                                 </span>
                                 {getStatusBadge(analysis.nutrientTiming.status)}
                             </div>
@@ -308,7 +311,7 @@ const AnalysisView: React.FC = () => {
                             <div className="flex items-center gap-1.5 px-1">
                                 <AlertTriangle size={14} className="text-rose-500" />
                                 <h3 className="font-sans text-[11px] uppercase tracking-[0.2em] font-bold opacity-60">
-                                    Odhalené metabolické brzdy a úniky
+                                    {t.coaching.metabolicLeaksTitle}
                                 </h3>
                             </div>
 
@@ -323,7 +326,7 @@ const AnalysisView: React.FC = () => {
                                             <span className={`text-[8px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
                                                 leak.severity === 'high' ? 'bg-rose-600 text-white' : 'bg-rose-200 text-rose-800'
                                             }`}>
-                                                {leak.severity === 'high' ? 'Vysoká priorita' : 'Střední'}
+                                                {leak.severity === 'high' ? t.coaching.highPriority : t.coaching.mediumPriority}
                                             </span>
                                         </div>
                                         <p className="text-[11px] text-rose-800/80 font-sans leading-relaxed">
@@ -341,7 +344,7 @@ const AnalysisView: React.FC = () => {
                             <div className="flex items-center gap-1.5 px-1">
                                 <CheckCircle2 size={14} className="text-indigo-600" />
                                 <h3 className="font-sans text-[11px] uppercase tracking-[0.2em] font-bold opacity-60">
-                                    3 Taktické direktivy pro zítřek
+                                    {t.coaching.directivesTitle}
                                 </h3>
                             </div>
 
@@ -365,4 +368,4 @@ const AnalysisView: React.FC = () => {
     );
 };
 
-export default AnalysisView;
+export default CoachingView;

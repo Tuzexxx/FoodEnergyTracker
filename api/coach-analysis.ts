@@ -87,7 +87,19 @@ export default async function handler(req: ApiRequest & { method?: string }, res
     if (await guardRequest(req, res) === null) return;
 
     const body = (req.body || {}) as Record<string, any>;
-    const { dailyLog = [], consumedKcal = 0, consumedProtein = 0, consumedCarbs = 0, consumedFat = 0, targetKcal = 2000, targetProtein = 150, exerciseDay = false, profile = {}, historicalSummary = '' } = body;
+    const {
+        dailyLog = [],
+        consumedKcal = 0,
+        consumedProtein = 0,
+        consumedCarbs = 0,
+        consumedFat = 0,
+        targetKcal = 2000,
+        targetProtein = 150,
+        exerciseDay = false,
+        profile = {},
+        historicalSummary = '',
+        language = 'en'
+    } = body;
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -98,56 +110,59 @@ export default async function handler(req: ApiRequest & { method?: string }, res
         const dailyLogSummary = (dailyLog || []).map((item: any) => {
             const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
             return `- [${timeStr}] ${item.name}: ${item.kcal} kcal, ${item.protein}g protein, ${item.carbs || 0}g carbs, ${item.fat || 0}g fat`;
-        }).join('\n') || '(Zatím žádná zaznamenaná jídla pro dnešek)';
+        }).join('\n') || '(No meals logged yet today)';
 
-        const prompt = `Jsi přísný, vysoce analytický a nekompromisní nutriční a silový kouč integrovaný v aplikaci MacroTrack.
-Tvým úkolem je analyzovat denní jídelníček uživatele, časování živin, tréninkový objem a regeneraci. Nejsi tu od toho, abys uživatele bezdůvodně chválil nebo byl přehnaně příjemný – tvým cílem je odhalit skryté chyby, metabolické brzdy a zbytečné kalorické úniky.
+        const langName = language === 'cs' ? 'Czech' : language === 'de' ? 'German' : 'English';
 
-VÝSTUP MUSÍ BÝT V ČEŠTINĚ, STROHÝ, BRUTÁLNÍ, DŮSLEDNÝ A PŘESNÝ.
+        const prompt = `You are a world-class, sharp, highly analytical nutrition and metabolic performance coach in the MacroTrack app.
+Your task is to perform an objective, data-driven daily audit of the user's nutrition log, macronutrient balance, nutrient timing, and recovery.
+Provide direct, constructive, high-impact feedback to optimize performance and body composition.
 
-UŽIVATELSKÝ KONTEXT TELEMETRIE:
-- Denní kalorický cíl: ${targetKcal} kcal ${exerciseDay ? '(Aktivní tréninkový den: bonus +300 kcal a +10g bílkovin)' : '(Netréninkový / regenerační den)'}
-- Cíl bílkovin: ${targetProtein} g
-- Dnešní příjem celkem: ${consumedKcal} kcal | ${consumedProtein}g bílkovin | ${consumedCarbs}g sacharidů | ${consumedFat}g tuků
-- Tréninkový stav dnes: ${exerciseDay ? 'SILOVÝ TRÉNINK / GYM AKTIVNÍ' : 'ODPOČINKOVÝ / REGENERAČNÍ DEN'}
-- Profil uživatele: Cíl=${profile?.goal || 'Udržování/Rekompozice'}, Hmotnost=${profile?.weight || 'N/A'} kg, Úroveň aktivity=${profile?.activityLevel || 'Standardní'}
-- Zaznamenaná jídla dnes (s časovými značkami):
+IMPORTANT: ALL TEXT STRINGS IN YOUR JSON RESPONSE (verdict, comments, title, description, directives) MUST BE IN ${langName.toUpperCase()}.
+
+USER TELEMETRY CONTEXT:
+- Daily Calorie Target: ${targetKcal} kcal ${exerciseDay ? '(Active Workout Mode: +300 kcal buffer applied)' : '(Standard Base Target)'}
+- Daily Protein Target: ${targetProtein} g
+- Consumed Today: ${consumedKcal} kcal | ${consumedProtein}g Protein | ${consumedCarbs}g Carbs | ${consumedFat}g Fat
+- Activity Status Today: ${exerciseDay ? 'Active Workout / Training Day' : 'Standard / Rest & Recovery Day'}
+- User Profile: Goal=${profile?.goal || 'Maintain / Recomp'}, Weight=${profile?.weight || 'N/A'} kg, Baseline Activity=${profile?.activityLevel || 'Standard'}
+- Meals Logged Today (with timestamps):
 ${dailyLogSummary}
-- Historický kontext:
-${historicalSummary || 'Standardní historie'}
+- Historical Context:
+${historicalSummary || 'Standard baseline history'}
 
-POKYNY PRO HODNOCENÍ:
-1. Makro integrita: Splnil uživatel bílkoviny bez přetažení kalorií a tuků? Je poměr bílkovin dostatečný pro růst/udržení svalů?
-2. Časování živin (Nutrient Timing): Jsou bílkoviny rozprostřeny rovnoměrně (každé 3-4h)? Jsou sacharidy vhodně načasovány kolem tréninku, nebo byly zbytečně zkonzumovány pozdě večer v netréninkový den?
-3. Metabolické úniky a skryté brzdy: Identifikuj tekuté kalorie, nadbytek nasycených tuků, průmyslově zpracované potraviny nebo chybějící před/potréninkové jídlo. Pokud uživatel dnes ještě nic nezaznamenal, upozorni na to jako na kritické selhání evidence.
-4. Direktiva na zítra: Přesně 3 nekompromisní, konkrétní a okamžitě aplikovatelné taktické pokyny na zítřejší den.
+AUDIT GUIDELINES:
+1. Macro Integrity: Did the user hit their protein target without excessive calorie/fat overages? Is protein distribution sufficient for muscle preservation and recovery?
+2. Nutrient Timing: Are protein feedings distributed appropriately across the day? Are carbs strategically placed around active times vs late evening?
+3. Metabolic Leaks & Friction: Identify hidden liquid calories, excess saturated fat, ultra-processed items, or missing pre/post fuel. If no meals are logged, highlight adherence/logging gap.
+4. Directives for Tomorrow: Provide exactly 3 actionable, high-leverage tactical directives for tomorrow.
 
-VÝSTUP POUZE STRIKTNÍ JSON BEZ TEXTU KOLEME:
+OUTPUT ONLY STRICT JSON MATCHING THIS SCHEMA:
 {
   "type": "success",
   "grade": "A+" | "A" | "B" | "C" | "D" | "F",
-  "score": <číslo 0-100>,
-  "verdict": "<Stručný, úderný verdikt, např. 'Suboptimální rozložení bílkovin, přebytek skrytých tuků večer'>",
+  "score": <number 0-100>,
+  "verdict": "<Concise, impactful 1-2 sentence overall summary in ${langName}>",
   "macroIntegrity": {
     "status": "PASS" | "WARNING" | "CRITICAL",
-    "score": <číslo 0-100>,
-    "comment": "<Přesný analytický rozbor kalorické a makro bilance>"
+    "score": <number 0-100>,
+    "comment": "<Analytical breakdown of calorie and macro balance in ${langName}>"
   },
   "nutrientTiming": {
     "status": "OPTIMAL" | "SUBOPTIMAL" | "CRITICAL",
-    "comment": "<Hodnocení časování živin vzhledem k tréninku a rozestupům mezi jídly>"
+    "comment": "<Evaluation of feeding intervals and nutrient timing in ${langName}>"
   },
   "metabolicLeaks": [
     {
-      "title": "<Název úniku / chyby>",
-      "description": "<Proč tato položka zpomaluje progres nebo tvoří zbytečné kalorie>",
+      "title": "<Short leak title in ${langName}>",
+      "description": "<Why this impedes progress and how to fix it in ${langName}>",
       "severity": "high" | "medium" | "low"
     }
   ],
   "directives": [
-    "<1. Konkrétní nekompromisní úkol na zítra>",
-    "<2. Konkrétní nekompromisní úkol na zítra>",
-    "<3. Konkrétní nekompromisní úkol na zítra>"
+    "<Directive 1 in ${langName}>",
+    "<Directive 2 in ${langName}>",
+    "<Directive 3 in ${langName}>"
   ]
 }`;
 
@@ -158,7 +173,7 @@ VÝSTUP POUZE STRIKTNÍ JSON BEZ TEXTU KOLEME:
 
         const requestBody = JSON.stringify({
             system_instruction: {
-                parts: [{ text: "Vždy vracej striktní JSON objekt bez okolního textu." }]
+                parts: [{ text: "Always return a valid, well-formed JSON object without markdown fences or additional conversational text." }]
             },
             contents: [{
                 parts: [{ text: prompt }]

@@ -3,9 +3,11 @@ import gsap from 'gsap';
 import { AlertCircle, CheckCircle2, Flame } from 'lucide-react';
 import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
 import { calculateMacroDistribution } from '../utils/calorieFormula';
+import { getTranslation } from '../utils/i18n';
 
 const MacroDashboard = () => {
-    const { targetKcal, consumedKcal, targetProtein, consumedProtein, dailyLog, exerciseDay, toggleExerciseDay, profile } = useStore();
+    const { targetKcal, consumedKcal, targetProtein, consumedProtein, dailyLog, exerciseDay, toggleExerciseDay, profile, language } = useStore();
+    const t = getTranslation(language);
 
     const showGymButton = !profile?.activityLevel || profile?.activityLevel === 'SEDENTARY' || profile?.activityLevel === 'LIGHT';
 
@@ -107,7 +109,7 @@ const MacroDashboard = () => {
         <div
             onClick={toggleSecondaryMacros}
             className="brutal-card w-full shadow-2xl relative bg-black text-off-white group overflow-hidden border-2 border-brutal-black cursor-pointer select-none"
-            title={showSecondaryMacros ? "Click anywhere on widget to minimize carbs & fat" : "Click anywhere on widget to show carbs & fat details"}
+            title={t.macro.clickToToggle}
         >
             {/* Red kcal progress fill */}
             <div
@@ -127,7 +129,7 @@ const MacroDashboard = () => {
                 <div className="flex items-center justify-between">
                     <h2 className="font-sans text-[10px] uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-signal-red animate-pulse" />
-                        Macro Tracker
+                        {t.macro.trackerTitle}
                     </h2>
 
                     {/* Exercise Day toggle */}
@@ -137,14 +139,14 @@ const MacroDashboard = () => {
                                 e.stopPropagation();
                                 toggleExerciseDay();
                             }}
-                            title={exerciseDay ? `Exercise day: +${EXERCISE_BONUS_KCAL} kcal` : 'Mark as exercise day'}
+                            title={exerciseDay ? `${t.macro.gymActive} (+ ${EXERCISE_BONUS_KCAL} ${t.common.kcal})` : t.macro.gymInactive}
                             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
                                 ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
                                 : 'bg-off-white/10 text-off-white/60 hover:bg-off-white/20'
                                 }`}
                         >
                             <Flame size={12} />
-                            {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : 'GYM'}
+                            {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : t.tabs.day === 'Day' ? 'GYM' : 'GYM'}
                         </button>
                     )}
                 </div>
@@ -162,7 +164,7 @@ const MacroDashboard = () => {
                             {consumedKcal}
                         </span>
                         <span className="font-sans text-xs uppercase tracking-widest text-signal-red whitespace-nowrap">
-                            / {effectiveKcal} KCAL
+                            / {effectiveKcal} {t.common.kcal.toUpperCase()}
                         </span>
                     </div>
 
@@ -173,7 +175,7 @@ const MacroDashboard = () => {
                                 {consumedProtein}
                             </span>
                             <span className="font-sans text-[10px] uppercase tracking-widest whitespace-nowrap text-white/80">
-                                / {effectiveProtein}G PROT
+                                / {effectiveProtein}G {t.common.protein.toUpperCase()}
                             </span>
                         </div>
 
@@ -203,11 +205,11 @@ const MacroDashboard = () => {
                     <div className="flex items-center justify-between text-[9px] font-sans font-medium uppercase tracking-wider px-6 pb-1.5 w-full animate-in fade-in duration-200">
                         <span className="text-amber-400/90 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                            CARB &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g
+                            {t.common.carbs.toUpperCase()} &middot; {consumedCarbs}/{optimalMacros.carbsGrams}g
                         </span>
                         <span className="text-rose-400/90 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
-                            FAT &middot; {consumedFat}/{optimalMacros.fatGrams}g
+                            {t.common.fat.toUpperCase()} &middot; {consumedFat}/{optimalMacros.fatGrams}g
                         </span>
                     </div>
                 )}

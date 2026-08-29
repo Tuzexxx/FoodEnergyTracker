@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useStore } from '../store/useStore';
 import { Loader2 } from 'lucide-react';
+import { getTranslation } from '../utils/i18n';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const AuthScreen = () => {
-    const { setGuestMode } = useStore();
+    const { setGuestMode, language } = useStore();
+    const t = getTranslation(language);
+
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -50,11 +54,16 @@ const AuthScreen = () => {
     };
 
     return (
-        <div className="min-h-screen bg-off-white text-brutal-black p-6 flex flex-col justify-center items-center">
+        <div className="min-h-screen bg-off-white text-brutal-black p-6 flex flex-col justify-center items-center relative">
+            {/* Top Language Switcher on Auth Screen */}
+            <div className="absolute top-6 right-6">
+                <LanguageSwitcher />
+            </div>
+
             <div className="w-full max-w-sm flex flex-col items-center">
-                <h1 className="font-serif text-5xl font-bold tracking-tight mb-2 text-center">MacroTrack</h1>
+                <h1 className="font-serif text-5xl font-bold tracking-tight mb-2 text-center">{t.auth.title}</h1>
                 <p className="font-sans text-xs uppercase tracking-widest opacity-50 mb-8 text-center">
-                    AI Telemetry & Cloud Sync
+                    {t.auth.subtitle}
                 </p>
 
                 <form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-4 mb-6">
@@ -65,7 +74,7 @@ const AuthScreen = () => {
                     )}
                     <input
                         type="email"
-                        placeholder="EMAIL ADDRESS"
+                        placeholder={t.auth.email}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-3 font-sans text-sm tracking-widest uppercase transition-colors"
@@ -73,7 +82,7 @@ const AuthScreen = () => {
                     />
                     <input
                         type="password"
-                        placeholder="PASSWORD"
+                        placeholder={t.auth.password}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-3 font-sans text-sm tracking-widest uppercase transition-colors"
@@ -86,7 +95,7 @@ const AuthScreen = () => {
                         className="w-full bg-brutal-black text-off-white p-4 font-sans text-sm tracking-widest uppercase font-bold hover:bg-brutal-black/90 transition-colors shadow-[0_4px_0_rgba(0,0,0,1)] hover:shadow-[0_2px_0_rgba(0,0,0,1)] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {loading && <Loader2 className="animate-spin w-4 h-4" />}
-                        {isSignUp ? 'Create Account' : 'Sign In'}
+                        {isSignUp ? t.auth.createAccount : t.auth.signIn}
                     </button>
 
                     <button
@@ -94,7 +103,7 @@ const AuthScreen = () => {
                         onClick={() => { setIsSignUp(!isSignUp); setErrorMsg(''); }}
                         className="text-xs font-sans tracking-widest uppercase opacity-60 hover:opacity-100 transition-opacity mt-2"
                     >
-                        {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+                        {isSignUp ? t.auth.haveAccount : t.auth.needAccount}
                     </button>
                 </form>
 
@@ -119,12 +128,11 @@ const AuthScreen = () => {
                         Google
                     </button>
 
-
                     <button
                         onClick={() => setGuestMode(true)}
                         className="w-full mt-4 py-3 text-xs font-sans tracking-widest uppercase border-2 border-brutal-black/10 hover:border-brutal-black/30 hover:bg-black/5 flex items-center justify-center transition-colors"
                     >
-                        Continue as Guest (Offline Mode)
+                        {t.auth.continueGuest}
                     </button>
                 </div>
             </div>
