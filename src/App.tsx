@@ -220,7 +220,7 @@ function App() {
                                             : 'text-brutal-black/70 hover:text-brutal-black'
                                     }`}
                                 >
-                                    <BrainCircuit size={13} className={timeframe === 'coaching' ? 'text-indigo-400' : 'opacity-60'} />
+                                    <BrainCircuit size={13} className="text-emerald-500 shrink-0" />
                                     {t.tabs.coaching}
                                     <span className="absolute -top-1.5 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">
                                         PRO

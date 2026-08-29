@@ -9,8 +9,8 @@ interface LanguageSwitcherProps {
 
 const languages: { code: Language; flag: string; label: string; name: string }[] = [
     { code: 'en', flag: '🇬🇧', label: 'EN', name: 'English' },
-    { code: 'cs', flag: '🇨🇿', label: 'CS', name: 'Čeština' },
     { code: 'de', flag: '🇩🇪', label: 'DE', name: 'Deutsch' },
+    { code: 'cs', flag: '🇨🇿', label: 'CS', name: 'Čeština' },
 ];
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = '', variant = 'flags' }) => {

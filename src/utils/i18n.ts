@@ -118,6 +118,9 @@ export interface Translations {
         estimatedFatStored: string;
         sugarCubesEquivalent: string;
         sugarCubesLabel: string;
+        showSugarPile: string;
+        sugarModalTitle: string;
+        sugarModalDesc: string;
         optimalPlanTitle: string;
         optimalPlanDesc: string;
         planEfficiency: string;
@@ -288,6 +291,9 @@ export const translations: Record<Language, Translations> = {
             estimatedFatStored: 'Estimated Fat Stored',
             sugarCubesEquivalent: 'sugar cubes',
             sugarCubesLabel: 'Equivalent in sugar cubes',
+            showSugarPile: 'Visual Sugar Cube Cascade',
+            sugarModalTitle: 'Tangible Fat Burn Equivalent',
+            sugarModalDesc: 'At 4g per standard sugar cube, your caloric deficit represents:',
             optimalPlanTitle: 'Optimal Plan Potential',
             optimalPlanDesc: 'Target fat burn if daily calories were met 100% on plan',
             planEfficiency: 'Plan Efficiency',
@@ -456,6 +462,9 @@ export const translations: Record<Language, Translations> = {
             estimatedFatStored: 'Odhadovaný uložený tuk',
             sugarCubesEquivalent: 'kostek cukru',
             sugarCubesLabel: 'Ekvivalent v kostkách cukru',
+            showSugarPile: 'Vizuální sypání kostek cukru',
+            sugarModalTitle: 'Hmatatelný ekvivalent spáleného tuku',
+            sugarModalDesc: 'Při 4 g na standardní kostku cukru odpovídá váš spálený tuk:',
             optimalPlanTitle: 'Potenciál optimálního plánu',
             optimalPlanDesc: 'Cílový úbytek tuku při 100% dodržení denního kalorického limitu',
             planEfficiency: 'Efektivita plánu',
@@ -624,6 +633,9 @@ export const translations: Record<Language, Translations> = {
             estimatedFatStored: 'Geschätztes Fett gespeichert',
             sugarCubesEquivalent: 'Zuckerwürfel',
             sugarCubesLabel: 'Äquivalent in Zuckerwürfeln',
+            showSugarPile: 'Visueller Zuckerwürfel-Wasserfall',
+            sugarModalTitle: 'Greifbares Fettabbau-Äquivalent',
+            sugarModalDesc: 'Bei 4 g pro Standard-Zuckerwürfel entspricht Ihr verbranntes Fett:',
             optimalPlanTitle: 'Optimales Planpotenzial',
             optimalPlanDesc: 'Ziel-Fettabbau bei 100%iger Einhaltung des Kalorienplans',
             planEfficiency: 'Planeffizienz',
