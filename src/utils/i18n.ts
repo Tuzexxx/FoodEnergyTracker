@@ -109,6 +109,7 @@ export interface Translations {
         dailyLimitReached: string;
         vipUnlimitedBadge: string;
         dailyQuota: string;
+        translatingAnalysis: string;
     };
     dailyLog: {
         todayLog: string;
@@ -300,6 +301,7 @@ export const translations: Record<Language, Translations> = {
             dailyLimitReached: 'Daily coaching audit limit reached (1/1). Next audit available tomorrow.',
             vipUnlimitedBadge: 'VIP Unlimited Access',
             dailyQuota: 'Daily Quota: 1/1 Used',
+            translatingAnalysis: 'Translating analysis...',
         },
         dailyLog: {
             todayLog: "Today's Log",
@@ -489,6 +491,7 @@ export const translations: Record<Language, Translations> = {
             dailyLimitReached: 'Dnešní limit koučinku byl vyčerpán (1/1). Další analýza bude dostupná zítra.',
             vipUnlimitedBadge: 'VIP Neomezený přístup',
             dailyQuota: 'Denní kvóta: 1/1 vyčerpáno',
+            translatingAnalysis: 'Překládám analýzu do češtiny...',
         },
         dailyLog: {
             todayLog: 'Dnešní přehled',
@@ -678,6 +681,7 @@ export const translations: Record<Language, Translations> = {
             dailyLimitReached: 'Tageslimit für Coaching erreicht (1/1). Nächstes Audit morgen verfügbar.',
             vipUnlimitedBadge: 'VIP Unbegrenzter Zugriff',
             dailyQuota: 'Tageskontingent: 1/1 verbraucht',
+            translatingAnalysis: 'Übersetze Analyse ins Deutsche...',
         },
         dailyLog: {
             todayLog: 'Heutiges Protokoll',

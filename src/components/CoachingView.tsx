@@ -3,7 +3,7 @@ import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/
 import { BrainCircuit, Activity, AlertTriangle, ShieldCheck, Zap, RefreshCw, CheckCircle2, Flame, Lock, Crown, LogIn } from 'lucide-react';
 import { playSound } from '../utils/audio';
 import { isSupabaseConfigured, supabase } from '../utils/supabase';
-import { getTranslation } from '../utils/i18n';
+import { getTranslation, Language } from '../utils/i18n';
 import { isVipUser } from '../utils/vip';
 
 interface MetabolicLeak {
@@ -51,6 +51,7 @@ const CoachingView: React.FC = () => {
     const t = getTranslation(language);
 
     const [loading, setLoading] = useState(false);
+    const [isTranslating, setIsTranslating] = useState(false);
     const [analysis, setAnalysis] = useState<CoachAnalysisResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -124,25 +125,97 @@ const CoachingView: React.FC = () => {
     const canRunPeriodData = period === 'today' ? canRunToday : period === 'yesterday' ? activeData.hasData : true;
     const canRunAudit = isAuthenticated && !hasUsedDailyLimit && canRunPeriodData;
 
-    const cacheKey = useMemo(() => {
+    const baseScopeKey = useMemo(() => {
         const todayStr = new Date().toDateString();
         const histCount = (historicalDays || []).length;
-        return `macrotrack_coach_${period}_${language}_${todayStr}_${activeData.log.length}_${activeData.kcal}_${histCount}_${activeData.isExercise ? 'gym' : 'rest'}`;
-    }, [period, language, activeData.log.length, activeData.kcal, historicalDays, activeData.isExercise]);
+        return `${period}_${todayStr}_${activeData.log.length}_${activeData.kcal}_${histCount}_${activeData.isExercise ? 'gym' : 'rest'}`;
+    }, [period, activeData.log.length, activeData.kcal, historicalDays, activeData.isExercise]);
 
-    // Load from local storage cache if available
+    const cacheKey = useMemo(() => {
+        return `macrotrack_coach_${language}_${baseScopeKey}`;
+    }, [language, baseScopeKey]);
+
+    // Load from cache or auto-translate from existing language cache when switching languages
     useEffect(() => {
+        let isMounted = true;
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
             try {
                 setAnalysis(JSON.parse(cached));
+                setIsTranslating(false);
+                return;
             } catch (e) {
                 console.warn('Failed to parse cached coach analysis', e);
             }
+        }
+
+        // Check if an analysis exists in any other language for this scope
+        const allLangs: Language[] = ['en', 'cs', 'de'];
+        const otherLangs = allLangs.filter(l => l !== language);
+        let candidateAnalysis: CoachAnalysisResult | null = null;
+
+        for (const l of otherLangs) {
+            const otherKey = `macrotrack_coach_${l}_${baseScopeKey}`;
+            const raw = localStorage.getItem(otherKey);
+            if (raw) {
+                try {
+                    candidateAnalysis = JSON.parse(raw);
+                    break;
+                } catch (e) {}
+            }
+        }
+
+        if (candidateAnalysis) {
+            // Keep existing analysis immediately visible so nothing disappears!
+            setAnalysis(candidateAnalysis);
+            setIsTranslating(true);
+
+            // Fetch translation in background
+            (async () => {
+                try {
+                    const { data: { session: activeSession } } = isSupabaseConfigured
+                        ? await supabase.auth.getSession()
+                        : { data: { session: null } };
+
+                    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+                    if (activeSession?.access_token) {
+                        headers['Authorization'] = `Bearer ${activeSession.access_token}`;
+                    }
+
+                    const res = await fetch('/api/coach-analysis', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            mode: 'translate',
+                            analysis: candidateAnalysis,
+                            language
+                        })
+                    });
+
+                    if (res.ok && isMounted) {
+                        const translatedData: CoachAnalysisResult = await res.json();
+                        if (translatedData && translatedData.grade) {
+                            setAnalysis(translatedData);
+                            localStorage.setItem(cacheKey, JSON.stringify(translatedData));
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Auto-translate error:', err);
+                } finally {
+                    if (isMounted) {
+                        setIsTranslating(false);
+                    }
+                }
+            })();
         } else {
             setAnalysis(null);
+            setIsTranslating(false);
         }
-    }, [cacheKey]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [cacheKey, baseScopeKey, language]);
 
     const handleGoogleLogin = async () => {
         if (!isSupabaseConfigured) return;
@@ -313,6 +386,14 @@ const CoachingView: React.FC = () => {
                 </div>
             </div>
 
+            {/* Translation in progress indicator */}
+            {isTranslating && (
+                <div className="flex items-center justify-center gap-2 py-2 px-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-sans font-bold shadow-xs animate-in fade-in">
+                    <RefreshCw size={13} className="animate-spin text-emerald-600" />
+                    <span>{t.coaching.translatingAnalysis}</span>
+                </div>
+            )}
+
             {/* Error Banner */}
             {error && (
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs font-sans flex items-start gap-2 animate-in fade-in">
@@ -354,7 +435,7 @@ const CoachingView: React.FC = () => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-emerald-600/30 rounded-xl text-emerald-400 border border-emerald-500/30">
-                            <BrainCircuit size={18} className={loading ? "animate-spin" : "animate-pulse"} />
+                            <BrainCircuit size={18} className={loading || isTranslating ? "animate-spin" : "animate-pulse"} />
                         </div>
                         <div>
                             <span className="font-sans text-[9px] uppercase tracking-[0.25em] opacity-60 font-bold block">

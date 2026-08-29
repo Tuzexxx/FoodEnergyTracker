@@ -65,7 +65,11 @@ async function authenticate(req: ApiRequest): Promise<AuthResult> {
     }
 }
 
-export async function guardRequest(req: ApiRequest, res: ApiResponse): Promise<{ userId: string; email: string | null; isVip: boolean } | null> {
+export async function guardRequest(
+    req: ApiRequest,
+    res: ApiResponse,
+    isTranslateMode: boolean = false
+): Promise<{ userId: string; email: string | null; isVip: boolean } | null> {
     const auth = await authenticate(req);
     if (auth.invalidToken || !auth.userId) {
         res.status(401).json({
@@ -80,14 +84,14 @@ export async function guardRequest(req: ApiRequest, res: ApiResponse): Promise<{
 
     // Rate limiting
     const key = 'user:' + auth.userId;
-    const limit = isVip ? 100 : 20;
+    const limit = isVip ? 100 : 30;
     if (!consumeRateLimit(key, limit)) {
         res.status(429).json({ error: 'Too many analysis requests. Please try again later.' });
         return null;
     }
 
-    // Daily 1-audit limit for non-VIP registered users
-    if (!isVip) {
+    // Daily 1-audit limit for non-VIP registered users (only for fresh audits, not translations)
+    if (!isVip && !isTranslateMode) {
         const todayStr = new Date().toISOString().split('T')[0];
         const lastAuditDate = dailyUserAudits.get(auth.userId);
         if (lastAuditDate === todayStr) {
@@ -107,10 +111,80 @@ export default async function handler(req: ApiRequest & { method?: string }, res
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const authContext = await guardRequest(req, res);
+    const body = (req.body || {}) as Record<string, any>;
+    const isTranslateMode = body.mode === 'translate';
+
+    const authContext = await guardRequest(req, res, isTranslateMode);
     if (authContext === null) return;
 
-    const body = (req.body || {}) as Record<string, any>;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        return res.status(500).json({ error: 'API key not configured', type: 'error' });
+    }
+
+    const MODELS = [
+        'gemini-3.6-flash',
+        'gemini-3.5-flash-lite',
+    ];
+
+    // Handle Translation of existing Coaching Analysis
+    if (isTranslateMode) {
+        const { analysis, language = 'en' } = body;
+        if (!analysis) {
+            return res.status(400).json({ error: 'Missing analysis object to translate' });
+        }
+
+        const langName = language === 'cs' ? 'Czech' : language === 'de' ? 'German' : 'English';
+        const translatePrompt = `You are an expert translator for the MacroTrack fitness app.
+Translate the text fields in the following nutrition coaching analysis JSON into natural, precise ${langName.toUpperCase()}.
+
+TRANSLATION RULES:
+1. Preserve all structural numbers, "grade", "score", "type", "severity", and status codes ("PASS", "WARNING", "CRITICAL", "OPTIMAL", "SUBOPTIMAL") EXACTLY as they are.
+2. Only translate human-readable texts: "verdict", "macroIntegrity.comment", "nutrientTiming.comment", "metabolicLeaks[].title", "metabolicLeaks[].description", "directives[]".
+3. Write high-quality, professional, direct coaching tone in ${langName}.
+4. Return ONLY valid JSON matching the exact same schema.
+
+INPUT JSON:
+${JSON.stringify(analysis, null, 2)}`;
+
+        const requestBody = JSON.stringify({
+            system_instruction: {
+                parts: [{ text: "Always return a valid, well-formed JSON object without markdown fences or conversational text." }]
+            },
+            contents: [{
+                parts: [{ text: translatePrompt }]
+            }],
+            generationConfig: { responseMimeType: 'application/json' },
+        });
+
+        for (const model of MODELS) {
+            try {
+                const resp = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: requestBody,
+                    }
+                );
+
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const textPart = data?.candidates?.[0]?.content?.parts?.find((p: any) => p.text);
+                    if (textPart?.text) {
+                        const parsed = JSON.parse(textPart.text);
+                        return res.status(200).json(parsed);
+                    }
+                }
+            } catch (err) {
+                console.warn(`[coach-translate] Model ${model} failed:`, err);
+            }
+        }
+
+        return res.status(500).json({ error: 'Failed to translate coaching analysis' });
+    }
+
+    // Standard Telemetry Analysis Mode
     const {
         period = 'today',
         dailyLog = [],
@@ -127,11 +201,6 @@ export default async function handler(req: ApiRequest & { method?: string }, res
     } = body;
 
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return res.status(500).json({ error: 'API key not configured', type: 'error' });
-        }
-
         const dailyLogSummary = (dailyLog || []).map((item: any) => {
             const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
             return `- [${timeStr}] ${item.name}: ${item.kcal} kcal, ${item.protein}g protein, ${item.carbs || 0}g carbs, ${item.fat || 0}g fat`;
@@ -193,11 +262,6 @@ OUTPUT ONLY STRICT JSON MATCHING THIS SCHEMA:
     "<Directive 3 in ${langName}>"
   ]
 }`;
-
-        const MODELS = [
-            'gemini-3.6-flash',
-            'gemini-3.5-flash-lite',
-        ];
 
         const requestBody = JSON.stringify({
             system_instruction: {
