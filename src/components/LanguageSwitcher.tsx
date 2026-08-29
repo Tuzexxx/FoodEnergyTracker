@@ -46,16 +46,15 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = 
                     <button
                         key={lang.code}
                         onClick={() => setLanguage(lang.code)}
-                        className={`h-7 px-1.5 flex items-center justify-center gap-1 rounded-full text-xs font-bold font-sans transition-all active:scale-95 ${
+                        className={`h-7 w-7 flex items-center justify-center rounded-full transition-all active:scale-90 ${
                             isActive
-                                ? 'bg-brutal-black text-off-white shadow-sm'
-                                : 'text-brutal-black/60 hover:text-brutal-black hover:bg-black/5'
+                                ? 'bg-brutal-black text-off-white shadow-sm scale-105'
+                                : 'opacity-60 hover:opacity-100 hover:bg-black/5'
                         }`}
                         title={lang.name}
                         aria-label={`Switch language to ${lang.name}`}
                     >
-                        <span className="text-sm leading-none">{lang.flag}</span>
-                        <span className="text-[9px] uppercase font-bold tracking-tight">{lang.label}</span>
+                        <span className="text-base leading-none" role="img" aria-label={lang.name}>{lang.flag}</span>
                     </button>
                 );
             })}
