@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
-import { BrainCircuit, Activity, AlertTriangle, ShieldCheck, Zap, RefreshCw, CheckCircle2, Flame, Lock } from 'lucide-react';
+import { BrainCircuit, Activity, AlertTriangle, ShieldCheck, Zap, RefreshCw, CheckCircle2, Flame, Lock, Crown, LogIn } from 'lucide-react';
 import { playSound } from '../utils/audio';
 import { isSupabaseConfigured, supabase } from '../utils/supabase';
 import { getTranslation } from '../utils/i18n';
+import { isVipUser } from '../utils/vip';
 
 interface MetabolicLeak {
     title: string;
@@ -33,12 +34,32 @@ export type CoachingPeriod = 'yesterday' | 'today' | '7d';
 
 const CoachingView: React.FC = () => {
     const [period, setPeriod] = useState<CoachingPeriod>('today');
-    const { dailyLog, consumedKcal, consumedProtein, targetKcal, targetProtein, exerciseDay, profile, historicalDays, language } = useStore();
+    const {
+        dailyLog,
+        consumedKcal,
+        consumedProtein,
+        targetKcal,
+        targetProtein,
+        exerciseDay,
+        profile,
+        historicalDays,
+        language,
+        session,
+        lastCoachAuditDate,
+        setLastCoachAuditDate
+    } = useStore();
     const t = getTranslation(language);
 
     const [loading, setLoading] = useState(false);
     const [analysis, setAnalysis] = useState<CoachAnalysisResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const isAuthenticated = Boolean(session?.user);
+    const userEmail = session?.user?.email || null;
+    const isVip = isVipUser(userEmail);
+
+    const todayDateStr = new Date().toISOString().split('T')[0];
+    const hasUsedDailyLimit = !isVip && lastCoachAuditDate === todayDateStr;
 
     // Resolve yesterday data from historicalDays
     const yesterdayData = useMemo(() => {
@@ -100,7 +121,8 @@ const CoachingView: React.FC = () => {
 
     // Validation rule: Today requires at least 3 meals logged
     const canRunToday = dailyLog.length >= 3;
-    const canRunAudit = period === 'today' ? canRunToday : period === 'yesterday' ? activeData.hasData : true;
+    const canRunPeriodData = period === 'today' ? canRunToday : period === 'yesterday' ? activeData.hasData : true;
+    const canRunAudit = isAuthenticated && !hasUsedDailyLimit && canRunPeriodData;
 
     const cacheKey = useMemo(() => {
         const todayStr = new Date().toDateString();
@@ -122,6 +144,19 @@ const CoachingView: React.FC = () => {
         }
     }, [cacheKey]);
 
+    const handleGoogleLogin = async () => {
+        if (!isSupabaseConfigured) return;
+        playSound('click');
+        try {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+        } catch (err) {
+            console.error('Login error:', err);
+        }
+    };
+
     const runAnalysis = useCallback(async () => {
         if (!canRunAudit) return;
 
@@ -130,12 +165,18 @@ const CoachingView: React.FC = () => {
         playSound('click');
 
         try {
-            const { data: { session } } = isSupabaseConfigured
+            const { data: { session: activeSession } } = isSupabaseConfigured
                 ? await supabase.auth.getSession()
                 : { data: { session: null } };
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-            else headers['X-Client-Mode'] = 'guest';
+            
+            if (!activeSession?.access_token) {
+                throw new Error(t.coaching.loginRequired);
+            }
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${activeSession.access_token}`
+            };
 
             const historicalSummary = (historicalDays || []).slice(0, 7).map(d => {
                 return `${d.dateStr}: ${d.kcal} kcal, ${d.protein}g protein (${d.entries?.length || 0} meals)`;
@@ -161,14 +202,23 @@ const CoachingView: React.FC = () => {
             });
 
             if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(errText || `Server error: ${res.status}`);
+                const errData = await res.json().catch(() => null);
+                if (res.status === 401) {
+                    throw new Error(t.coaching.loginRequired);
+                }
+                if (res.status === 429) {
+                    throw new Error(errData?.error || t.coaching.dailyLimitReached);
+                }
+                throw new Error(errData?.error || `Server error: ${res.status}`);
             }
 
             const data: CoachAnalysisResult = await res.json();
             if (data && data.grade) {
                 setAnalysis(data);
                 localStorage.setItem(cacheKey, JSON.stringify(data));
+                if (!isVip) {
+                    setLastCoachAuditDate(todayDateStr);
+                }
                 playSound('targetHit');
             } else {
                 throw new Error(t.coaching.errorMessage);
@@ -180,7 +230,7 @@ const CoachingView: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [period, activeData, canRunAudit, profile, historicalDays, language, cacheKey, t]);
+    }, [canRunAudit, period, activeData, profile, historicalDays, language, cacheKey, isVip, todayDateStr, setLastCoachAuditDate, t]);
 
     const getGradeStyle = (grade: string) => {
         if (grade.startsWith('A')) return 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/30';
@@ -226,7 +276,15 @@ const CoachingView: React.FC = () => {
             {/* Header & 3-Way Timeframe Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 className="font-drama text-3xl text-brutal-black tracking-tight">{t.coaching.title}</h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="font-drama text-3xl text-brutal-black tracking-tight">{t.coaching.title}</h2>
+                        {isVip && (
+                            <span className="inline-flex items-center gap-1 bg-amber-400/20 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                                <Crown size={11} className="text-amber-600 fill-amber-500" />
+                                VIP
+                            </span>
+                        )}
+                    </div>
                     <p className="font-sans text-xs text-brutal-black/50 tracking-wide mt-0.5">
                         {subtitleText}
                     </p>
@@ -266,6 +324,28 @@ const CoachingView: React.FC = () => {
                 </div>
             )}
 
+            {/* Auth Required Banner for Guest Mode */}
+            {!isAuthenticated && (
+                <div className="p-5 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200/80 rounded-3xl flex flex-col gap-3 shadow-sm animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                        <Lock size={18} className="text-indigo-600" />
+                        <h3 className="font-sans font-bold text-sm text-indigo-950 uppercase tracking-wider">
+                            {t.coaching.loginRequired}
+                        </h3>
+                    </div>
+                    <p className="font-sans text-xs text-indigo-900/80 leading-relaxed">
+                        {t.coaching.loginPrompt}
+                    </p>
+                    <button
+                        onClick={handleGoogleLogin}
+                        className="py-3 px-4 bg-brutal-black hover:bg-black text-off-white font-sans text-xs font-bold uppercase tracking-wider rounded-2xl shadow-md flex items-center justify-center gap-2 transition active:scale-98"
+                    >
+                        <LogIn size={15} />
+                        <span>{t.coaching.loginButton}</span>
+                    </button>
+                </div>
+            )}
+
             {/* Hero Card: Single Unified Action Hub */}
             <div className="brutal-card p-6 bg-black text-off-white border-2 border-brutal-black rounded-3xl shadow-xl flex flex-col gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -300,6 +380,17 @@ const CoachingView: React.FC = () => {
                             </span>
                         </div>
                     </div>
+
+                    {isVip ? (
+                        <span className="inline-flex items-center gap-1 bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                            <Crown size={11} className="text-amber-400 fill-amber-400" />
+                            VIP UNLIMITED
+                        </span>
+                    ) : hasUsedDailyLimit ? (
+                        <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-white/50 bg-white/10 px-2 py-0.5 rounded-full">
+                            1/1 USED TODAY
+                        </span>
+                    ) : null}
                 </div>
 
                 {/* Result Grade & Verdict or Ready Callout */}
@@ -331,7 +422,11 @@ const CoachingView: React.FC = () => {
                 ) : (
                     <div className="py-2">
                         <p className="text-xs text-white/70 font-sans leading-relaxed">
-                            {period === 'yesterday' && !activeData.hasData
+                            {!isAuthenticated
+                                ? t.coaching.loginPrompt
+                                : hasUsedDailyLimit
+                                ? t.coaching.dailyLimitReached
+                                : period === 'yesterday' && !activeData.hasData
                                 ? t.coaching.noYesterdayData
                                 : period === 'today' && !canRunToday
                                 ? t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())
@@ -340,47 +435,60 @@ const CoachingView: React.FC = () => {
                     </div>
                 )}
 
-                {/* Single Primary Action Button with 3-meal requirement validation */}
+                {/* Single Primary Action Button with Auth, Daily Limit & 3-Meal Validation */}
                 <div className="pt-1 flex flex-col gap-2">
-                    <button
-                        onClick={runAnalysis}
-                        disabled={loading || !canRunAudit}
-                        className={`w-full py-3.5 px-4 rounded-2xl font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-98 shadow-md flex items-center justify-center gap-2 ${
-                            !canRunAudit
-                                ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/10'
-                                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        }`}
-                    >
-                        {loading ? (
-                            <>
-                                <RefreshCw size={15} className="animate-spin" />
-                                <span>{t.coaching.analyzingButton}</span>
-                            </>
-                        ) : !canRunAudit ? (
-                            <>
-                                <Lock size={15} className="text-amber-400" />
-                                <span>
-                                    {period === 'today'
-                                        ? t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())
-                                        : period === 'yesterday'
-                                        ? t.coaching.noYesterdayData
-                                        : t.coaching.runButton}
-                                </span>
-                            </>
-                        ) : analysis ? (
-                            <>
-                                <RefreshCw size={15} />
-                                <span>{t.coaching.recalculateButton}</span>
-                            </>
-                        ) : (
-                            <>
-                                <Zap size={15} className="text-amber-400 fill-amber-400" />
-                                <span>{t.coaching.runButton}</span>
-                            </>
-                        )}
-                    </button>
+                    {!isAuthenticated ? (
+                        <button
+                            onClick={handleGoogleLogin}
+                            className="w-full py-3.5 px-4 bg-white hover:bg-white/90 text-brutal-black rounded-2xl font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-98 shadow-md flex items-center justify-center gap-2"
+                        >
+                            <LogIn size={15} />
+                            <span>{t.coaching.loginButton}</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={runAnalysis}
+                            disabled={loading || !canRunAudit}
+                            className={`w-full py-3.5 px-4 rounded-2xl font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-98 shadow-md flex items-center justify-center gap-2 ${
+                                !canRunAudit
+                                    ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/10'
+                                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            }`}
+                        >
+                            {loading ? (
+                                <>
+                                    <RefreshCw size={15} className="animate-spin" />
+                                    <span>{t.coaching.analyzingButton}</span>
+                                </>
+                            ) : hasUsedDailyLimit ? (
+                                <>
+                                    <Lock size={15} className="text-amber-400" />
+                                    <span>{t.coaching.dailyLimitReached}</span>
+                                </>
+                            ) : !canRunPeriodData ? (
+                                <>
+                                    <Lock size={15} className="text-amber-400" />
+                                    <span>
+                                        {period === 'today'
+                                            ? t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())
+                                            : t.coaching.noYesterdayData}
+                                    </span>
+                                </>
+                            ) : analysis ? (
+                                <>
+                                    <RefreshCw size={15} />
+                                    <span>{t.coaching.recalculateButton}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Zap size={15} className="text-amber-400 fill-amber-400" />
+                                    <span>{t.coaching.runButton}</span>
+                                </>
+                            )}
+                        </button>
+                    )}
 
-                    {period === 'today' && !canRunToday && (
+                    {isAuthenticated && period === 'today' && !canRunToday && !hasUsedDailyLimit && (
                         <span className="text-[10px] text-amber-300/80 font-sans text-center">
                             ⚡ {t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())}
                         </span>

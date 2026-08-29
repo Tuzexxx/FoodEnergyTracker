@@ -112,6 +112,8 @@ interface AppState {
     setViewedHistoryDate: (date: string | null) => void;
     language: Language;
     setLanguage: (language: Language) => void;
+    lastCoachAuditDate: string | null;
+    setLastCoachAuditDate: (date: string | null) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -119,6 +121,8 @@ export const useStore = create<AppState>()(
     (set, get) => ({
             language: getInitialLanguage(),
             setLanguage: (language) => set({ language }),
+            lastCoachAuditDate: null,
+            setLastCoachAuditDate: (date) => set({ lastCoachAuditDate: date }),
             session: null,
             persistedScope: null,
             viewedHistoryDate: null,

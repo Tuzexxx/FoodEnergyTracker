@@ -12,18 +12,21 @@ export interface ApiResponse {
 
 interface AuthResult {
     userId: string | null;
+    email: string | null;
     invalidToken: boolean;
 }
 
+const VIP_EMAILS = [
+    'holdacompany@gmail.com'
+];
+
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
+// Map of userId -> dateStr of last audit (e.g. '2026-08-29')
+const dailyUserAudits = new Map<string, string>();
 
 function header(req: ApiRequest, name: string): string {
     const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
     return Array.isArray(value) ? value[0] || '' : value || '';
-}
-
-function clientKey(req: ApiRequest): string {
-    return header(req, 'x-forwarded-for').split(',')[0].trim() || 'unknown-client';
 }
 
 function consumeRateLimit(key: string, limit: number): boolean {
@@ -41,42 +44,62 @@ function consumeRateLimit(key: string, limit: number): boolean {
 async function authenticate(req: ApiRequest): Promise<AuthResult> {
     try {
         const authorization = header(req, 'authorization');
-        if (!authorization) return { userId: null, invalidToken: false };
+        if (!authorization) return { userId: null, email: null, invalidToken: false };
 
         const token = authorization.replace(/^Bearer\s+/i, '').trim();
-        if (!token) return { userId: null, invalidToken: false };
+        if (!token) return { userId: null, email: null, invalidToken: false };
 
         const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
         const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-        if (!supabaseUrl || !supabaseAnonKey) return { userId: null, invalidToken: false };
+        if (!supabaseUrl || !supabaseAnonKey) return { userId: null, email: null, invalidToken: false };
 
         const client = createClient(supabaseUrl, supabaseAnonKey);
         const { data, error } = await client.auth.getUser(token);
         if (error || !data?.user) {
-            return { userId: null, invalidToken: true };
+            return { userId: null, email: null, invalidToken: true };
         }
-        return { userId: data.user.id, invalidToken: false };
+        return { userId: data.user.id, email: data.user.email || null, invalidToken: false };
     } catch (err) {
         console.warn('[auth] Error checking token:', err);
-        return { userId: null, invalidToken: false };
+        return { userId: null, email: null, invalidToken: false };
     }
 }
 
-export async function guardRequest(req: ApiRequest, res: ApiResponse): Promise<string | null> {
+export async function guardRequest(req: ApiRequest, res: ApiResponse): Promise<{ userId: string; email: string | null; isVip: boolean } | null> {
     const auth = await authenticate(req);
-    if (auth.invalidToken) {
-        res.status(401).json({ error: 'Authentication required or expired.' });
+    if (auth.invalidToken || !auth.userId) {
+        res.status(401).json({
+            error: 'Authentication required. Please log in with a registered account to run AI Coaching.',
+            type: 'auth_required'
+        });
         return null;
     }
 
-    const key = auth.userId ? ('user:' + auth.userId) : ('guest:' + clientKey(req));
-    const limit = auth.userId ? 40 : 10;
+    const email = (auth.email || '').toLowerCase().trim();
+    const isVip = VIP_EMAILS.map(e => e.toLowerCase().trim()).includes(email);
+
+    // Rate limiting
+    const key = 'user:' + auth.userId;
+    const limit = isVip ? 100 : 20;
     if (!consumeRateLimit(key, limit)) {
         res.status(429).json({ error: 'Too many analysis requests. Please try again later.' });
         return null;
     }
 
-    return auth.userId ?? 'guest';
+    // Daily 1-audit limit for non-VIP registered users
+    if (!isVip) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const lastAuditDate = dailyUserAudits.get(auth.userId);
+        if (lastAuditDate === todayStr) {
+            res.status(429).json({
+                error: 'Daily coaching audit limit reached (1/1). Next audit will be available tomorrow.',
+                type: 'daily_limit'
+            });
+            return null;
+        }
+    }
+
+    return { userId: auth.userId, email: auth.email, isVip };
 }
 
 export default async function handler(req: ApiRequest & { method?: string }, res: ApiResponse) {
@@ -84,7 +107,8 @@ export default async function handler(req: ApiRequest & { method?: string }, res
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    if (await guardRequest(req, res) === null) return;
+    const authContext = await guardRequest(req, res);
+    if (authContext === null) return;
 
     const body = (req.body || {}) as Record<string, any>;
     const {
@@ -242,6 +266,13 @@ OUTPUT ONLY STRICT JSON MATCHING THIS SCHEMA:
         }
 
         const parsed = JSON.parse(resultText.substring(firstBrace, lastBrace + 1));
+
+        // Mark today as audited for non-VIP user
+        if (!authContext.isVip) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            dailyUserAudits.set(authContext.userId, todayStr);
+        }
+
         return res.status(200).json(parsed);
     } catch (error: any) {
         console.error('API Route Error [coach-analysis]:', error.message || error);

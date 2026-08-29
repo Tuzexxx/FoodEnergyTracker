@@ -103,6 +103,12 @@ export interface Translations {
         mediumPriority: string;
         errorTitle: string;
         errorMessage: string;
+        loginRequired: string;
+        loginPrompt: string;
+        loginButton: string;
+        dailyLimitReached: string;
+        vipUnlimitedBadge: string;
+        dailyQuota: string;
     };
     dailyLog: {
         todayLog: string;
@@ -282,6 +288,12 @@ export const translations: Record<Language, Translations> = {
             mediumPriority: 'Medium',
             errorTitle: 'Coaching Analysis Error',
             errorMessage: 'Unable to generate analysis. Please try again.',
+            loginRequired: 'Account Required for Coaching',
+            loginPrompt: 'AI Strategic Coaching is exclusive to registered users. Sign in with Google to unlock full metabolic audits.',
+            loginButton: 'Sign In / Register with Google',
+            dailyLimitReached: 'Daily coaching audit limit reached (1/1). Next audit available tomorrow.',
+            vipUnlimitedBadge: 'VIP Unlimited Access',
+            dailyQuota: 'Daily Quota: 1/1 Used',
         },
         dailyLog: {
             todayLog: "Today's Log",
@@ -459,6 +471,12 @@ export const translations: Record<Language, Translations> = {
             mediumPriority: 'Střední priorita',
             errorTitle: 'Chyba analýzy kouče',
             errorMessage: 'Analýzu se nepodařilo vygenerovat. Zkuste to prosím znovu.',
+            loginRequired: 'Koučink vyžaduje přihlášení',
+            loginPrompt: 'AI Strategický Koučink je dostupný pouze pro přihlášené uživatele. Přihlaste se přes Google pro odemknutí.',
+            loginButton: 'Přihlásit se / Registrovat přes Google',
+            dailyLimitReached: 'Dnešní limit koučinku byl vyčerpán (1/1). Další analýza bude dostupná zítra.',
+            vipUnlimitedBadge: 'VIP Neomezený přístup',
+            dailyQuota: 'Denní kvóta: 1/1 vyčerpáno',
         },
         dailyLog: {
             todayLog: 'Dnešní přehled',
@@ -636,6 +654,12 @@ export const translations: Record<Language, Translations> = {
             mediumPriority: 'Mittlere Priorität',
             errorTitle: 'Coaching-Analysefehler',
             errorMessage: 'Analyse konnte nicht erstellt werden. Bitte erneut versuchen.',
+            loginRequired: 'Anmeldung für Coaching erforderlich',
+            loginPrompt: 'KI-Strategie-Coaching ist exklusiv für registrierte Benutzer verfügbar. Melden Sie sich mit Google an.',
+            loginButton: 'Mit Google anmelden / registrieren',
+            dailyLimitReached: 'Tageslimit für Coaching erreicht (1/1). Nächstes Audit morgen verfügbar.',
+            vipUnlimitedBadge: 'VIP Unbegrenzter Zugriff',
+            dailyQuota: 'Tageskontingent: 1/1 verbraucht',
         },
         dailyLog: {
             todayLog: 'Heutiges Protokoll',
