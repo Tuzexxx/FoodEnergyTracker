@@ -1,5 +1,24 @@
 export type Language = 'en' | 'cs' | 'de';
 
+export function getInitialLanguage(): Language {
+    if (typeof window === 'undefined') return 'en';
+    
+    const stored = localStorage.getItem('macrotrack-storage');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (parsed?.state?.language && ['en', 'cs', 'de'].includes(parsed.state.language)) {
+                return parsed.state.language;
+            }
+        } catch (e) {}
+    }
+
+    const browserLang = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
+    if (browserLang.startsWith('cs') || browserLang.startsWith('sk')) return 'cs';
+    if (browserLang.startsWith('de')) return 'de';
+    return 'en';
+}
+
 export interface Translations {
     common: {
         appTitle: string;
@@ -51,8 +70,10 @@ export interface Translations {
         bannerTag: string;
         title: string;
         subtitle: string;
+        yesterday: string;
         today: string;
         sevenDays: string;
+        yesterdaySubtitle: string;
         todaySubtitle: string;
         sevenDaysSubtitle: string;
         runButton: string;
@@ -61,7 +82,10 @@ export interface Translations {
         activityModeGym: string;
         activityModeRest: string;
         mealsLogged: string;
+        yesterdayMeals: string;
         sevenDaysMeals: string;
+        noYesterdayData: string;
+        minMealsRequired: string;
         emptyTitle: string;
         emptyDescription: string;
         emptyAction: string;
@@ -73,6 +97,7 @@ export interface Translations {
         nutrientTimingTitle: string;
         metabolicLeaksTitle: string;
         directivesTitle: string;
+        directivesTitleYesterday: string;
         directivesTitleWeekly: string;
         highPriority: string;
         mediumPriority: string;
@@ -224,8 +249,10 @@ export const translations: Record<Language, Translations> = {
             bannerTag: 'AI Strategic Coaching Telemetry',
             title: 'Nutrition & Performance Coaching',
             subtitle: 'Real-time metabolic audit & tactical recommendations',
+            yesterday: 'Yesterday',
             today: 'Today',
             sevenDays: '7 Days',
+            yesterdaySubtitle: "Objective audit of yesterday's completed nutrition & recovery",
             todaySubtitle: 'Real-time daily audit & nutrient timing',
             sevenDaysSubtitle: '7-day consistency & weekly trend audit',
             runButton: 'Run Coaching Audit',
@@ -234,7 +261,10 @@ export const translations: Record<Language, Translations> = {
             activityModeGym: 'Workout / Active Mode (+300 kcal)',
             activityModeRest: 'Base Target / Recovery Mode',
             mealsLogged: 'meals logged today',
+            yesterdayMeals: 'meals logged yesterday',
             sevenDaysMeals: 'meals logged across 7 days',
+            noYesterdayData: 'No completed data recorded for yesterday.',
+            minMealsRequired: 'Log at least 3 meals today to unlock AI coaching (currently {count}/3)',
             emptyTitle: '1-Click Nutrition Audit',
             emptyDescription: 'AI coach audits your nutrient timing, macro ratios, metabolic friction, and delivers 3 tactical directives.',
             emptyAction: 'Analyze Telemetry',
@@ -246,6 +276,7 @@ export const translations: Record<Language, Translations> = {
             nutrientTimingTitle: 'Nutrient Timing & Recovery',
             metabolicLeaksTitle: 'Identified Metabolic Leaks & Friction',
             directivesTitle: '3 Tactical Directives for Tomorrow',
+            directivesTitleYesterday: '3 Tactical Directives for Today',
             directivesTitleWeekly: '3 Strategic Directives for Next Week',
             highPriority: 'High Priority',
             mediumPriority: 'Medium',
@@ -395,8 +426,10 @@ export const translations: Record<Language, Translations> = {
             bannerTag: 'AI Strategický Koučink',
             title: 'Nutriční & Výkonnostní Koučink',
             subtitle: 'Metabolický audit a taktická doporučení v reálném čase',
+            yesterday: 'Včera',
             today: 'Dnes',
             sevenDays: '7 dní',
+            yesterdaySubtitle: 'Objektivní audit včerejšího uzavřeného jídelníčku a regenerace',
             todaySubtitle: 'Audit dnešního dne a časování živin',
             sevenDaysSubtitle: '7denní konzistence a týdenní trendy',
             runButton: 'Spustit koučink',
@@ -405,7 +438,10 @@ export const translations: Record<Language, Translations> = {
             activityModeGym: 'Tréninkový / Aktivní režim (+300 kcal)',
             activityModeRest: 'Základní cíl / Regenerační režim',
             mealsLogged: 'zaznamenaných jídel dnes',
+            yesterdayMeals: 'jídel zaznamenáno včera',
             sevenDaysMeals: 'jídel zaznamenáno za 7 dní',
+            noYesterdayData: 'Pro včerejší den nebyla nalezena žádná zaznamenaná data.',
+            minMealsRequired: 'Zaznamenejte dnes alespoň 3 jídla pro odemknutí AI koučinku (aktuálně {count}/3)',
             emptyTitle: 'Nutriční audit na 1 klik',
             emptyDescription: 'AI kouč zhodnotí časování živin, poměr bílkovin, metabolické brzdy a připraví 3 taktické pokyny.',
             emptyAction: 'Analyzovat telemetrii',
@@ -417,6 +453,7 @@ export const translations: Record<Language, Translations> = {
             nutrientTimingTitle: 'Časování živin & Regenerace',
             metabolicLeaksTitle: 'Odhalené metabolické brzdy a úniky',
             directivesTitle: '3 Taktické direktivy pro zítřek',
+            directivesTitleYesterday: '3 Taktické direktivy pro dnešek',
             directivesTitleWeekly: '3 Strategické direktivy pro příští týden',
             highPriority: 'Vysoká priorita',
             mediumPriority: 'Střední priorita',
@@ -566,8 +603,10 @@ export const translations: Record<Language, Translations> = {
             bannerTag: 'Strategisches KI-Coaching',
             title: 'Ernährungs- & Leistungs-Coaching',
             subtitle: 'Echtzeit-Stoffwechselaudit & taktische Empfehlungen',
+            yesterday: 'Gestern',
             today: 'Heute',
             sevenDays: '7 Tage',
+            yesterdaySubtitle: 'Objektives Audit der gestrigen abgeschlossenen Ernährung & Regeneration',
             todaySubtitle: 'Tages-Audit & Nährstoff-Timing in Echtzeit',
             sevenDaysSubtitle: '7-Tage-Konsistenz & Wochentrends',
             runButton: 'Coaching starten',
@@ -576,7 +615,10 @@ export const translations: Record<Language, Translations> = {
             activityModeGym: 'Trainingsmodus / Aktiv (+300 kcal)',
             activityModeRest: 'Basisziel / Regeneration',
             mealsLogged: 'Mahlzeiten heute erfasst',
+            yesterdayMeals: 'Mahlzeiten gestern erfasst',
             sevenDaysMeals: 'Mahlzeiten in 7 Tagen erfasst',
+            noYesterdayData: 'Keine abgeschlossenen Daten für gestern erfasst.',
+            minMealsRequired: 'Erfassen Sie heute mindestens 3 Mahlzeiten für das KI-Coaching (aktuell {count}/3)',
             emptyTitle: '1-Klick Ernährungs-Audit',
             emptyDescription: 'Der KI-Coach analysiert Nährstoff-Timing, Makroverhältnisse und liefert 3 taktische Anweisungen.',
             emptyAction: 'Telemetrie analysieren',
@@ -588,6 +630,7 @@ export const translations: Record<Language, Translations> = {
             nutrientTimingTitle: 'Nährstoff-Timing & Erholung',
             metabolicLeaksTitle: 'Erkannte Stoffwechsel-Bremsen & Lecks',
             directivesTitle: '3 Taktische Anweisungen für morgen',
+            directivesTitleYesterday: '3 Taktische Anweisungen für heute',
             directivesTitleWeekly: '3 Strategische Anweisungen für nächste Woche',
             highPriority: 'Hohe Priorität',
             mediumPriority: 'Mittlere Priorität',

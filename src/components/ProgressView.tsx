@@ -1,34 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Watch, RotateCcw, TrendingDown, TrendingUp, Activity, Sparkles, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Watch, RotateCcw, TrendingDown, TrendingUp, Activity, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useCompletedDaysTelemetry } from './WeeklyFatBurnModal';
 import { getTranslation } from '../utils/i18n';
-import { playSound } from '../utils/audio';
-
-// Realistic 3D Isometric Sugar Cube SVG Component
-export const SugarCubeIcon: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }> = ({ size = 28, className = '', style = {} }) => (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={`inline-block drop-shadow-md shrink-0 ${className}`} style={style}>
-        {/* Ambient base shadow */}
-        <ellipse cx="16" cy="27.5" rx="10" ry="3.5" fill="rgba(0,0,0,0.22)" />
-        {/* Top facet - bright sparkling crystalline white */}
-        <polygon points="16,3.5 27,9.5 16,15.5 5,9.5" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="0.8" />
-        {/* Left facet - soft shaded white */}
-        <polygon points="5,9.5 16,15.5 16,26 5,20" fill="#EAEFF6" stroke="#CBD5E1" strokeWidth="0.8" />
-        {/* Right facet - deeper shadow for 3D depth */}
-        <polygon points="16,15.5 27,9.5 27,20 16,26" fill="#D2DCE8" stroke="#94A3B8" strokeWidth="0.8" />
-        {/* Crystalline sugar sparkles / micro-facets */}
-        <circle cx="16" cy="9.5" r="0.7" fill="#CBD5E1" opacity="0.7" />
-        <circle cx="12" cy="11.5" r="0.6" fill="#CBD5E1" opacity="0.6" />
-        <circle cx="19" cy="12.5" r="0.6" fill="#FFFFFF" opacity="0.9" />
-        <circle cx="10" cy="16.5" r="0.6" fill="#FFFFFF" opacity="0.8" />
-        <circle cx="21" cy="18" r="0.7" fill="#94A3B8" opacity="0.6" />
-    </svg>
-);
 
 const ProgressView: React.FC = () => {
     const [period, setPeriod] = useState<'7d' | '30d'>('7d');
-    const [showSugarModal, setShowSugarModal] = useState(false);
-    const [pourKey, setPourKey] = useState(0);
 
     const { daysCount, consumedKcal, exerciseDaysCount, dateRangeLabel, telemetry } = useCompletedDaysTelemetry(period);
     const {
@@ -44,11 +21,6 @@ const ProgressView: React.FC = () => {
 
     const currentWatchBurn = period === '7d' ? smartwatchWeeklyBurn : smartwatchMonthlyBurn;
     const [smartwatchInput, setSmartwatchInput] = useState(currentWatchBurn ? currentWatchBurn.toString() : '');
-
-    // Retrigger falling sugar animation on tab or period switch
-    useEffect(() => {
-        setPourKey(prev => prev + 1);
-    }, [period]);
 
     const handleSaveWatch = () => {
         const val = Number(smartwatchInput.trim());
@@ -69,12 +41,6 @@ const ProgressView: React.FC = () => {
 
     const dailyAvgIntake = telemetry ? Math.round(consumedKcal / daysCount) : 0;
     const dailyAvgBurn = telemetry ? Math.round(telemetry.totalWeeklyBurn / daysCount) : 0;
-
-    // Sugar cubes equivalent calculation (1 standard cube ≈ 4g)
-    const sugarCubesCount = useMemo(() => {
-        if (!telemetry) return 0;
-        return Math.max(1, Math.round(telemetry.fatGrams / 4));
-    }, [telemetry]);
 
     // Optimal plan projection calculation
     const { optimalFatGrams, adherenceEfficiency } = useMemo(() => {
@@ -132,8 +98,8 @@ const ProgressView: React.FC = () => {
                 </div>
             </div>
 
-            {/* Hero Card: Primary Fat Burn Grams & Animated 3D Sugar Cubes */}
-            <div className={`p-6 sm:p-7 rounded-3xl border-2 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 ${
+            {/* Hero Card: Primary Fat Burn Grams */}
+            <div className={`p-6 sm:p-8 rounded-3xl border-2 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 ${
                 telemetry.isDeficit 
                     ? 'bg-gradient-to-b from-orange-500 to-amber-600 text-white border-orange-600 shadow-orange-500/20' 
                     : 'bg-gradient-to-b from-red-600 to-rose-700 text-white border-red-700 shadow-red-500/20'
@@ -143,53 +109,14 @@ const ProgressView: React.FC = () => {
                     <span>{telemetry.isDeficit ? t.progress.deficitBadge : t.progress.surplusBadge}</span>
                 </div>
 
-                <div className="flex items-center justify-center gap-4 my-1 w-full">
-                    {/* Big Mass Display */}
-                    <div className="flex items-baseline gap-1">
-                        <span className="font-drama text-6xl sm:text-7xl font-bold tracking-tighter leading-none">
-                            {telemetry.isDeficit ? `-${telemetry.fatGrams}` : `+${telemetry.fatGrams}`}
-                        </span>
-                        <span className="font-sans text-2xl font-bold opacity-80">{t.common.grams}</span>
-                    </div>
-
-                    {/* Animated Sugar Cubes Reservoir / Cascade Trigger */}
-                    <button
-                        onClick={() => {
-                            setShowSugarModal(true);
-                            playSound('click');
-                        }}
-                        key={pourKey}
-                        className="relative bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md rounded-2xl p-2.5 flex flex-col items-center justify-center gap-1 shadow-lg transition-all active:scale-95 group cursor-pointer"
-                        title={t.progress.showSugarPile}
-                    >
-                        {/* 3D Sugar Cubes Cascade Stack */}
-                        <div className="relative h-12 w-14 flex items-center justify-center overflow-visible">
-                            {Array.from({ length: Math.min(sugarCubesCount, 6) }).map((_, i) => {
-                                const rotations = [-14, 18, -6, 22, -18, 10];
-                                const offsetsX = [-8, 6, -2, 10, -10, 4];
-                                const offsetsY = [10, 8, -4, -6, 2, -10];
-                                return (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            animationDelay: `${i * 90}ms`,
-                                            transform: `translate(${offsetsX[i % offsetsX.length]}px, ${offsetsY[i % offsetsY.length]}px) rotate(${rotations[i % rotations.length]}deg)`
-                                        }}
-                                        className="absolute animate-in zoom-in-50 slide-in-from-top-6 duration-600 ease-out pointer-events-none"
-                                    >
-                                        <SugarCubeIcon size={22} />
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        <span className="text-[10px] font-sans font-bold bg-white/30 px-2 py-0.5 rounded-full whitespace-nowrap shadow-xs">
-                            &asymp; {sugarCubesCount} {t.progress.sugarCubesEquivalent}
-                        </span>
-                    </button>
+                <div className="flex items-baseline gap-1 my-2">
+                    <span className="font-drama text-6xl sm:text-7xl font-bold tracking-tighter leading-none">
+                        {telemetry.isDeficit ? `-${telemetry.fatGrams}` : `+${telemetry.fatGrams}`}
+                    </span>
+                    <span className="font-sans text-2xl font-bold opacity-80">{t.common.grams}</span>
                 </div>
 
-                <span className="font-sans text-xs uppercase font-bold tracking-widest opacity-90 mt-1">
+                <span className="font-sans text-xs uppercase font-bold tracking-widest opacity-90">
                     {telemetry.isDeficit ? t.progress.pureFatBurned : t.progress.estimatedFatStored}
                 </span>
 
@@ -309,77 +236,6 @@ const ProgressView: React.FC = () => {
                     )}
                 </div>
             </div>
-
-            {/* Full Visual Sugar Cubes Cascade Modal Overlay */}
-            {showSugarModal && (
-                <div
-                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
-                    onClick={() => setShowSugarModal(false)}
-                >
-                    <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-full max-w-sm bg-white text-brutal-black border-2 border-brutal-black rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <SugarCubeIcon size={24} />
-                                <h3 className="font-sans font-bold text-sm uppercase tracking-wider text-brutal-black">
-                                    {t.progress.sugarModalTitle}
-                                </h3>
-                            </div>
-                            <button
-                                onClick={() => setShowSugarModal(false)}
-                                className="p-1.5 hover:bg-black/5 rounded-full transition"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        <p className="text-xs text-brutal-black/70 font-sans leading-relaxed">
-                            {t.progress.sugarModalDesc}
-                        </p>
-
-                        {/* Interactive Sugar Pile Container */}
-                        <div className="p-5 bg-gradient-to-b from-orange-50 to-amber-100/70 border-2 border-orange-200/80 rounded-2xl flex flex-col items-center justify-center gap-3">
-                            <div className="flex items-baseline gap-1.5">
-                                <span className="font-drama text-5xl font-bold text-orange-600 tracking-tight leading-none">
-                                    {sugarCubesCount}
-                                </span>
-                                <span className="font-sans font-bold text-sm text-orange-950 uppercase tracking-wider">
-                                    {t.progress.sugarCubesEquivalent}
-                                </span>
-                            </div>
-
-                            {/* Realistic Sugar Cube Cluster (all cubes rendered in structured masonry) */}
-                            <div className="flex flex-wrap items-center justify-center gap-1.5 max-h-48 overflow-y-auto p-2 bg-white/70 rounded-xl border border-orange-200/60 w-full shadow-inner">
-                                {Array.from({ length: sugarCubesCount }).map((_, i) => (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            animationDelay: `${Math.min(i * 25, 800)}ms`,
-                                        }}
-                                        className="animate-in zoom-in-50 slide-in-from-top-2 duration-300 ease-out"
-                                        title={`Sugar cube #${i + 1} (4g)`}
-                                    >
-                                        <SugarCubeIcon size={20} />
-                                    </div>
-                                ))}
-                            </div>
-
-                            <span className="text-[11px] font-sans font-semibold text-orange-900/80 text-center">
-                                = {Math.round(sugarCubesCount * 4)} g ekvivalentní energie cukru ({telemetry.fatGrams} g čistého tělesného tuku)
-                            </span>
-                        </div>
-
-                        <button
-                            onClick={() => setShowSugarModal(false)}
-                            className="w-full py-3 bg-brutal-black text-off-white font-sans font-bold text-xs uppercase tracking-wider rounded-2xl shadow-md hover:bg-black active:scale-98 transition"
-                        >
-                            {t.common.done}
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

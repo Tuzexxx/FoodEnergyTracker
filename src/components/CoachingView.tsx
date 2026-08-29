@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useStore, EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../store/useStore';
-import { BrainCircuit, Activity, AlertTriangle, ShieldCheck, Zap, RefreshCw, CheckCircle2, Flame } from 'lucide-react';
+import { BrainCircuit, Activity, AlertTriangle, ShieldCheck, Zap, RefreshCw, CheckCircle2, Flame, Lock } from 'lucide-react';
 import { playSound } from '../utils/audio';
 import { isSupabaseConfigured, supabase } from '../utils/supabase';
 import { getTranslation } from '../utils/i18n';
@@ -29,8 +29,10 @@ interface CoachAnalysisResult {
     directives: string[];
 }
 
+export type CoachingPeriod = 'yesterday' | 'today' | '7d';
+
 const CoachingView: React.FC = () => {
-    const [period, setPeriod] = useState<'today' | '7d'>('today');
+    const [period, setPeriod] = useState<CoachingPeriod>('today');
     const { dailyLog, consumedKcal, consumedProtein, targetKcal, targetProtein, exerciseDay, profile, historicalDays, language } = useStore();
     const t = getTranslation(language);
 
@@ -38,24 +40,75 @@ const CoachingView: React.FC = () => {
     const [analysis, setAnalysis] = useState<CoachAnalysisResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
-    const effectiveProtein = targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
+    // Resolve yesterday data from historicalDays
+    const yesterdayData = useMemo(() => {
+        if (!historicalDays || historicalDays.length === 0) return null;
+        const yDate = new Date();
+        yDate.setDate(yDate.getDate() - 1);
+        const yIso = yDate.toISOString().split('T')[0];
+        
+        return historicalDays.find(d => {
+            const dObj = new Date(d.dateStr);
+            return !isNaN(dObj.getTime()) && (
+                d.dateStr.startsWith(yIso) ||
+                dObj.toDateString() === yDate.toDateString()
+            );
+        }) || historicalDays[0];
+    }, [historicalDays]);
 
-    const consumedCarbs = useMemo(() => {
-        return Math.round((dailyLog || []).reduce((sum, item) => sum + (item.carbs || 0), 0));
-    }, [dailyLog]);
+    // Compute active payload values based on period
+    const activeData = useMemo(() => {
+        if (period === 'yesterday') {
+            const yEntries = yesterdayData?.entries || [];
+            const yKcal = yesterdayData?.kcal || 0;
+            const yProtein = yesterdayData?.protein || 0;
+            const yCarbs = yEntries.reduce((sum, item) => sum + (item.carbs || 0), 0);
+            const yFat = yEntries.reduce((sum, item) => sum + (item.fat || 0), 0);
+            const yTargetKcal = (yesterdayData?.targetKcal || targetKcal) + (yesterdayData?.exerciseDay ? EXERCISE_BONUS_KCAL : 0);
+            const yTargetProtein = (yesterdayData?.targetProtein || targetProtein) + (yesterdayData?.exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
 
-    const consumedFat = useMemo(() => {
-        return Math.round((dailyLog || []).reduce((sum, item) => sum + (item.fat || 0), 0));
-    }, [dailyLog]);
+            return {
+                log: yEntries,
+                kcal: yKcal,
+                protein: yProtein,
+                carbs: Math.round(yCarbs),
+                fat: Math.round(yFat),
+                targetKcal: yTargetKcal,
+                targetProtein: yTargetProtein,
+                isExercise: Boolean(yesterdayData?.exerciseDay),
+                hasData: Boolean(yesterdayData && (yEntries.length > 0 || yKcal > 0))
+            };
+        }
+
+        const carbs = Math.round((dailyLog || []).reduce((sum, item) => sum + (item.carbs || 0), 0));
+        const fat = Math.round((dailyLog || []).reduce((sum, item) => sum + (item.fat || 0), 0));
+        const effKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
+        const effProtein = targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
+
+        return {
+            log: dailyLog || [],
+            kcal: consumedKcal,
+            protein: consumedProtein,
+            carbs,
+            fat,
+            targetKcal: effKcal,
+            targetProtein: effProtein,
+            isExercise: exerciseDay,
+            hasData: (dailyLog || []).length >= 3
+        };
+    }, [period, yesterdayData, dailyLog, consumedKcal, consumedProtein, targetKcal, targetProtein, exerciseDay]);
+
+    // Validation rule: Today requires at least 3 meals logged
+    const canRunToday = dailyLog.length >= 3;
+    const canRunAudit = period === 'today' ? canRunToday : period === 'yesterday' ? activeData.hasData : true;
 
     const cacheKey = useMemo(() => {
         const todayStr = new Date().toDateString();
         const histCount = (historicalDays || []).length;
-        return `macrotrack_coach_${period}_${language}_${todayStr}_${dailyLog.length}_${consumedKcal}_${histCount}_${exerciseDay ? 'gym' : 'rest'}`;
-    }, [period, language, dailyLog.length, consumedKcal, historicalDays, exerciseDay]);
+        return `macrotrack_coach_${period}_${language}_${todayStr}_${activeData.log.length}_${activeData.kcal}_${histCount}_${activeData.isExercise ? 'gym' : 'rest'}`;
+    }, [period, language, activeData.log.length, activeData.kcal, historicalDays, activeData.isExercise]);
 
-    // Load from local storage cache if available when period or data changes
+    // Load from local storage cache if available
     useEffect(() => {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
@@ -70,6 +123,8 @@ const CoachingView: React.FC = () => {
     }, [cacheKey]);
 
     const runAnalysis = useCallback(async () => {
+        if (!canRunAudit) return;
+
         setLoading(true);
         setError(null);
         playSound('click');
@@ -91,14 +146,14 @@ const CoachingView: React.FC = () => {
                 headers,
                 body: JSON.stringify({
                     period,
-                    dailyLog,
-                    consumedKcal,
-                    consumedProtein,
-                    consumedCarbs,
-                    consumedFat,
-                    targetKcal: effectiveKcal,
-                    targetProtein: effectiveProtein,
-                    exerciseDay,
+                    dailyLog: activeData.log,
+                    consumedKcal: activeData.kcal,
+                    consumedProtein: activeData.protein,
+                    consumedCarbs: activeData.carbs,
+                    consumedFat: activeData.fat,
+                    targetKcal: activeData.targetKcal,
+                    targetProtein: activeData.targetProtein,
+                    exerciseDay: activeData.isExercise,
                     profile,
                     historicalSummary,
                     language: language || 'en'
@@ -125,7 +180,7 @@ const CoachingView: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [period, dailyLog, consumedKcal, consumedProtein, consumedCarbs, consumedFat, effectiveKcal, effectiveProtein, exerciseDay, profile, historicalDays, language, cacheKey, t]);
+    }, [period, activeData, canRunAudit, profile, historicalDays, language, cacheKey, t]);
 
     const getGradeStyle = (grade: string) => {
         if (grade.startsWith('A')) return 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/30';
@@ -160,28 +215,40 @@ const CoachingView: React.FC = () => {
         return (historicalDays || []).slice(0, 7).reduce((sum, d) => sum + (d.entries?.length || 0), 0) + dailyLog.length;
     }, [historicalDays, dailyLog.length]);
 
+    const subtitleText = period === 'yesterday'
+        ? t.coaching.yesterdaySubtitle
+        : period === 'today'
+        ? t.coaching.todaySubtitle
+        : t.coaching.sevenDaysSubtitle;
+
     return (
         <div className="w-full flex flex-col gap-6 animate-in fade-in duration-300">
-            {/* Header & Period Switcher (Consistent with ProgressView) */}
-            <div className="flex items-center justify-between">
+            {/* Header & 3-Way Timeframe Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h2 className="font-drama text-3xl text-brutal-black tracking-tight">{t.coaching.title}</h2>
                     <p className="font-sans text-xs text-brutal-black/50 tracking-wide mt-0.5">
-                        {period === 'today' ? t.coaching.todaySubtitle : t.coaching.sevenDaysSubtitle}
+                        {subtitleText}
                     </p>
                 </div>
 
-                {/* Today / 7 Days Toggle */}
-                <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner shrink-0">
+                {/* Yesterday / Today / 7 Days Toggle */}
+                <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-0.5 shadow-inner shrink-0 self-start sm:self-auto">
+                    <button
+                        onClick={() => setPeriod('yesterday')}
+                        className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === 'yesterday' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                    >
+                        {t.coaching.yesterday}
+                    </button>
                     <button
                         onClick={() => setPeriod('today')}
-                        className={`px-3.5 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === 'today' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                        className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === 'today' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
                         {t.coaching.today}
                     </button>
                     <button
                         onClick={() => setPeriod('7d')}
-                        className={`px-3.5 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                        className={`px-3 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
                     >
                         {t.coaching.sevenDays}
                     </button>
@@ -201,12 +268,12 @@ const CoachingView: React.FC = () => {
 
             {/* Hero Card: Single Unified Action Hub */}
             <div className="brutal-card p-6 bg-black text-off-white border-2 border-brutal-black rounded-3xl shadow-xl flex flex-col gap-4 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
                 {/* Subtitle / Scope Tag */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-600/30 rounded-xl text-indigo-400 border border-indigo-500/30">
+                        <div className="p-2 bg-emerald-600/30 rounded-xl text-emerald-400 border border-emerald-500/30">
                             <BrainCircuit size={18} className={loading ? "animate-spin" : "animate-pulse"} />
                         </div>
                         <div>
@@ -214,14 +281,19 @@ const CoachingView: React.FC = () => {
                                 {t.coaching.bannerTag}
                             </span>
                             <span className="font-sans text-xs opacity-75 flex items-center gap-1.5 font-medium">
-                                {period === 'today' ? (
+                                {period === 'yesterday' ? (
                                     <>
-                                        {exerciseDay ? <Flame size={12} className="text-amber-400 fill-amber-400" /> : <Activity size={12} className="text-indigo-400" />}
-                                        {exerciseDay ? t.coaching.activityModeGym : t.coaching.activityModeRest} &middot; {dailyLog.length} {t.coaching.mealsLogged}
+                                        <Activity size={12} className="text-emerald-400" />
+                                        {activeData.isExercise ? t.coaching.activityModeGym : t.coaching.activityModeRest} &middot; {activeData.log.length} {t.coaching.yesterdayMeals}
+                                    </>
+                                ) : period === 'today' ? (
+                                    <>
+                                        {activeData.isExercise ? <Flame size={12} className="text-amber-400 fill-amber-400" /> : <Activity size={12} className="text-emerald-400" />}
+                                        {activeData.isExercise ? t.coaching.activityModeGym : t.coaching.activityModeRest} &middot; {dailyLog.length} {t.coaching.mealsLogged}
                                     </>
                                 ) : (
                                     <>
-                                        <Activity size={12} className="text-indigo-400" />
+                                        <Activity size={12} className="text-emerald-400" />
                                         {totalHistoricalMeals} {t.coaching.sevenDaysMeals}
                                     </>
                                 )}
@@ -259,22 +331,41 @@ const CoachingView: React.FC = () => {
                 ) : (
                     <div className="py-2">
                         <p className="text-xs text-white/70 font-sans leading-relaxed">
-                            {t.coaching.emptyDescription}
+                            {period === 'yesterday' && !activeData.hasData
+                                ? t.coaching.noYesterdayData
+                                : period === 'today' && !canRunToday
+                                ? t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())
+                                : t.coaching.emptyDescription}
                         </p>
                     </div>
                 )}
 
-                {/* Single Primary Action Button */}
-                <div className="pt-1">
+                {/* Single Primary Action Button with 3-meal requirement validation */}
+                <div className="pt-1 flex flex-col gap-2">
                     <button
                         onClick={runAnalysis}
-                        disabled={loading}
-                        className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-98 shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                        disabled={loading || !canRunAudit}
+                        className={`w-full py-3.5 px-4 rounded-2xl font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-98 shadow-md flex items-center justify-center gap-2 ${
+                            !canRunAudit
+                                ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/10'
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        }`}
                     >
                         {loading ? (
                             <>
                                 <RefreshCw size={15} className="animate-spin" />
                                 <span>{t.coaching.analyzingButton}</span>
+                            </>
+                        ) : !canRunAudit ? (
+                            <>
+                                <Lock size={15} className="text-amber-400" />
+                                <span>
+                                    {period === 'today'
+                                        ? t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())
+                                        : period === 'yesterday'
+                                        ? t.coaching.noYesterdayData
+                                        : t.coaching.runButton}
+                                </span>
                             </>
                         ) : analysis ? (
                             <>
@@ -288,13 +379,19 @@ const CoachingView: React.FC = () => {
                             </>
                         )}
                     </button>
+
+                    {period === 'today' && !canRunToday && (
+                        <span className="text-[10px] text-amber-300/80 font-sans text-center">
+                            ⚡ {t.coaching.minMealsRequired.replace('{count}', dailyLog.length.toString())}
+                        </span>
+                    )}
                 </div>
             </div>
 
             {/* Loading State Spinner when analyzing from scratch */}
             {loading && !analysis && (
                 <div className="flex flex-col gap-3 py-6 items-center justify-center text-center opacity-75 animate-in fade-in">
-                    <div className="w-10 h-10 rounded-full border-3 border-indigo-200 border-t-indigo-600 animate-spin" />
+                    <div className="w-10 h-10 rounded-full border-3 border-emerald-200 border-t-emerald-600 animate-spin" />
                     <span className="font-sans text-xs font-bold uppercase tracking-widest text-brutal-black">
                         {t.coaching.loadingTitle}
                     </span>
@@ -313,7 +410,7 @@ const CoachingView: React.FC = () => {
                         <div className="brutal-card p-4 bg-white border-2 border-brutal-black/20 rounded-2xl flex flex-col gap-2 shadow-xs">
                             <div className="flex items-center justify-between">
                                 <span className="font-sans text-xs font-bold uppercase tracking-wider text-brutal-black flex items-center gap-1.5">
-                                    <Activity size={14} className="text-indigo-600" />
+                                    <Activity size={14} className="text-emerald-600" />
                                     {t.coaching.macroIntegrityTitle}
                                 </span>
                                 {getStatusBadge(analysis.macroIntegrity.status)}
@@ -323,7 +420,7 @@ const CoachingView: React.FC = () => {
                             </p>
                         </div>
 
-                        {/* 2. Nutrient Timing & Gym Sync */}
+                        {/* 2. Nutrient Timing & Recovery */}
                         <div className="brutal-card p-4 bg-white border-2 border-brutal-black/20 rounded-2xl flex flex-col gap-2 shadow-xs">
                             <div className="flex items-center justify-between">
                                 <span className="font-sans text-xs font-bold uppercase tracking-wider text-brutal-black flex items-center gap-1.5">
@@ -375,9 +472,13 @@ const CoachingView: React.FC = () => {
                     {analysis.directives && analysis.directives.length > 0 && (
                         <div className="flex flex-col gap-2.5 pt-1">
                             <div className="flex items-center gap-1.5 px-1">
-                                <CheckCircle2 size={14} className="text-indigo-600" />
+                                <CheckCircle2 size={14} className="text-emerald-600" />
                                 <h3 className="font-sans text-[11px] uppercase tracking-[0.2em] font-bold opacity-60">
-                                    {period === 'today' ? t.coaching.directivesTitle : t.coaching.directivesTitleWeekly}
+                                    {period === 'yesterday'
+                                        ? t.coaching.directivesTitleYesterday
+                                        : period === 'today'
+                                        ? t.coaching.directivesTitle
+                                        : t.coaching.directivesTitleWeekly}
                                 </h3>
                             </div>
 

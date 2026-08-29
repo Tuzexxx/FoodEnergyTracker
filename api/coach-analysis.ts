@@ -111,34 +111,35 @@ export default async function handler(req: ApiRequest & { method?: string }, res
         const dailyLogSummary = (dailyLog || []).map((item: any) => {
             const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
             return `- [${timeStr}] ${item.name}: ${item.kcal} kcal, ${item.protein}g protein, ${item.carbs || 0}g carbs, ${item.fat || 0}g fat`;
-        }).join('\n') || '(No meals logged yet today)';
+        }).join('\n') || '(No meals logged in this scope)';
 
         const langName = language === 'cs' ? 'Czech' : language === 'de' ? 'German' : 'English';
         const isWeekly = period === '7d';
+        const isYesterday = period === 'yesterday';
 
         const prompt = `You are a world-class, sharp, highly analytical nutrition and metabolic performance coach in the MacroTrack app.
-Your task is to perform an objective, data-driven audit of the user's ${isWeekly ? '7-day nutrition trend, weekly consistency, and metabolic trajectory' : 'daily nutrition log, macronutrient balance, nutrient timing, and recovery'}.
+Your task is to perform an objective, data-driven audit of the user's ${isWeekly ? '7-day nutrition trend, weekly consistency, and metabolic trajectory' : isYesterday ? "yesterday's completed nutrition log, recovery, and macro adherence" : "daily nutrition log, macronutrient balance, nutrient timing, and recovery"}.
 Provide direct, constructive, high-impact feedback to optimize performance and body composition.
 
 IMPORTANT: ALL TEXT STRINGS IN YOUR JSON RESPONSE (verdict, comments, title, description, directives) MUST BE IN ${langName.toUpperCase()}.
 
 USER TELEMETRY CONTEXT:
-- Audit Scope: ${isWeekly ? 'LAST 7 DAYS COMPREHENSIVE TREND AUDIT' : 'SINGLE DAY AUDIT'}
+- Audit Scope: ${isWeekly ? 'LAST 7 DAYS COMPREHENSIVE TREND AUDIT' : isYesterday ? 'YESTERDAY COMPLETED DAY AUDIT' : 'TODAY REAL-TIME AUDIT'}
 - Daily Calorie Target: ${targetKcal} kcal ${exerciseDay ? '(Active Workout Mode: +300 kcal buffer applied)' : '(Standard Base Target)'}
 - Daily Protein Target: ${targetProtein} g
-- Today's Consumed: ${consumedKcal} kcal | ${consumedProtein}g Protein | ${consumedCarbs}g Carbs | ${consumedFat}g Fat
-- Today's Workout Mode: ${exerciseDay ? 'Active Workout / Training Day' : 'Standard / Rest & Recovery Day'}
+- Consumed in this period: ${consumedKcal} kcal | ${consumedProtein}g Protein | ${consumedCarbs}g Carbs | ${consumedFat}g Fat
+- Workout Mode: ${exerciseDay ? 'Active Workout / Training Day' : 'Standard / Rest & Recovery Day'}
 - User Profile: Goal=${profile?.goal || 'Maintain / Recomp'}, Weight=${profile?.weight || 'N/A'} kg, Baseline Activity=${profile?.activityLevel || 'Standard'}
-- Today's Meals Logged (with timestamps):
+- Meals Logged (with timestamps):
 ${dailyLogSummary}
-- 7-Day Historical Data Breakdown:
+- Historical Context / Previous Days:
 ${historicalSummary || '(No previous completed days recorded)'}
 
-AUDIT GUIDELINES (${isWeekly ? 'WEEKLY 7-DAY PERSPECTIVE' : 'DAILY PERSPECTIVE'}):
-1. Macro Integrity: ${isWeekly ? 'Evaluate 7-day adherence consistency, protein hit rate across the week, and average caloric surplus/deficit stability.' : 'Did the user hit their protein target without excessive calorie/fat overages? Is protein distribution sufficient?'}
-2. Nutrient Timing & Recovery: ${isWeekly ? 'Analyze weekly training frequency, recovery nutrition consistency, and any recurring high-fat or late-night patterns across the week.' : 'Are protein feedings distributed appropriately across the day? Are carbs strategically placed around workouts?'}
-3. Metabolic Leaks & Friction: ${isWeekly ? 'Identify chronic weekly caloric leaks, weekend drift, hidden liquid calories, or skipped logging days.' : 'Identify hidden liquid calories, excess saturated fat, ultra-processed items, or missing pre/post fuel.'}
-4. Directives: Provide exactly 3 actionable, high-leverage tactical directives for ${isWeekly ? 'the coming week (strategic habits)' : 'tomorrow (immediate actionable steps)'}.
+AUDIT GUIDELINES:
+1. Macro Integrity: ${isWeekly ? 'Evaluate 7-day adherence consistency, protein hit rate across the week, and caloric surplus/deficit stability.' : 'Did the user hit their protein target without excessive calorie/fat overages? Is protein distribution sufficient for muscle preservation?'}
+2. Nutrient Timing & Recovery: ${isWeekly ? 'Analyze weekly training frequency and recovery nutrition consistency.' : 'Are protein feedings distributed appropriately? Are carbs strategically placed around active times?'}
+3. Metabolic Leaks & Friction: ${isWeekly ? 'Identify chronic weekly caloric leaks, weekend drift, or skipped logging.' : 'Identify hidden liquid calories, excess saturated fat, ultra-processed items, or missing pre/post fuel.'}
+4. Directives: Provide exactly 3 actionable, high-leverage tactical directives for ${isWeekly ? 'the coming week (strategic habits)' : isYesterday ? 'today (immediate course corrections and actionable steps based on yesterday)' : 'tomorrow (immediate actionable steps)'}.
 
 OUTPUT ONLY STRICT JSON MATCHING THIS SCHEMA:
 {

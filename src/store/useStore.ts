@@ -5,7 +5,7 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN } from '../utils/calorieFormula';
 import { clearAllPending } from '../utils/pendingQueue';
-import { Language } from '../utils/i18n';
+import { Language, getInitialLanguage } from '../utils/i18n';
 
 export { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN };
 
@@ -23,6 +23,7 @@ export interface FoodEntry {
 export interface HistoricalDay {
     targetKcal?: number;
     targetProtein?: number;
+    exerciseDay?: boolean;
     dateStr: string;
     realDateStr: string;
     kcal: number;
@@ -116,7 +117,7 @@ interface AppState {
 export const useStore = create<AppState>()(
     persist(
     (set, get) => ({
-            language: 'en',
+            language: getInitialLanguage(),
             setLanguage: (language) => set({ language }),
             session: null,
             persistedScope: null,
