@@ -156,7 +156,7 @@ function App() {
                         Lab
                     </span>
                     )}
-                    MacroTrack
+                    Macro Tracker
                 </h1>
                 <div className="flex items-center gap-1.5 sm:gap-2 text-brutal-black shrink-0">
                     <LanguageSwitcher />

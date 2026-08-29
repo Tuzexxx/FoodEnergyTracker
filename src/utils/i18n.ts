@@ -213,7 +213,7 @@ export interface Translations {
 export const translations: Record<Language, Translations> = {
     en: {
         common: {
-            appTitle: 'MacroTrack',
+            appTitle: 'Macro Tracker',
             byAuthor: 'by MiHo',
             save: 'Save',
             cancel: 'Cancel',
@@ -389,7 +389,7 @@ export const translations: Record<Language, Translations> = {
             signOutConfirm: 'Are you sure you want to sign out? Your cloud data is safe.',
         },
         auth: {
-            title: 'MacroTrack',
+            title: 'Macro Tracker',
             subtitle: 'AI Telemetry & Cloud Sync',
             email: 'EMAIL ADDRESS',
             password: 'PASSWORD',
@@ -403,7 +403,7 @@ export const translations: Record<Language, Translations> = {
     },
     cs: {
         common: {
-            appTitle: 'MacroTrack',
+            appTitle: 'Macro Tracker',
             byAuthor: 'od MiHo',
             save: 'Uložit',
             cancel: 'Zrušit',
@@ -432,7 +432,7 @@ export const translations: Record<Language, Translations> = {
             coaching: 'Koučink',
         },
         macro: {
-            trackerTitle: 'Sledování maker',
+            trackerTitle: 'Macro Tracker',
             gymBonus: 'Tréninkový den',
             gymActive: 'Aktivní tréninkový režim (+300 kcal)',
             gymInactive: 'Základní denní cíl',
@@ -579,8 +579,8 @@ export const translations: Record<Language, Translations> = {
             signOutConfirm: 'Opravdu se chcete odhlásit? Vaše cloudová data jsou v bezpečí.',
         },
         auth: {
-            title: 'MacroTrack',
-            subtitle: 'AI Telemetrie a Cloudová synchronizace',
+            title: 'Macro Tracker',
+            subtitle: 'AI telemetrie a cloudová synchronizace',
             email: 'E-MAILOVÁ ADRESA',
             password: 'HESLO',
             signIn: 'Přihlásit se',
@@ -593,7 +593,7 @@ export const translations: Record<Language, Translations> = {
     },
     de: {
         common: {
-            appTitle: 'MacroTrack',
+            appTitle: 'Macro Tracker',
             byAuthor: 'von MiHo',
             save: 'Speichern',
             cancel: 'Abbrechen',
@@ -622,7 +622,7 @@ export const translations: Record<Language, Translations> = {
             coaching: 'Coaching',
         },
         macro: {
-            trackerTitle: 'Makro-Tracker',
+            trackerTitle: 'Macro Tracker',
             gymBonus: 'Trainingstag',
             gymActive: 'Aktiver Trainingsmodus (+300 kcal)',
             gymInactive: 'Basis-Tagesziel',
@@ -769,7 +769,7 @@ export const translations: Record<Language, Translations> = {
             signOutConfirm: 'Möchten Sie sich wirklich abmelden? Ihre Cloud-Daten bleiben sicher.',
         },
         auth: {
-            title: 'MacroTrack',
+            title: 'Macro Tracker',
             subtitle: 'KI-Telemetrie & Cloud-Synchronisierung',
             email: 'E-MAIL-ADRESSE',
             password: 'PASSWORT',

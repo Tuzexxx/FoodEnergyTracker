@@ -79,7 +79,7 @@ const PWAInstall = () => {
 
                             <div className="px-6 pt-6 pb-2">
                                 <h3 className="font-sans font-bold text-lg text-brutal-black mb-1">
-                                    Install MacroTrack
+                                    Install Macro Tracker
                                 </h3>
                                 <p className="text-sm text-brutal-black/60 font-sans leading-relaxed">
                                     Add this app to your Home Screen for the best experience — full screen, offline access &amp; instant launch.
