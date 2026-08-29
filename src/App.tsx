@@ -209,15 +209,12 @@ function App() {
                                             : 'text-brutal-black/70 hover:text-brutal-black'
                                     }`}
                                 >
-                                    <span className="relative flex h-3.5 w-3.5 items-center justify-center">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-60" />
-                                        <Flame size={13} className="relative text-amber-500 fill-amber-500 animate-pulse shrink-0" />
-                                    </span>
+                                    <Flame size={13} className="text-amber-500 fill-amber-500 shrink-0" />
                                     {t.tabs.progress}
                                 </button>
                                 <button
                                     onClick={() => setTimeframe('coaching')}
-                                    className={`px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                                    className={`relative px-3.5 py-1.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                                         timeframe === 'coaching'
                                             ? 'bg-brutal-black text-off-white shadow-md'
                                             : 'text-brutal-black/70 hover:text-brutal-black'
@@ -225,6 +222,9 @@ function App() {
                                 >
                                     <BrainCircuit size={13} className={timeframe === 'coaching' ? 'text-indigo-400' : 'opacity-60'} />
                                     {t.tabs.coaching}
+                                    <span className="absolute -top-1.5 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full leading-none tracking-wider shadow-sm">
+                                        PRO
+                                    </span>
                                 </button>
                             </div>
                         </div>
