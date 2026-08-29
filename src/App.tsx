@@ -144,33 +144,30 @@ function App() {
     return (
         <div className="min-h-screen w-full flex flex-col relative pb-32">
             {/* Settings / PWA Install Bridge */}
-            <nav className="py-4 px-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0 bg-off-white/90 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm">
-                <h1 className="font-drama tracking-wide text-xl flex items-center gap-3 text-brutal-black drop-shadow-sm">
+            <nav className="py-3 px-3 sm:px-4 flex justify-between items-center z-40 fixed top-0 w-full max-w-md mx-auto left-0 right-0 bg-off-white/90 backdrop-blur-2xl border-b border-brutal-black/5 shadow-sm">
+                <h1 className="font-drama tracking-wide text-lg sm:text-xl flex items-center gap-1.5 sm:gap-2 text-brutal-black drop-shadow-sm truncate">
                     {(import.meta.env.VITE_APP_ENV === 'lab' || (typeof window !== 'undefined' && window.location.hostname.includes('lab'))) && (
                     <span
-                        className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.16em] text-violet-700 shadow-sm"
+                        className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 font-sans text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.16em] text-violet-700 shadow-sm shrink-0"
                         title="Lab environment"
                         aria-label="Lab environment"
                     >
-                        <FlaskConical size={13} strokeWidth={2.4} aria-hidden="true" />
+                        <FlaskConical size={11} strokeWidth={2.4} aria-hidden="true" />
                         Lab
                     </span>
                     )}
                     MacroTrack
-                    <span className="font-sans text-[9px] uppercase tracking-widest opacity-40 bg-black/5 px-2 py-0.5 rounded-full border border-black/5 leading-none mt-1">
-                        by MiHo
-                    </span>
                 </h1>
-                <div className="flex items-center gap-2.5 text-brutal-black">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-brutal-black shrink-0">
                     <LanguageSwitcher />
                     <PWAInstall />
                     {isCalibrated && (
                         <button
                             onClick={() => setIsSettingsOpen(true)}
-                            className="p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center"
+                            className="p-1.5 sm:p-2 bg-brutal-black text-off-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center shrink-0"
                             title={t.common.settings}
                         >
-                            <Settings size={18} strokeWidth={2} />
+                            <Settings size={17} strokeWidth={2} />
                         </button>
                     )}
                 </div>

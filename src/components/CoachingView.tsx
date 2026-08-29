@@ -30,6 +30,7 @@ interface CoachAnalysisResult {
 }
 
 const CoachingView: React.FC = () => {
+    const [period, setPeriod] = useState<'today' | '7d'>('today');
     const { dailyLog, consumedKcal, consumedProtein, targetKcal, targetProtein, exerciseDay, profile, historicalDays, language } = useStore();
     const t = getTranslation(language);
 
@@ -50,10 +51,11 @@ const CoachingView: React.FC = () => {
 
     const cacheKey = useMemo(() => {
         const todayStr = new Date().toDateString();
-        return `macrotrack_coach_analysis_${language}_${todayStr}_${dailyLog.length}_${consumedKcal}_${exerciseDay ? 'gym' : 'rest'}`;
-    }, [language, dailyLog.length, consumedKcal, exerciseDay]);
+        const histCount = (historicalDays || []).length;
+        return `macrotrack_coach_${period}_${language}_${todayStr}_${dailyLog.length}_${consumedKcal}_${histCount}_${exerciseDay ? 'gym' : 'rest'}`;
+    }, [period, language, dailyLog.length, consumedKcal, historicalDays, exerciseDay]);
 
-    // Load from local storage cache if available
+    // Load from local storage cache if available when period or data changes
     useEffect(() => {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
@@ -62,6 +64,8 @@ const CoachingView: React.FC = () => {
             } catch (e) {
                 console.warn('Failed to parse cached coach analysis', e);
             }
+        } else {
+            setAnalysis(null);
         }
     }, [cacheKey]);
 
@@ -79,13 +83,14 @@ const CoachingView: React.FC = () => {
             else headers['X-Client-Mode'] = 'guest';
 
             const historicalSummary = (historicalDays || []).slice(0, 7).map(d => {
-                return `${d.dateStr}: ${d.kcal} kcal, ${d.protein}g pro (${d.entries?.length || 0} meals)`;
+                return `${d.dateStr}: ${d.kcal} kcal, ${d.protein}g protein (${d.entries?.length || 0} meals)`;
             }).join('; ');
 
             const res = await fetch('/api/coach-analysis', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
+                    period,
                     dailyLog,
                     consumedKcal,
                     consumedProtein,
@@ -120,7 +125,7 @@ const CoachingView: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [dailyLog, consumedKcal, consumedProtein, consumedCarbs, consumedFat, effectiveKcal, effectiveProtein, exerciseDay, profile, historicalDays, language, cacheKey, t]);
+    }, [period, dailyLog, consumedKcal, consumedProtein, consumedCarbs, consumedFat, effectiveKcal, effectiveProtein, exerciseDay, profile, historicalDays, language, cacheKey, t]);
 
     const getGradeStyle = (grade: string) => {
         if (grade.startsWith('A')) return 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/30';
@@ -151,48 +156,39 @@ const CoachingView: React.FC = () => {
         );
     };
 
-    return (
-        <div className="w-full flex flex-col gap-5 animate-in fade-in duration-300">
-            {/* Header Telemetry Banner */}
-            <div className="brutal-card p-5 bg-black text-off-white border-2 border-brutal-black shadow-xl flex flex-col gap-3 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-                
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-600/30 rounded-xl text-indigo-400 border border-indigo-500/30">
-                            <BrainCircuit size={18} className="animate-pulse" />
-                        </div>
-                        <div>
-                            <span className="font-sans text-[9px] uppercase tracking-[0.25em] opacity-60 font-bold block">
-                                {t.coaching.bannerTag}
-                            </span>
-                            <h2 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
-                                {t.coaching.title}
-                            </h2>
-                        </div>
-                    </div>
+    const totalHistoricalMeals = useMemo(() => {
+        return (historicalDays || []).slice(0, 7).reduce((sum, d) => sum + (d.entries?.length || 0), 0) + dailyLog.length;
+    }, [historicalDays, dailyLog.length]);
 
-                    <button
-                        onClick={runAnalysis}
-                        disabled={loading}
-                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-sans font-bold uppercase tracking-wider transition-all active:scale-95 shadow-md flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                        <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-                        <span>{loading ? t.coaching.analyzingButton : analysis ? t.coaching.recalculateButton : t.coaching.runButton}</span>
-                    </button>
+    return (
+        <div className="w-full flex flex-col gap-6 animate-in fade-in duration-300">
+            {/* Header & Period Switcher (Consistent with ProgressView) */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="font-drama text-3xl text-brutal-black tracking-tight">{t.coaching.title}</h2>
+                    <p className="font-sans text-xs text-brutal-black/50 tracking-wide mt-0.5">
+                        {period === 'today' ? t.coaching.todaySubtitle : t.coaching.sevenDaysSubtitle}
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs opacity-75 font-sans pt-1 border-t border-white/10">
-                    <span className="flex items-center gap-1">
-                        {exerciseDay ? <Flame size={13} className="text-amber-400 fill-amber-400" /> : <Activity size={13} className="text-indigo-400" />}
-                        {exerciseDay ? t.coaching.activityModeGym : t.coaching.activityModeRest}
-                    </span>
-                    <span>&middot;</span>
-                    <span>{dailyLog.length} {t.coaching.mealsLogged}</span>
+                {/* Today / 7 Days Toggle */}
+                <div className="bg-black/5 p-1 rounded-full border border-black/5 flex items-center gap-1 shadow-inner shrink-0">
+                    <button
+                        onClick={() => setPeriod('today')}
+                        className={`px-3.5 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === 'today' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                    >
+                        {t.coaching.today}
+                    </button>
+                    <button
+                        onClick={() => setPeriod('7d')}
+                        className={`px-3.5 py-1 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all ${period === '7d' ? 'bg-brutal-black text-off-white shadow-sm' : 'text-brutal-black/50 hover:text-brutal-black'}`}
+                    >
+                        {t.coaching.sevenDays}
+                    </button>
                 </div>
             </div>
 
-            {/* Error banner */}
+            {/* Error Banner */}
             {error && (
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs font-sans flex items-start gap-2 animate-in fade-in">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0 text-rose-600" />
@@ -203,63 +199,50 @@ const CoachingView: React.FC = () => {
                 </div>
             )}
 
-            {/* Empty state prompt to run analysis */}
-            {!analysis && !loading && (
-                <div className="brutal-card p-8 bg-white border-2 border-brutal-black/20 text-center flex flex-col items-center gap-4 rounded-3xl shadow-sm">
-                    <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 border border-indigo-100">
-                        <BrainCircuit size={32} />
-                    </div>
-                    <div className="max-w-xs">
-                        <h3 className="font-sans font-bold text-base text-brutal-black mb-1">
-                            {t.coaching.emptyTitle}
-                        </h3>
-                        <p className="text-xs text-brutal-black/60 font-sans leading-relaxed">
-                            {t.coaching.emptyDescription}
-                        </p>
-                    </div>
-                    <button
-                        onClick={runAnalysis}
-                        className="px-6 py-3 bg-brutal-black hover:bg-black text-off-white rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-md flex items-center gap-2"
-                    >
-                        <Zap size={14} className="text-amber-400 fill-amber-400" />
-                        <span>{t.coaching.emptyAction}</span>
-                    </button>
-                </div>
-            )}
+            {/* Hero Card: Single Unified Action Hub */}
+            <div className="brutal-card p-6 bg-black text-off-white border-2 border-brutal-black rounded-3xl shadow-xl flex flex-col gap-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Loading state skeleton */}
-            {loading && !analysis && (
-                <div className="flex flex-col gap-4 py-8 items-center justify-center text-center opacity-70">
-                    <div className="relative">
-                        <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
-                        <BrainCircuit size={20} className="absolute inset-0 m-auto text-indigo-600 animate-pulse" />
-                    </div>
-                    <div>
-                        <span className="font-sans text-xs uppercase tracking-widest font-bold text-brutal-black block mb-1">
-                            {t.coaching.loadingTitle}
-                        </span>
-                        <span className="text-[11px] text-brutal-black/50 font-sans">
-                            {t.coaching.loadingSubtitle}
-                        </span>
+                {/* Subtitle / Scope Tag */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-indigo-600/30 rounded-xl text-indigo-400 border border-indigo-500/30">
+                            <BrainCircuit size={18} className={loading ? "animate-spin" : "animate-pulse"} />
+                        </div>
+                        <div>
+                            <span className="font-sans text-[9px] uppercase tracking-[0.25em] opacity-60 font-bold block">
+                                {t.coaching.bannerTag}
+                            </span>
+                            <span className="font-sans text-xs opacity-75 flex items-center gap-1.5 font-medium">
+                                {period === 'today' ? (
+                                    <>
+                                        {exerciseDay ? <Flame size={12} className="text-amber-400 fill-amber-400" /> : <Activity size={12} className="text-indigo-400" />}
+                                        {exerciseDay ? t.coaching.activityModeGym : t.coaching.activityModeRest} &middot; {dailyLog.length} {t.coaching.mealsLogged}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Activity size={12} className="text-indigo-400" />
+                                        {totalHistoricalMeals} {t.coaching.sevenDaysMeals}
+                                    </>
+                                )}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            )}
 
-            {/* Active Analysis Dashboard */}
-            {analysis && (
-                <div className="flex flex-col gap-5 animate-in fade-in duration-300">
-                    {/* Grade & Verdict Card */}
-                    <div className="brutal-card p-5 bg-white border-2 border-brutal-black rounded-3xl shadow-md flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                {/* Result Grade & Verdict or Ready Callout */}
+                {analysis ? (
+                    <div className="flex flex-col gap-3.5 pt-1">
+                        <div className="flex items-center justify-between bg-white/5 border border-white/10 p-4 rounded-2xl">
+                            <div className="flex items-center gap-3.5">
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-data text-2xl font-black border-2 shadow-lg ${getGradeStyle(analysis.grade)}`}>
                                     {analysis.grade}
                                 </div>
                                 <div>
-                                    <span className="font-sans text-[10px] uppercase tracking-widest opacity-40 font-bold block">
+                                    <span className="font-sans text-[10px] uppercase tracking-widest opacity-60 font-bold block">
                                         {t.coaching.overallScore}
                                     </span>
-                                    <span className="font-data text-xl font-bold text-brutal-black">
+                                    <span className="font-data text-2xl font-bold text-white">
                                         {analysis.score} <span className="text-xs font-sans font-normal opacity-50">{t.coaching.scoreOutOf}</span>
                                     </span>
                                 </div>
@@ -267,13 +250,63 @@ const CoachingView: React.FC = () => {
                         </div>
 
                         {/* Verdict Quote */}
-                        <div className="p-3.5 bg-black/5 rounded-2xl border border-black/5">
-                            <p className="font-sans font-semibold text-xs text-brutal-black leading-snug">
+                        <div className="p-3.5 bg-white/10 rounded-2xl border border-white/10">
+                            <p className="font-sans font-semibold text-xs text-white leading-relaxed">
                                 &ldquo;{analysis.verdict}&rdquo;
                             </p>
                         </div>
                     </div>
+                ) : (
+                    <div className="py-2">
+                        <p className="text-xs text-white/70 font-sans leading-relaxed">
+                            {t.coaching.emptyDescription}
+                        </p>
+                    </div>
+                )}
 
+                {/* Single Primary Action Button */}
+                <div className="pt-1">
+                    <button
+                        onClick={runAnalysis}
+                        disabled={loading}
+                        className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-98 shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <>
+                                <RefreshCw size={15} className="animate-spin" />
+                                <span>{t.coaching.analyzingButton}</span>
+                            </>
+                        ) : analysis ? (
+                            <>
+                                <RefreshCw size={15} />
+                                <span>{t.coaching.recalculateButton}</span>
+                            </>
+                        ) : (
+                            <>
+                                <Zap size={15} className="text-amber-400 fill-amber-400" />
+                                <span>{t.coaching.runButton}</span>
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Loading State Spinner when analyzing from scratch */}
+            {loading && !analysis && (
+                <div className="flex flex-col gap-3 py-6 items-center justify-center text-center opacity-75 animate-in fade-in">
+                    <div className="w-10 h-10 rounded-full border-3 border-indigo-200 border-t-indigo-600 animate-spin" />
+                    <span className="font-sans text-xs font-bold uppercase tracking-widest text-brutal-black">
+                        {t.coaching.loadingTitle}
+                    </span>
+                    <span className="text-[11px] text-brutal-black/50 font-sans">
+                        {t.coaching.loadingSubtitle}
+                    </span>
+                </div>
+            )}
+
+            {/* Detailed Structured Analysis Cards */}
+            {analysis && (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                     {/* Macro Integrity & Nutrient Timing Cards */}
                     <div className="grid grid-cols-1 gap-3">
                         {/* 1. Macro Integrity */}
@@ -338,13 +371,13 @@ const CoachingView: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Tactical Directives for Tomorrow */}
+                    {/* Tactical Directives */}
                     {analysis.directives && analysis.directives.length > 0 && (
                         <div className="flex flex-col gap-2.5 pt-1">
                             <div className="flex items-center gap-1.5 px-1">
                                 <CheckCircle2 size={14} className="text-indigo-600" />
                                 <h3 className="font-sans text-[11px] uppercase tracking-[0.2em] font-bold opacity-60">
-                                    {t.coaching.directivesTitle}
+                                    {period === 'today' ? t.coaching.directivesTitle : t.coaching.directivesTitleWeekly}
                                 </h3>
                             </div>
 

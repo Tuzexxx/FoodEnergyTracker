@@ -51,12 +51,17 @@ export interface Translations {
         bannerTag: string;
         title: string;
         subtitle: string;
+        today: string;
+        sevenDays: string;
+        todaySubtitle: string;
+        sevenDaysSubtitle: string;
         runButton: string;
         recalculateButton: string;
         analyzingButton: string;
         activityModeGym: string;
         activityModeRest: string;
         mealsLogged: string;
+        sevenDaysMeals: string;
         emptyTitle: string;
         emptyDescription: string;
         emptyAction: string;
@@ -68,6 +73,7 @@ export interface Translations {
         nutrientTimingTitle: string;
         metabolicLeaksTitle: string;
         directivesTitle: string;
+        directivesTitleWeekly: string;
         highPriority: string;
         mediumPriority: string;
         errorTitle: string;
@@ -207,25 +213,31 @@ export const translations: Record<Language, Translations> = {
         },
         coaching: {
             bannerTag: 'AI Strategic Coaching Telemetry',
-            title: 'Daily Nutrition Coaching',
+            title: 'Nutrition & Performance Coaching',
             subtitle: 'Real-time metabolic audit & tactical recommendations',
+            today: 'Today',
+            sevenDays: '7 Days',
+            todaySubtitle: 'Real-time daily audit & nutrient timing',
+            sevenDaysSubtitle: '7-day consistency & weekly trend audit',
             runButton: 'Run Coaching Audit',
             recalculateButton: 'Recalculate',
             analyzingButton: 'Analyzing...',
             activityModeGym: 'Workout / Active Mode (+300 kcal)',
             activityModeRest: 'Base Target / Recovery Mode',
             mealsLogged: 'meals logged today',
+            sevenDaysMeals: 'meals logged across 7 days',
             emptyTitle: '1-Click Nutrition Audit',
-            emptyDescription: 'AI coach audits today\'s nutrient timing, macro ratios, metabolic friction, and delivers 3 tactical directives for tomorrow.',
-            emptyAction: 'Analyze Today\'s Telemetry',
+            emptyDescription: 'AI coach audits your nutrient timing, macro ratios, metabolic friction, and delivers 3 tactical directives.',
+            emptyAction: 'Analyze Telemetry',
             loadingTitle: 'Auditing metabolic leaks and nutrient timing...',
             loadingSubtitle: 'Analyzing macro balance and training recovery',
-            overallScore: 'Daily Performance Score',
+            overallScore: 'Performance Score',
             scoreOutOf: '/ 100 points',
             macroIntegrityTitle: 'Macro Integrity & Density',
             nutrientTimingTitle: 'Nutrient Timing & Recovery',
             metabolicLeaksTitle: 'Identified Metabolic Leaks & Friction',
             directivesTitle: '3 Tactical Directives for Tomorrow',
+            directivesTitleWeekly: '3 Strategic Directives for Next Week',
             highPriority: 'High Priority',
             mediumPriority: 'Medium',
             errorTitle: 'Coaching Analysis Error',
@@ -363,25 +375,31 @@ export const translations: Record<Language, Translations> = {
         },
         coaching: {
             bannerTag: 'AI Strategický Koučink',
-            title: 'Denní nutriční koučink',
+            title: 'Nutriční & Výkonnostní Koučink',
             subtitle: 'Metabolický audit a taktická doporučení v reálném čase',
+            today: 'Dnes',
+            sevenDays: '7 dní',
+            todaySubtitle: 'Audit dnešního dne a časování živin',
+            sevenDaysSubtitle: '7denní konzistence a týdenní trendy',
             runButton: 'Spustit koučink',
             recalculateButton: 'Přepočítat',
             analyzingButton: 'Analyzuji...',
             activityModeGym: 'Tréninkový / Aktivní režim (+300 kcal)',
             activityModeRest: 'Základní cíl / Regenerační režim',
             mealsLogged: 'zaznamenaných jídel dnes',
+            sevenDaysMeals: 'jídel zaznamenáno za 7 dní',
             emptyTitle: 'Nutriční audit na 1 klik',
-            emptyDescription: 'AI kouč zhodnotí dnešní časování živin, poměr bílkovin, metabolické brzdy a připraví 3 taktické pokyny na zítra.',
-            emptyAction: 'Analyzovat dnešní telemetrii',
+            emptyDescription: 'AI kouč zhodnotí časování živin, poměr bílkovin, metabolické brzdy a připraví 3 taktické pokyny.',
+            emptyAction: 'Analyzovat telemetrii',
             loadingTitle: 'Prověřuji metabolické úniky a časování...',
             loadingSubtitle: 'Kouč analyzuje poměry makroživin a tréninkovou regeneraci',
-            overallScore: 'Celkové denní skóre',
+            overallScore: 'Výkonnostní skóre',
             scoreOutOf: '/ 100 bodů',
             macroIntegrityTitle: 'Makro Integrita & Hustota',
             nutrientTimingTitle: 'Časování živin & Regenerace',
             metabolicLeaksTitle: 'Odhalené metabolické brzdy a úniky',
             directivesTitle: '3 Taktické direktivy pro zítřek',
+            directivesTitleWeekly: '3 Strategické direktivy pro příští týden',
             highPriority: 'Vysoká priorita',
             mediumPriority: 'Střední priorita',
             errorTitle: 'Chyba analýzy kouče',
@@ -519,29 +537,35 @@ export const translations: Record<Language, Translations> = {
         },
         coaching: {
             bannerTag: 'Strategisches KI-Coaching',
-            title: 'Tägliches Ernährungs-Coaching',
+            title: 'Ernährungs- & Leistungs-Coaching',
             subtitle: 'Echtzeit-Stoffwechselaudit & taktische Empfehlungen',
+            today: 'Heute',
+            sevenDays: '7 Tage',
+            todaySubtitle: 'Tages-Audit & Nährstoff-Timing in Echtzeit',
+            sevenDaysSubtitle: '7-Tage-Konsistenz & Wochentrends',
             runButton: 'Coaching starten',
             recalculateButton: 'Neu berechnen',
             analyzingButton: 'Analysiere...',
             activityModeGym: 'Trainingsmodus / Aktiv (+300 kcal)',
             activityModeRest: 'Basisziel / Regeneration',
             mealsLogged: 'Mahlzeiten heute erfasst',
+            sevenDaysMeals: 'Mahlzeiten in 7 Tagen erfasst',
             emptyTitle: '1-Klick Ernährungs-Audit',
-            emptyDescription: 'Der KI-Coach analysiert Nährstoff-Timing, Makroverhältnisse und liefert 3 taktische Anweisungen für morgen.',
-            emptyAction: 'Heutige Telemetrie analysieren',
+            emptyDescription: 'Der KI-Coach analysiert Nährstoff-Timing, Makroverhältnisse und liefert 3 taktische Anweisungen.',
+            emptyAction: 'Telemetrie analysieren',
             loadingTitle: 'Prüfe Stoffwechsel-Lecks und Nährstoff-Timing...',
             loadingSubtitle: 'Coach analysiert Makro-Verhältnisse und Trainingserholung',
-            overallScore: 'Tages-Gesamtbewertung',
+            overallScore: 'Leistungs-Score',
             scoreOutOf: '/ 100 Punkte',
             macroIntegrityTitle: 'Makro-Integrität & Dichte',
             nutrientTimingTitle: 'Nährstoff-Timing & Erholung',
             metabolicLeaksTitle: 'Erkannte Stoffwechsel-Bremsen & Lecks',
             directivesTitle: '3 Taktische Anweisungen für morgen',
+            directivesTitleWeekly: '3 Strategische Anweisungen für nächste Woche',
             highPriority: 'Hohe Priorität',
-            mediumPriority: 'Mittel',
+            mediumPriority: 'Mittlere Priorität',
             errorTitle: 'Coaching-Analysefehler',
-            errorMessage: 'Analyse konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
+            errorMessage: 'Analyse konnte nicht erstellt werden. Bitte erneut versuchen.',
         },
         dailyLog: {
             todayLog: 'Heutiges Protokoll',
