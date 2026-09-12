@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
-import { X, Save, RefreshCw, LogOut, Info, ChevronDown, Globe } from 'lucide-react';
+import { X, Save, RefreshCw, LogOut, Info, ChevronDown, Globe, Download, Key, Check } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { calculateTargets, ACTIVITY_LEVELS } from '../utils/calorieFormula';
 import { getTranslation } from '../utils/i18n';
@@ -77,6 +77,65 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             await supabase.auth.signOut();
             resetAll();
             handleClose();
+        }
+    };
+
+    const [tokenCopied, setTokenCopied] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleCopyToken = () => {
+        if (!session?.access_token) return;
+        navigator.clipboard.writeText(session.access_token);
+        setTokenCopied(true);
+        setTimeout(() => setTokenCopied(false), 2500);
+    };
+
+    const handleExportJson = async () => {
+        setIsExporting(true);
+        try {
+            let exportData: any = null;
+            if (session?.access_token) {
+                try {
+                    const res = await fetch('/api/export', {
+                        headers: {
+                            Authorization: `Bearer ${session.access_token}`
+                        }
+                    });
+                    if (res.ok) {
+                        exportData = await res.json();
+                    }
+                } catch (e) {
+                    console.warn('API export fallback to local state', e);
+                }
+            }
+
+            if (!exportData) {
+                const state = useStore.getState();
+                exportData = {
+                    user: session?.user || { isGuest: true },
+                    profile,
+                    targetKcal,
+                    targetProtein,
+                    exportTimestamp: Date.now(),
+                    currentEntries: state.dailyLog,
+                    historicalDays: state.historicalDays
+                };
+            }
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.download = `macro_tracker_export_${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export error:', err);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -270,6 +329,40 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                             </>
                         )}
                     </div>
+
+                    {/* Data Export & AI API */}
+                    <div className="p-3.5 bg-black/5 rounded-2xl border border-black/5 flex flex-col gap-2.5">
+                        <div className="flex items-center justify-between">
+                            <label className="font-sans text-xs uppercase tracking-widest font-bold opacity-70 flex items-center gap-1.5">
+                                <Download size={13} /> {t.settings.exportTitle}
+                            </label>
+                        </div>
+                        <p className="font-sans text-[10px] opacity-50 leading-relaxed">
+                            {t.settings.exportDesc}
+                        </p>
+                        <div className="flex flex-col gap-2 pt-1">
+                            <button
+                                type="button"
+                                onClick={handleExportJson}
+                                disabled={isExporting}
+                                className="w-full py-2.5 px-3 text-xs font-sans tracking-wide border border-brutal-black/20 hover:border-brutal-black bg-white hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 rounded-lg"
+                            >
+                                <Download size={14} /> {isExporting ? t.common.loading : t.settings.exportJsonBtn}
+                            </button>
+
+                            {!isGuest && session?.access_token && (
+                                <button
+                                    type="button"
+                                    onClick={handleCopyToken}
+                                    className="w-full py-2.5 px-3 text-xs font-sans tracking-wide border border-brutal-black/20 hover:border-brutal-black bg-white hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 rounded-lg"
+                                >
+                                    {tokenCopied ? <Check size={14} className="text-green-600" /> : <Key size={14} />}
+                                    {tokenCopied ? t.settings.tokenCopied : t.settings.copyTokenBtn}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="mt-auto flex flex-col gap-4">
                         <button
                             onClick={handleSave}

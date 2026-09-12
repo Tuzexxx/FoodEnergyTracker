@@ -195,6 +195,11 @@ export interface Translations {
         wipeConfirm: string;
         signOut: string;
         signOutConfirm: string;
+        exportTitle: string;
+        exportDesc: string;
+        exportJsonBtn: string;
+        copyTokenBtn: string;
+        tokenCopied: string;
     };
     auth: {
         title: string;
@@ -387,6 +392,11 @@ export const translations: Record<Language, Translations> = {
             wipeConfirm: 'Are you sure you want to delete all local telemetry?',
             signOut: 'Sign Out',
             signOutConfirm: 'Are you sure you want to sign out? Your cloud data is safe.',
+            exportTitle: 'Data Export & AI API',
+            exportDesc: 'Export full telemetry JSON or copy your Bearer token for AI agent access.',
+            exportJsonBtn: 'Download JSON Export',
+            copyTokenBtn: 'Copy API Bearer Token',
+            tokenCopied: 'Token copied!',
         },
         auth: {
             title: 'Macro Tracker',
@@ -577,6 +587,11 @@ export const translations: Record<Language, Translations> = {
             wipeConfirm: 'Opravdu chcete smazat všechna lokální data?',
             signOut: 'Odhlásit se',
             signOutConfirm: 'Opravdu se chcete odhlásit? Vaše cloudová data jsou v bezpečí.',
+            exportTitle: 'Export dat a AI API',
+            exportDesc: 'Stáhněte kompletní JSON telemetrii nebo zkopírujte Bearer token pro přístup AI agenta.',
+            exportJsonBtn: 'Stáhnout JSON export',
+            copyTokenBtn: 'Zkopírovat API Bearer Token',
+            tokenCopied: 'Token zkopírován!',
         },
         auth: {
             title: 'Macro Tracker',
@@ -767,6 +782,11 @@ export const translations: Record<Language, Translations> = {
             wipeConfirm: 'Möchten Sie wirklich alle lokalen Daten löschen?',
             signOut: 'Abmelden',
             signOutConfirm: 'Möchten Sie sich wirklich abmelden? Ihre Cloud-Daten bleiben sicher.',
+            exportTitle: 'Datenexport & KI-API',
+            exportDesc: 'Laden Sie den vollständigen JSON-Export herunter oder kopieren Sie Ihr Bearer-Token für den KI-Agenten.',
+            exportJsonBtn: 'JSON-Export herunterladen',
+            copyTokenBtn: 'API-Bearer-Token kopieren',
+            tokenCopied: 'Token kopiert!',
         },
         auth: {
             title: 'Macro Tracker',
