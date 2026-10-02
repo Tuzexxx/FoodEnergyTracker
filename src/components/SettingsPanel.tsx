@@ -27,12 +27,15 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const [trainKcal, setTrainKcal] = useState(customTrainingTargets?.kcal?.toString() || '');
     const [trainProtein, setTrainProtein] = useState(customTrainingTargets?.protein?.toString() || '');
     const [trainCarbs, setTrainCarbs] = useState(customTrainingTargets?.carbs?.toString() || '');
+    const [trainFatInput, setTrainFatInput] = useState(customTrainingTargets?.fat?.toString() || '');
 
     const [restKcal, setRestKcal] = useState(customRestTargets?.kcal?.toString() || '');
     const [restProtein, setRestProtein] = useState(customRestTargets?.protein?.toString() || '');
     const [restCarbs, setRestCarbs] = useState(customRestTargets?.carbs?.toString() || '');
+    const [restFatInput, setRestFatInput] = useState(customRestTargets?.fat?.toString() || '');
 
     const trainFat = useMemo(() => {
+        if (trainFatInput !== '') return Number(trainFatInput);
         const k = Number(trainKcal);
         const p = Number(trainProtein);
         const c = Number(trainCarbs);
@@ -40,9 +43,10 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             return Math.max(0, Math.round((k - (p * 4 + c * 4)) / 9));
         }
         return null;
-    }, [trainKcal, trainProtein, trainCarbs]);
+    }, [trainFatInput, trainKcal, trainProtein, trainCarbs]);
 
     const restFat = useMemo(() => {
+        if (restFatInput !== '') return Number(restFatInput);
         const k = Number(restKcal);
         const p = Number(restProtein);
         const c = Number(restCarbs);
@@ -50,7 +54,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             return Math.max(0, Math.round((k - (p * 4 + c * 4)) / 9));
         }
         return null;
-    }, [restKcal, restProtein, restCarbs]);
+    }, [restFatInput, restKcal, restProtein, restCarbs]);
 
     const panelRef = useRef(null);
 
@@ -399,7 +403,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-4 gap-2">
                                             <div>
                                                 <label className="font-sans text-[9px] uppercase opacity-40 block">Kcal</label>
                                                 <input
@@ -411,7 +415,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Bílkoviny (g)</label>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Bílkoviny</label>
                                                 <input
                                                     type="number"
                                                     placeholder="150"
@@ -421,13 +425,23 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Sacharidy (g)</label>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Sacharidy</label>
                                                 <input
                                                     type="number"
                                                     placeholder="280"
                                                     value={trainCarbs}
                                                     onChange={e => setTrainCarbs(e.target.value)}
                                                     className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Tuky (g)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder={trainFat !== null ? trainFat.toString() : "55"}
+                                                    value={trainFatInput}
+                                                    onChange={e => setTrainFatInput(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm text-rose-600 font-bold"
                                                 />
                                             </div>
                                         </div>
@@ -445,7 +459,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-4 gap-2">
                                             <div>
                                                 <label className="font-sans text-[9px] uppercase opacity-40 block">Kcal</label>
                                                 <input
@@ -457,7 +471,7 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Bílkoviny (g)</label>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Bílkoviny</label>
                                                 <input
                                                     type="number"
                                                     placeholder="150"
@@ -467,13 +481,23 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Sacharidy (g)</label>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Sacharidy</label>
                                                 <input
                                                     type="number"
                                                     placeholder="180"
                                                     value={restCarbs}
                                                     onChange={e => setRestCarbs(e.target.value)}
                                                     className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Tuky (g)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder={restFat !== null ? restFat.toString() : "65"}
+                                                    value={restFatInput}
+                                                    onChange={e => setRestFatInput(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm text-rose-600 font-bold"
                                                 />
                                             </div>
                                         </div>
