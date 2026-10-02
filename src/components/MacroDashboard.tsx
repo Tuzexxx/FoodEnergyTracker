@@ -6,13 +6,12 @@ import { calculateMacroDistribution } from '../utils/calorieFormula';
 import { getTranslation } from '../utils/i18n';
 
 const MacroDashboard = () => {
-    const { targetKcal, consumedKcal, targetProtein, consumedProtein, dailyLog, exerciseDay, toggleExerciseDay, profile, language } = useStore();
+    const { targetKcal, consumedKcal, targetProtein, consumedProtein, dailyLog, exerciseDay, toggleExerciseDay, language, customTrainingTargets, customRestTargets } = useStore();
     const t = getTranslation(language);
 
-    const showGymButton = !profile?.activityLevel || profile?.activityLevel === 'SEDENTARY' || profile?.activityLevel === 'LIGHT';
-
-    const effectiveKcal = targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0);
-    const effectiveProtein = targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0);
+    const currentDayTargets = exerciseDay ? customTrainingTargets : customRestTargets;
+    const effectiveKcal = currentDayTargets ? currentDayTargets.kcal : (targetKcal + (exerciseDay ? EXERCISE_BONUS_KCAL : 0));
+    const effectiveProtein = currentDayTargets ? currentDayTargets.protein : (targetProtein + (exerciseDay ? EXERCISE_BONUS_PROTEIN : 0));
 
     // Sum consumed carbs and fats from daily log
     const consumedCarbs = useMemo(() => {
@@ -25,8 +24,16 @@ const MacroDashboard = () => {
 
     // Optimal macro targets
     const optimalMacros = useMemo(() => {
+        if (currentDayTargets) {
+            const fatGrams = currentDayTargets.fat ?? Math.max(0, Math.round((currentDayTargets.kcal - (currentDayTargets.protein * 4 + currentDayTargets.carbs * 4)) / 9));
+            return {
+                proteinGrams: currentDayTargets.protein,
+                carbsGrams: currentDayTargets.carbs,
+                fatGrams,
+            };
+        }
         return calculateMacroDistribution(effectiveKcal, effectiveProtein);
-    }, [effectiveKcal, effectiveProtein]);
+    }, [effectiveKcal, effectiveProtein, currentDayTargets]);
 
     const [showSecondaryMacros, setShowSecondaryMacros] = useState<boolean>(() => {
         const saved = localStorage.getItem('macrotrack_show_secondary');
@@ -132,23 +139,24 @@ const MacroDashboard = () => {
                         {t.macro.trackerTitle}
                     </h2>
 
-                    {/* Exercise Day toggle */}
-                    {showGymButton && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExerciseDay();
-                            }}
-                            title={exerciseDay ? `${t.macro.gymActive} (+ ${EXERCISE_BONUS_KCAL} ${t.common.kcal})` : t.macro.gymInactive}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
-                                ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
-                                : 'bg-off-white/10 text-off-white/60 hover:bg-off-white/20'
-                                }`}
-                        >
-                            <Flame size={12} />
-                            {exerciseDay ? `+${EXERCISE_BONUS_KCAL}` : t.tabs.day === 'Day' ? 'GYM' : 'GYM'}
-                        </button>
-                    )}
+                    {/* Exercise Day toggle - Always visible */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExerciseDay();
+                        }}
+                        title={exerciseDay
+                            ? `${currentDayTargets ? 'Tréninkový den (Aktivní)' : t.macro.gymActive}`
+                            : `${currentDayTargets ? 'Netréninkový den (Rest) - Klikni pro přepnutí na trénink' : t.macro.gymInactive}`
+                        }
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition-all duration-300 ${exerciseDay
+                            ? 'bg-signal-red text-white shadow-[0_0_12px_rgba(255,51,51,0.6)] animate-pulse'
+                            : 'bg-off-white/10 text-off-white/60 hover:bg-off-white/20'
+                            }`}
+                    >
+                        <Flame size={12} className={exerciseDay ? 'fill-white' : ''} />
+                        {exerciseDay ? (currentDayTargets ? 'TRAIN' : `+${EXERCISE_BONUS_KCAL}`) : (currentDayTargets ? 'REST' : 'GYM')}
+                    </button>
                 </div>
 
                 {/* Main Calorie & Protein Counters */}

@@ -26,3 +26,4 @@ dist-ssr
 .env*.local
 .env.vercel
 supabase/.temp/
+session_token.json

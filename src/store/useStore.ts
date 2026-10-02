@@ -9,6 +9,13 @@ import { Language, getInitialLanguage } from '../utils/i18n';
 
 export { EXERCISE_BONUS_KCAL, EXERCISE_BONUS_PROTEIN };
 
+export interface DayMacroTargets {
+    kcal: number;
+    protein: number;
+    carbs: number;
+    fat?: number;
+}
+
 export interface FoodEntry {
     id: string;
     name: string;
@@ -114,11 +121,17 @@ interface AppState {
     setLanguage: (language: Language) => void;
     lastCoachAuditDate: string | null;
     setLastCoachAuditDate: (date: string | null) => void;
+    customTrainingTargets: DayMacroTargets | null;
+    customRestTargets: DayMacroTargets | null;
+    setCustomDayTargets: (training: DayMacroTargets | null, rest: DayMacroTargets | null) => void;
 }
 
 export const useStore = create<AppState>()(
     persist(
     (set, get) => ({
+            customTrainingTargets: null,
+            customRestTargets: null,
+            setCustomDayTargets: (training, rest) => set({ customTrainingTargets: training, customRestTargets: rest }),
             language: getInitialLanguage(),
             setLanguage: (language) => set({ language }),
             lastCoachAuditDate: null,
@@ -864,6 +877,8 @@ export const useStore = create<AppState>()(
                 lastActiveDate: state.lastActiveDate,
                 smartwatchWeeklyBurn: state.smartwatchWeeklyBurn,
                 smartwatchMonthlyBurn: state.smartwatchMonthlyBurn,
+                customTrainingTargets: state.customTrainingTargets,
+                customRestTargets: state.customRestTargets,
             }),
             migrate: (persistedState: any, version: number) => {
                 if (version === 0 && persistedState) {

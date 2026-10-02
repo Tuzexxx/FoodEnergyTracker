@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { X, Save, RefreshCw, LogOut, Info, ChevronDown, Globe, Download, Key, Check } from 'lucide-react';
@@ -8,7 +8,7 @@ import { getTranslation } from '../utils/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
-    const { profile, targetKcal, targetProtein, resetAll, calibrateUser, resetDaily, session, isGuest, language } = useStore();
+    const { profile, targetKcal, targetProtein, resetAll, calibrateUser, resetDaily, session, isGuest, language, customTrainingTargets, customRestTargets, setCustomDayTargets } = useStore();
     const t = getTranslation(language);
 
     const [weight, setWeight] = useState(profile?.weight?.toString() || '');
@@ -19,9 +19,38 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
     const [goal, setGoal] = useState(profile?.goal || 'RECOMP (Maintain/Muscle)');
     const [customKcal, setCustomKcal] = useState('');
     const [customProtein, setCustomProtein] = useState('');
-    const [showCustom, setShowCustom] = useState(false);
+    const [showCustom, setShowCustom] = useState(Boolean(customTrainingTargets || customRestTargets));
     const [showActivity, setShowActivity] = useState(false);
     const [showGoal, setShowGoal] = useState(false);
+
+    // Custom day targets (Training vs Rest)
+    const [trainKcal, setTrainKcal] = useState(customTrainingTargets?.kcal?.toString() || '');
+    const [trainProtein, setTrainProtein] = useState(customTrainingTargets?.protein?.toString() || '');
+    const [trainCarbs, setTrainCarbs] = useState(customTrainingTargets?.carbs?.toString() || '');
+
+    const [restKcal, setRestKcal] = useState(customRestTargets?.kcal?.toString() || '');
+    const [restProtein, setRestProtein] = useState(customRestTargets?.protein?.toString() || '');
+    const [restCarbs, setRestCarbs] = useState(customRestTargets?.carbs?.toString() || '');
+
+    const trainFat = useMemo(() => {
+        const k = Number(trainKcal);
+        const p = Number(trainProtein);
+        const c = Number(trainCarbs);
+        if (k > 0 && p >= 0 && c >= 0) {
+            return Math.max(0, Math.round((k - (p * 4 + c * 4)) / 9));
+        }
+        return null;
+    }, [trainKcal, trainProtein, trainCarbs]);
+
+    const restFat = useMemo(() => {
+        const k = Number(restKcal);
+        const p = Number(restProtein);
+        const c = Number(restCarbs);
+        if (k > 0 && p >= 0 && c >= 0) {
+            return Math.max(0, Math.round((k - (p * 4 + c * 4)) / 9));
+        }
+        return null;
+    }, [restKcal, restProtein, restCarbs]);
 
     const panelRef = useRef(null);
 
@@ -62,6 +91,26 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
             finalKcal,
             finalProtein
         );
+
+        if (trainKcal && trainProtein && trainCarbs && restKcal && restProtein && restCarbs) {
+            setCustomDayTargets(
+                {
+                    kcal: Number(trainKcal),
+                    protein: Number(trainProtein),
+                    carbs: Number(trainCarbs),
+                    fat: trainFat ?? undefined,
+                },
+                {
+                    kcal: Number(restKcal),
+                    protein: Number(restProtein),
+                    carbs: Number(restCarbs),
+                    fat: restFat ?? undefined,
+                }
+            );
+        } else if (!trainKcal && !restKcal) {
+            setCustomDayTargets(null, null);
+        }
+
         handleClose();
     };
 
@@ -324,6 +373,110 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                                             onChange={(e) => setCustomProtein(e.target.value)}
                                             className="w-full bg-transparent border-b-2 border-brutal-black/20 focus:border-signal-red outline-none py-1 font-data text-lg transition-colors"
                                         />
+                                    </div>
+                                </div>
+
+                                {/* Calorie & Carb Cycling Section */}
+                                <div className="mt-5 pt-4 border-t border-brutal-black/10 flex flex-col gap-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-sans text-[11px] uppercase tracking-wider font-bold opacity-80 flex items-center gap-1.5">
+                                            🔥 Calorie & Carb Cycling
+                                        </span>
+                                    </div>
+                                    <p className="font-sans text-[10px] opacity-50 leading-relaxed">
+                                        Nastavení pro tréninkový a netréninkový den. Tuky se dopočítávají ze zbývajících kalorií.
+                                    </p>
+
+                                    {/* Training Day Box */}
+                                    <div className="p-3 bg-black/5 rounded-xl border border-black/10 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-sans text-[10px] uppercase font-bold text-signal-red tracking-wider">
+                                                🏋️ Tréninkový den (Train)
+                                            </span>
+                                            {trainFat !== null && (
+                                                <span className="text-[10px] font-sans text-rose-600 font-medium">
+                                                    Tuky: {trainFat}g
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Kcal</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="2400"
+                                                    value={trainKcal}
+                                                    onChange={e => setTrainKcal(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Bílkoviny (g)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="150"
+                                                    value={trainProtein}
+                                                    onChange={e => setTrainProtein(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Sacharidy (g)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="280"
+                                                    value={trainCarbs}
+                                                    onChange={e => setTrainCarbs(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Rest Day Box */}
+                                    <div className="p-3 bg-black/5 rounded-xl border border-black/10 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-sans text-[10px] uppercase font-bold opacity-80 tracking-wider">
+                                                🛌 Netréninkový den (Rest)
+                                            </span>
+                                            {restFat !== null && (
+                                                <span className="text-[10px] font-sans text-rose-600 font-medium">
+                                                    Tuky: {restFat}g
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Kcal</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="1950"
+                                                    value={restKcal}
+                                                    onChange={e => setRestKcal(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Bílkoviny (g)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="150"
+                                                    value={restProtein}
+                                                    onChange={e => setRestProtein(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="font-sans text-[9px] uppercase opacity-40 block">Sacharidy (g)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="180"
+                                                    value={restCarbs}
+                                                    onChange={e => setRestCarbs(e.target.value)}
+                                                    className="w-full bg-transparent border-b border-brutal-black/20 focus:border-signal-red outline-none py-0.5 font-data text-sm"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </>
