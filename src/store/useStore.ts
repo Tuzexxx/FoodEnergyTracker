@@ -141,9 +141,27 @@ export const useStore = create<AppState>()(
             viewedHistoryDate: null,
             setViewedHistoryDate: (date) => set({ viewedHistoryDate: date }),
             smartwatchWeeklyBurn: null,
-            setSmartwatchWeeklyBurn: (burn) => set({ smartwatchWeeklyBurn: burn }),
+            setSmartwatchWeeklyBurn: (burn) => {
+                set({ smartwatchWeeklyBurn: burn });
+                const userId = get().session?.user.id;
+                if (userId) {
+                    void supabase.from('profiles').update({
+                        smartwatch_weekly_burn: burn,
+                        updated_at: new Date().toISOString()
+                    }).eq('id', userId);
+                }
+            },
             smartwatchMonthlyBurn: null,
-            setSmartwatchMonthlyBurn: (burn) => set({ smartwatchMonthlyBurn: burn }),
+            setSmartwatchMonthlyBurn: (burn) => {
+                set({ smartwatchMonthlyBurn: burn });
+                const userId = get().session?.user.id;
+                if (userId) {
+                    void supabase.from('profiles').update({
+                        smartwatch_monthly_burn: burn,
+                        updated_at: new Date().toISOString()
+                    }).eq('id', userId);
+                }
+            },
             setSession: (session) => {
                 const previousUserId = get().session?.user.id;
                 const nextUserId = session?.user.id;
@@ -246,7 +264,9 @@ export const useStore = create<AppState>()(
                             activityLevel: profileData.activity_level || 'LIGHT',
                         },
                         targetKcal: profileData.target_kcal,
-                        targetProtein: profileData.target_protein
+                        targetProtein: profileData.target_protein,
+                        ...(profileData.smartwatch_weekly_burn != null ? { smartwatchWeeklyBurn: Math.round(Number(profileData.smartwatch_weekly_burn)) } : {}),
+                        ...(profileData.smartwatch_monthly_burn != null ? { smartwatchMonthlyBurn: Math.round(Number(profileData.smartwatch_monthly_burn)) } : {}),
                     });
                 }
 
