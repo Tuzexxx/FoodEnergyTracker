@@ -40,7 +40,7 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
     const inFlightRequestsRef = useRef(new Set<string>());
     const queueScope = session?.user.id ?? 'guest';
 
-    // --- Voice Dictation (Web Speech API) ---
+    // --- Voice Dictation (Web Speech API s dynamickým jazykem a doménovým slovníkem) ---
     const toggleListening = () => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -58,7 +58,35 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
             const recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = true;
-            recognition.lang = navigator.language || 'cs-CZ';
+
+            // 1. Jazyk STT striktně dle aktivního jazyka aplikace v useStore
+            const langMap: Record<string, string> = {
+                cs: 'cs-CZ',
+                de: 'de-DE',
+                en: 'en-US'
+            };
+            recognition.lang = langMap[language] || 'cs-CZ';
+
+            // 2. Doménový slovník z databáze uživatele (favorites) pro maximální přesnost
+            const SpeechGrammarList = (window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList;
+            if (SpeechGrammarList && favorites && favorites.length > 0) {
+                try {
+                    const speechRecognitionList = new SpeechGrammarList();
+                    const cleanWords = favorites.map((f: any) => {
+                        let name = f.name;
+                        if (name.includes('||')) name = name.split('||')[0];
+                        return name.replace(/[*#_~]/g, '').trim();
+                    }).filter((w: string) => w.length > 1);
+
+                    if (cleanWords.length > 0) {
+                        const grammar = `#JSGF V1.0; grammar foods; public <food> = ${cleanWords.join(' | ')} ;`;
+                        speechRecognitionList.addFromString(grammar, 1);
+                        recognition.grammars = speechRecognitionList;
+                    }
+                } catch (e) {
+                    // Tichý fallback pokud prohlížeč JSGF nepodporuje
+                }
+            }
 
             recognition.onstart = () => {
                 setIsListening(true);
@@ -66,9 +94,25 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
             };
 
             recognition.onresult = (event: any) => {
-                const transcript = Array.from(event.results)
+                let transcript = Array.from(event.results)
                     .map((result: any) => (result as any)[0].transcript)
                     .join('');
+
+                // 3. Chytré přichycení k doménovému slovníku oblíbených jídel (Domain Vocabulary Snapping)
+                if (favorites && favorites.length > 0) {
+                    const lowerTranscript = transcript.toLowerCase();
+                    for (const fav of favorites) {
+                        let favName = fav.name;
+                        if (favName.includes('||')) favName = favName.split('||')[0];
+                        favName = favName.replace(/[*#_~]/g, '').trim();
+                        if (favName.length > 2 && lowerTranscript.includes(favName.toLowerCase())) {
+                            // Zachovat přesné kanonické názvy z databáze
+                            const regex = new RegExp(favName, 'gi');
+                            transcript = transcript.replace(regex, favName);
+                        }
+                    }
+                }
+
                 setInput(transcript);
             };
 
