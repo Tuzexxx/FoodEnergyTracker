@@ -3,6 +3,6 @@
 -- Přidává sloupce pro synchronizaci spálených kalorií ze smartwatches / Samsung Health
 
 ALTER TABLE public.profiles
-    ADD COLUMN IF NOT EXISTS smartwatch_weekly_burn NUMERIC,
-    ADD COLUMN IF NOT EXISTS smartwatch_monthly_burn NUMERIC,
-    ADD COLUMN IF NOT EXISTS yesterday_tdee NUMERIC;
+    ADD COLUMN IF NOT EXISTS smartwatch_weekly_burn NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS smartwatch_monthly_burn NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS yesterday_tdee NUMERIC(10, 2);
