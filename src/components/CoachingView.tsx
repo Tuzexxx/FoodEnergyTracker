@@ -132,12 +132,14 @@ const CoachingView: React.FC = () => {
     }, [period, activeData.log.length, activeData.kcal, historicalDays, activeData.isExercise]);
 
     const cacheKey = useMemo(() => {
-        return `macrotrack_coach_${language}_${baseScopeKey}`;
-    }, [language, baseScopeKey]);
+        return `macrotrack_coach_${session?.user.id ?? 'unauthenticated'}_${language}_${baseScopeKey}`;
+    }, [language, baseScopeKey, session?.user.id]);
 
     // Load from cache or auto-translate from existing language cache when switching languages
     useEffect(() => {
         let isMounted = true;
+        if (!session?.user.id) { setAnalysis(null); return; }
+        setAnalysis(null);
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
             try {
@@ -155,7 +157,7 @@ const CoachingView: React.FC = () => {
         let candidateAnalysis: CoachAnalysisResult | null = null;
 
         for (const l of otherLangs) {
-            const otherKey = `macrotrack_coach_${l}_${baseScopeKey}`;
+            const otherKey = `macrotrack_coach_${session?.user.id ?? 'unauthenticated'}_${l}_${baseScopeKey}`;
             const raw = localStorage.getItem(otherKey);
             if (raw) {
                 try {
