@@ -143,11 +143,11 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
             const response: any = await getAiResponse(prompt, image || undefined);
 
             if (response.type === 'success' && response.data) {
-                await removePending(id);
                 const currentScope = useStore.getState().session?.user.id ?? 'guest';
                 if (currentScope !== queueScope) return;
+                await addEntry(response.data, id);
+                await removePending(id);
                 if (!isRetry) playSound('log');
-                addEntry(response.data);
             } else if (response.type === 'clarification' && response.options) {
                 await removePending(id);
                 if (!isRetry) {

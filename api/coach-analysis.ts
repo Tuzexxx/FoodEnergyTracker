@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { consumeRateLimit } from './_rate-limit.js';
 
 export interface ApiRequest {
     headers?: Record<string, string | string[] | undefined>;
@@ -20,25 +21,9 @@ const VIP_EMAILS = [
     'holdacompany@gmail.com'
 ];
 
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
-// Map of userId -> dateStr of last audit (e.g. '2026-08-29')
-const dailyUserAudits = new Map<string, string>();
-
 function header(req: ApiRequest, name: string): string {
     const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
     return Array.isArray(value) ? value[0] || '' : value || '';
-}
-
-function consumeRateLimit(key: string, limit: number): boolean {
-    const now = Date.now();
-    const current = requestCounts.get(key);
-    if (!current || current.resetAt <= now) {
-        requestCounts.set(key, { count: 1, resetAt: now + 60000 });
-        return true;
-    }
-    if (current.count >= limit) return false;
-    current.count += 1;
-    return true;
 }
 
 async function authenticate(req: ApiRequest): Promise<AuthResult> {
@@ -61,7 +46,7 @@ async function authenticate(req: ApiRequest): Promise<AuthResult> {
         return { userId: data.user.id, email: data.user.email || null, invalidToken: false };
     } catch (err) {
         console.warn('[auth] Error checking token:', err);
-        return { userId: null, email: null, invalidToken: false };
+        return { userId: null, email: null, invalidToken: true };
     }
 }
 
@@ -85,22 +70,9 @@ export async function guardRequest(
     // Rate limiting
     const key = 'user:' + auth.userId;
     const limit = isVip ? 100 : 30;
-    if (!consumeRateLimit(key, limit)) {
+    if (!await consumeRateLimit('coach:' + key, limit).catch(() => false)) {
         res.status(429).json({ error: 'Too many analysis requests. Please try again later.' });
         return null;
-    }
-
-    // Daily 1-audit limit for non-VIP registered users (only for fresh audits, not translations)
-    if (!isVip && !isTranslateMode) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const lastAuditDate = dailyUserAudits.get(auth.userId);
-        if (lastAuditDate === todayStr) {
-            res.status(429).json({
-                error: 'Daily coaching audit limit reached (1/1). Next audit will be available tomorrow.',
-                type: 'daily_limit'
-            });
-            return null;
-        }
     }
 
     return { userId: auth.userId, email: auth.email, isVip };
@@ -117,6 +89,17 @@ export default async function handler(req: ApiRequest & { method?: string }, res
     const authContext = await guardRequest(req, res, isTranslateMode);
     if (authContext === null) return;
 
+    if (!isTranslateMode && !authContext.isVip) {
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+        if (!serviceKey || !url) return res.status(503).json({ error: 'Audit quota unavailable.' });
+        const admin = createClient(url, serviceKey);
+        const { error } = await admin.from('coach_daily_audits').insert({
+            user_id: authContext.userId, audit_date: new Date().toISOString().slice(0, 10)
+        });
+        if (error?.code === '23505') return res.status(429).json({ error: 'Daily audit limit reached.', type: 'daily_limit' });
+        if (error) return res.status(503).json({ error: 'Audit quota unavailable.' });
+    }
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: 'API key not configured', type: 'error' });
@@ -330,12 +313,6 @@ OUTPUT ONLY STRICT JSON MATCHING THIS SCHEMA:
         }
 
         const parsed = JSON.parse(resultText.substring(firstBrace, lastBrace + 1));
-
-        // Mark today as audited for non-VIP user
-        if (!authContext.isVip) {
-            const todayStr = new Date().toISOString().split('T')[0];
-            dailyUserAudits.set(authContext.userId, todayStr);
-        }
 
         return res.status(200).json(parsed);
     } catch (error: any) {

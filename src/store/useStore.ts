@@ -95,7 +95,7 @@ interface AppState {
     historicalDays: HistoricalDay[];
     dailyLog: FoodEntry[];
     calibrateUser: (profile: UserProfile, kcal: number, protein: number) => Promise<void>;
-    addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => Promise<void>;
+    addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>, requestId?: string) => Promise<void>;
     addEntryWithTimestamp: (entry: Omit<FoodEntry, 'id' | 'timestamp'>, timestamp: number) => Promise<void>;
     updateEntry: (id: string, updatedData: Partial<Omit<FoodEntry, 'id'>>) => Promise<void>;
     deleteEntry: (id: string) => Promise<void>;
@@ -168,14 +168,14 @@ export const useStore = create<AppState>()(
                 const previousPersistedScope = get().persistedScope;
 
                 // An actual user switch happens ONLY when we had an active user ID previously AND now have a DIFFERENT user ID.
-                const isRealUserSwitch = Boolean(previousUserId && nextUserId && previousUserId !== nextUserId);
+                const isRealUserSwitch = Boolean((previousUserId && previousUserId !== nextUserId) || (nextUserId && previousPersistedScope && previousPersistedScope !== nextUserId && previousPersistedScope !== 'guest'));
 
                 if (isRealUserSwitch) {
                     void clearAllPending();
                     set({
                         session,
                         isGuest: false,
-                        persistedScope: nextUserId,
+                        persistedScope: nextUserId ?? null,
                         isCalibrated: false,
                         profile: null,
                         targetKcal: 0,
@@ -188,10 +188,11 @@ export const useStore = create<AppState>()(
                         dailyLog: [],
                         favorites: [],
                         historicalExerciseDays: [],
-            smartwatchWeeklyBurn: null,
-            setSmartwatchWeeklyBurn: (burn) => set({ smartwatchWeeklyBurn: burn }),
+                        smartwatchWeeklyBurn: null,
+                        smartwatchMonthlyBurn: null,
                         exerciseDay: false,
                         viewedHistoryDate: null,
+                        lastCoachAuditDate: null,
                     });
                 } else {
                     set({
@@ -465,8 +466,9 @@ export const useStore = create<AppState>()(
                 }
             },
 
-            addEntry: async (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => {
-                const newId = createId();
+            addEntry: async (entry: Omit<FoodEntry, 'id' | 'timestamp'>, requestId?: string) => {
+                const newId = requestId ?? createId();
+                if (get().dailyLog.some(e => e.id === newId) || get().historicalDays?.some(d => d.entries?.some(e => e.id === newId))) return;
                 const timestamp = Date.now();
                 const newEntry = { ...entry, id: newId, timestamp };
 
@@ -480,7 +482,7 @@ export const useStore = create<AppState>()(
                 // Push to cloud in background
                 const { session } = get();
                 if (session?.user) {
-                    const { error } = await supabase.from('food_entries').insert({
+                    const { error } = await supabase.from('food_entries').upsert({
                         id: newId,
                         user_id: session.user.id,
                         name: entry.name,
@@ -490,7 +492,7 @@ export const useStore = create<AppState>()(
                         fat: entry.fat,
                         timestamp: timestamp,
                         requires_review: entry.requiresReview || false
-                    });
+                    }, { onConflict: 'id', ignoreDuplicates: true });
                     if (error) {
                         console.error('Supabase Sync Error:', error.message);
                         set((state) => ({
@@ -498,6 +500,7 @@ export const useStore = create<AppState>()(
                             consumedProtein: Math.max(0, Math.round(state.consumedProtein - entry.protein)),
                             dailyLog: state.dailyLog.filter(item => item.id !== newId),
                         }));
+                        throw error;
                     }
                 }
             },
