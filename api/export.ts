@@ -71,6 +71,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         return res.status(500).json({ error: entriesError.message });
     }
 
+    const timezone = typeof req.query?.timezone === 'string' ? req.query.timezone : 'UTC';
+    let formatter: Intl.DateTimeFormat;
+    try {
+        formatter = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch {
+        return res.status(400).json({ error: 'Invalid IANA timezone.' });
+    }
     // Group by local day (YYYY-MM-DD)
     const daysMap: Record<string, {
         dateStr: string;
@@ -83,7 +90,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     (entries || []).forEach((e: any) => {
         const d = new Date(Number(e.timestamp));
-        const dateStr = d.toISOString().split('T')[0];
+        const parts = formatter.formatToParts(d);
+        const part = (type: string) => parts.find(p => p.type === type)?.value || '';
+        const dateStr = [part('year'), part('month'), part('day')].join('-');
         if (!daysMap[dateStr]) {
             daysMap[dateStr] = {
                 dateStr,
