@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { consumeRateLimit } from './_rate-limit.js';
 
 export interface ApiRequest {
     headers?: Record<string, string | string[] | undefined>;
@@ -18,29 +19,13 @@ interface AuthResult {
 const MAX_INPUT_LENGTH = 2000;
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_IMAGE_LENGTH = 5000000;
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
-
 function header(req: ApiRequest, name: string): string {
-    const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
-    return Array.isArray(value) ? value[0] || '' : value || '';
+ const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
+ return Array.isArray(value) ? value[0] || '' : value || '';
 }
-
 function clientKey(req: ApiRequest): string {
-    return header(req, 'x-forwarded-for').split(',')[0].trim() || 'unknown-client';
+ return header(req, 'x-real-ip') || header(req, 'x-vercel-forwarded-for').split(',')[0].trim() || 'unknown-client';
 }
-
-function consumeRateLimit(key: string, limit: number): boolean {
-    const now = Date.now();
-    const current = requestCounts.get(key);
-    if (!current || current.resetAt <= now) {
-        requestCounts.set(key, { count: 1, resetAt: now + 60000 });
-        return true;
-    }
-    if (current.count >= limit) return false;
-    current.count += 1;
-    return true;
-}
-
 async function authenticate(req: ApiRequest): Promise<AuthResult> {
     try {
         const authorization = header(req, 'authorization');
@@ -61,7 +46,7 @@ async function authenticate(req: ApiRequest): Promise<AuthResult> {
         return { userId: data.user.id, invalidToken: false };
     } catch (err) {
         console.warn('[auth] Error checking token:', err);
-        return { userId: null, invalidToken: false };
+        return { userId: null, invalidToken: true };
     }
 }
 
@@ -75,7 +60,7 @@ export async function guardRequest(req: ApiRequest, res: ApiResponse): Promise<s
 
     const key = auth.userId ? ('user:' + auth.userId) : ('guest:' + clientKey(req));
     const limit = auth.userId ? 60 : 10;
-    if (!consumeRateLimit(key, limit)) {
+    if (!await consumeRateLimit(key, limit).catch(() => false)) {
         res.status(429).json({ error: 'Too many requests. Please try again later.' });
         return null;
     }
