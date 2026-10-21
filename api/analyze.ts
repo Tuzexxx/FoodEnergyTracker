@@ -131,7 +131,7 @@ Always output ONLY a strict JSON object. Do not output any conversational text b
 
 RULES:
 1. If the food entry (text or image) is clear and has a plausible consumed quantity, estimate the macros and set 'requiresReview' to false.
-2. CRITICAL - SPECIFIC BRANDS: If the user provides a specific brand or product name (e.g., "Gustavo Gusto pizza"), you MUST use Google Search to find the exact nutritional values for that specific brand before estimating.
+2. CRITICAL - SPECIFIC BRANDS: You do not have live product search access in this request. Never claim you verified manufacturer data. For named branded products, estimate conservatively, mark requiresReview true, and encourage verification against the packaging.
 3. CRITICAL - AMBIGUITY & GRACEFUL ASSUMPTION: If the portion is ambiguous (e.g., "salad" or an image without scale), DO NOT ask for clarification. Make a mathematically sound, educated guess based on statistical average portion sizes (e.g., "1 average medium bowl of mixed salad (approx 300g)"). If you have to make an assumption like this, you MUST set the 'requiresReview' flag to true.
 4. If an image is just ingredients or a nutrition label per 100g, assume a standard single serving size for that food type and set 'requiresReview' to true.
 5. CRITICAL - ALWAYS USE METRIC: The description after the '*Title*' marker MUST ALWAYS include precise metric weights (grams or ml). Never just say "1 bowl" or "2 pieces" without adding "(approx Xg)" or "(X ml)".
@@ -192,7 +192,7 @@ CLARIFICATION FORMAT:
             generationConfig: { responseMimeType: 'application/json' },
         };
 
-        // Google Search Grounding tool is only supported for text inputs, NOT multimodal/image inputs
+        // This request does not enable a search tool; branded-product results must be marked as estimates.
 
         const requestBody = JSON.stringify(requestBodyObj);
 
