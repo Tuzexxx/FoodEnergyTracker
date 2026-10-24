@@ -134,6 +134,18 @@ export interface Translations {
         voiceListening: string;
         favorites: string;
         recent: string;
+        favoritesTitle: string;
+        recentHint: string;
+        favoritesHint: string;
+        pickerError: string;
+        favoriteRemoved: string;
+        undo: string;
+        removeFavorite: string;
+        saveFavorite: string;
+        mealDetails: string;
+        mealDescription: string;
+        duplicateFavorite: string;
+
         recentEmpty: string;
         addRecentToday: string;
         recentError: string;
@@ -335,6 +347,18 @@ export const translations: Record<Language, Translations> = {
             voiceListening: 'Listening...',
             favorites: 'Toggle Favorites',
             recent: 'Recent meals',
+            favoritesTitle: 'Favorite meals',
+            recentHint: 'Tap for details · + adds to today · Swipe left to toggle favorite',
+            favoritesHint: 'Tap for details and editing · + adds to today · Swipe right to remove',
+            pickerError: 'Could not save the change. Please try again.',
+            favoriteRemoved: 'Removed from favorites',
+            undo: 'Undo',
+            removeFavorite: 'Remove from favorites',
+            saveFavorite: 'Save to favorites',
+            mealDetails: 'Meal details',
+            mealDescription: 'Name and details',
+            duplicateFavorite: 'A favorite with this name already exists.',
+
             recentEmpty: 'No meals logged yet. Your meals will appear here.',
             addRecentToday: 'Add to today',
             recentError: 'Could not save the meal. Please try again.',
@@ -534,6 +558,18 @@ export const translations: Record<Language, Translations> = {
             voiceListening: 'Poslouchám...',
             favorites: 'Oblíbené',
             recent: 'Historie jídel',
+            favoritesTitle: 'Oblíbená jídla',
+            recentHint: 'Klepnutí: detail · +: přidat do dneška · Tah doleva: oblíbené',
+            favoritesHint: 'Klepnutí: detail a úpravy · +: přidat do dneška · Tah doprava: odebrat',
+            pickerError: 'Změnu se nepodařilo uložit. Zkuste to znovu.',
+            favoriteRemoved: 'Odebráno z oblíbených',
+            undo: 'Vrátit',
+            removeFavorite: 'Odebrat z oblíbených',
+            saveFavorite: 'Uložit do oblíbených',
+            mealDetails: 'Detail jídla',
+            mealDescription: 'Název a podrobnosti',
+            duplicateFavorite: 'Oblíbené jídlo s tímto názvem již existuje.',
+
             recentEmpty: 'Zatím nemáte zapsaná žádná jídla. Zde se objeví vaše historie.',
             addRecentToday: 'Přidat do dneška',
             recentError: 'Jídlo se nepodařilo uložit. Zkuste to znovu.',
@@ -733,6 +769,18 @@ export const translations: Record<Language, Translations> = {
             voiceListening: 'Höre zu...',
             favorites: 'Favoriten umschalten',
             recent: 'Letzte Mahlzeiten',
+            favoritesTitle: 'Lieblingsgerichte',
+            recentHint: 'Tippen: Details · +: zu heute hinzufügen · Nach links: Favorit umschalten',
+            favoritesHint: 'Tippen: Details und Bearbeiten · +: zu heute hinzufügen · Nach rechts: entfernen',
+            pickerError: 'Die Änderung konnte nicht gespeichert werden. Bitte erneut versuchen.',
+            favoriteRemoved: 'Aus Favoriten entfernt',
+            undo: 'Rückgängig',
+            removeFavorite: 'Aus Favoriten entfernen',
+            saveFavorite: 'Als Favorit speichern',
+            mealDetails: 'Mahlzeitdetails',
+            mealDescription: 'Name und Details',
+            duplicateFavorite: 'Ein Favorit mit diesem Namen existiert bereits.',
+
             recentEmpty: 'Noch keine Mahlzeiten erfasst. Hier erscheint dein Verlauf.',
             addRecentToday: 'Zu heute hinzufügen',
             recentError: 'Die Mahlzeit konnte nicht gespeichert werden. Bitte erneut versuchen.',

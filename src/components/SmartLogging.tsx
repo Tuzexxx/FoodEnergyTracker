@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, X, Activity, LayoutGrid, History, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
+import { Camera, Send, X, Activity, LayoutGrid, History, Star, Mic, Image as ImageIcon } from 'lucide-react';
 import BatchUpload from './BatchUpload';
-import RecentMeals from './RecentMeals';
+import MealPicker from './MealPicker';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -20,16 +20,14 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
     const [showFavorites, setShowFavorites] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
     const closeRecent = useCallback(() => setShowRecent(false), []);
-    const [isFavEditMode, setIsFavEditMode] = useState(false);
-    const [editingFav, setEditingFav] = useState<any>(null);
-    const [isFavAdjusting, setIsFavAdjusting] = useState(false);
+    const closeFavorites = useCallback(() => setShowFavorites(false), []);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [showCameraPicker, setShowCameraPicker] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [isBatchOpen, setIsBatchOpen] = useState(false);
     const [interrogation, setInterrogation] = useState<any>(null);
     const [telemetryError, setTelemetryError] = useState<string | null>(null);
-    const { isCalibrated, session, addEntry, favorites, removeFavorite, updateFavorite, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs, language } = useStore();
+    const { isCalibrated, session, addEntry, favorites, processingLogs, addProcessingLog, removeProcessingLog, clearProcessingLogs, language } = useStore();
     const t = getTranslation(language);
 
     // Only lock the SmartLogging UI if actively recording voice dictation
@@ -504,184 +502,8 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
                 </div>
             )}
 
-            {showRecent && <RecentMeals onClose={closeRecent} />}
-
-            {/* Frosted Glass Backdrop */}
-            {showFavorites && favorites && favorites.length > 0 && (
-                <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-xl" onClick={() => { setShowFavorites(false); setIsFavEditMode(false); setEditingFav(null); }} />
-            )}
-
-            {/* Favorites List - Floating above the pill */}
-            {showFavorites && favorites && favorites.length > 0 && (
-                <div className="flex flex-col gap-2 pb-4 mb-2 px-2 w-full max-w-sm mx-auto items-center animate-in fade-in slide-in-from-bottom-2 relative z-40">
-                    {/* Frosted Glass Panel */}
-                    <div className="w-full bg-white/40 backdrop-blur-2xl border border-white/50 rounded-3xl shadow-2xl p-4">
-                        {/* Edit Toggle Header */}
-                        <div className="flex justify-end w-full mb-3">
-                            <button
-                                onClick={() => {
-                                    setIsFavEditMode(!isFavEditMode);
-                                    setEditingFav(null);
-                                }}
-                                className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md transition-all ${isFavEditMode ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-black/5 text-brutal-black/50 hover:bg-black/10'}`}
-                            >
-                                <Edit2 size={12} /> {isFavEditMode ? 'Done' : 'Edit'}
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
-                            {(favorites || []).map((fav, i) => {
-                                const isEditingThis = editingFav?.originalName === fav.name;
-
-                                if (isEditingThis) {
-                                    return (
-                                        <div key={`edit-${i}`} className="bg-white/60 backdrop-blur-2xl flex flex-col gap-3 p-3 rounded-2xl w-full border border-white/40 shadow-2xl z-50 animate-in zoom-in-95 data-[state=closed]:zoom-out-95 duration-200">
-                                            <input
-                                                type="text"
-                                                value={editingFav.name}
-                                                onChange={(e) => setEditingFav({ ...editingFav, name: e.target.value })}
-                                                className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-sans outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-black/30"
-                                                placeholder="Name (e.g., *Salad* with dressing)"
-                                            />
-                                            <div className="flex gap-2">
-                                                <div className="flex-1 flex flex-col">
-                                                    <label className="text-[10px] uppercase font-bold text-black/40 mb-1 tracking-wider">KCAL</label>
-                                                    <input
-                                                        type="number"
-                                                        value={editingFav.kcal}
-                                                        onChange={(e) => setEditingFav({ ...editingFav, kcal: Number(e.target.value) })}
-                                                        className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-data text-signal-red outline-none focus:ring-2 focus:ring-signal-red"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 flex flex-col">
-                                                    <label className="text-[10px] uppercase font-bold text-black/40 mb-1 tracking-wider">PROTEIN</label>
-                                                    <input
-                                                        type="number"
-                                                        value={editingFav.protein}
-                                                        onChange={(e) => setEditingFav({ ...editingFav, protein: Number(e.target.value) })}
-                                                        className="w-full bg-black/5 rounded-lg px-3 py-2 text-sm font-bold font-data text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-600"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap justify-between items-center mt-1 border-t border-black/5 pt-2 gap-2">
-                                                <button
-                                                    onClick={() => {
-                                                        removeFavorite(fav.name);
-                                                        setEditingFav(null);
-                                                        if (favorites.length === 1) setShowFavorites(false);
-                                                    }}
-                                                    className="flex items-center justify-center w-10 h-10 rounded-full text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-all shrink-0"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                                <div className="flex gap-1.5 flex-1 justify-end min-w-fit">
-                                                    <button
-                                                        onClick={() => setEditingFav(null)}
-                                                        className="px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase bg-black/5 hover:bg-black/10 transition-all active:scale-95 shrink-0"
-                                                        disabled={isFavAdjusting}
-                                                    >
-                                                        {t.common.cancel}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            const { originalName, ...toSave } = editingFav;
-                                                            updateFavorite(originalName, toSave);
-                                                            setEditingFav(null);
-                                                        }}
-                                                        className="px-3 py-2 bg-black/80 text-white rounded-xl hover:bg-black text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0"
-                                                        disabled={isFavAdjusting}
-                                                    >
-                                                        {t.common.save}
-                                                    </button>
-                                                    <button
-                                                        title="Recalculate Macros"
-                                                        onClick={async () => {
-                                                            setIsFavAdjusting(true);
-                                                            const aiRes: any = await getAiResponse(editingFav.name);
-                                                            setIsFavAdjusting(false);
-                                                            if (aiRes.type === 'success' && aiRes.data) {
-                                                                const { originalName } = editingFav;
-                                                                updateFavorite(originalName, {
-                                                                    name: aiRes.data.name || editingFav.name,
-                                                                    kcal: aiRes.data.kcal,
-                                                                    protein: aiRes.data.protein,
-                                                                    carbs: aiRes.data.carbs,
-                                                                    fat: aiRes.data.fat
-                                                                });
-                                                                setEditingFav(null);
-                                                            } else {
-                                                                alert("AI could not adjust. Please edit manually.");
-                                                            }
-                                                        }}
-                                                        disabled={isFavAdjusting}
-                                                        className="px-2.5 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0"
-                                                    >
-                                                        {isFavAdjusting ? <Activity size={14} className="animate-spin" /> : <Activity size={14} />} <span>{t.common.adjust}</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-
-                                return (
-                                    <button
-                                        key={i}
-                                        onClick={() => {
-                                            if (isFavEditMode) {
-                                                let editName = fav.name;
-                                                // Convert legacy || to *Title* for the edit input
-                                                if (fav.name.includes('||')) {
-                                                    const [title, ...rest] = fav.name.split('||');
-                                                    editName = `*${title.trim()}* ${rest.join(' ').trim()}`;
-                                                }
-                                                setEditingFav({ originalName: fav.name, ...fav, name: editName });
-                                            } else {
-                                                addEntry({
-                                                    name: fav.name,
-                                                    kcal: fav.kcal,
-                                                    protein: fav.protein,
-                                                    carbs: fav.carbs,
-                                                    fat: fav.fat,
-                                                    requiresReview: false
-                                                });
-                                                setShowFavorites(false);
-                                                playSound('targetHit');
-                                            }
-                                        }}
-                                        className={`bg-white/80 backdrop-blur-md text-brutal-black px-4 py-3 rounded-2xl font-sans text-sm font-medium hover:bg-white transition-all flex items-center justify-between gap-2 w-full border border-black/5 shadow-sm
-                                            ${isFavEditMode ? 'animate-pulse bg-indigo-50/90 border-indigo-200 shadow-indigo-200 group' : 'active:scale-[0.98]'}`}
-                                    >
-                                        <div className="flex items-center gap-1.5 truncate min-w-0 pr-1">
-                                            {isFavEditMode ? (
-                                                <Edit2 size={14} className="text-indigo-500 shrink-0 group-hover:scale-110 transition-transform" />
-                                            ) : (
-                                                <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
-                                            )}
-                                            <span className="font-bold truncate">
-                                                {(() => {
-                                                    const starMatch = fav.name.match(/^\*([^*]+)\*/);
-                                                    if (starMatch) return starMatch[1];
-                                                    if (fav.name.includes('||')) return fav.name.split('||')[0].trim();
-                                                    return fav.name;
-                                                })()}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                            <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
-                                                {fav.kcal} kcal
-                                            </span>
-                                            <span className="text-[9px] font-bold uppercase opacity-60 bg-black/5 px-1.5 py-0.5 rounded">
-                                                {fav.protein}g prot
-                                            </span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {showRecent && <MealPicker mode="recent" onClose={closeRecent} />}
+            {showFavorites && <MealPicker mode="favorites" onClose={closeFavorites} />}
 
             {telemetryError && (
                 <div className="absolute bottom-[110%] w-full z-50 bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-600 p-3 rounded-2xl text-xs font-bold font-mono animate-in fade-in slide-in-from-bottom-2 flex items-center gap-2 mb-2 shadow-sm">
@@ -733,11 +555,14 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
                         </button>
 
                         {/* Favorites Toggle */}
-                        {favorites && favorites.length > 0 && (
+                        {(
                             <button
                                 onClick={() => { setShowRecent(false); setShowFavorites(!showFavorites); }}
                                 className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                 title={t.smartLogging.favorites}
+                                aria-label={t.smartLogging.favorites}
+                                aria-expanded={showFavorites}
+                                aria-controls="favorites-meals"
                             >
                                 <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
                             </button>
@@ -745,8 +570,6 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
                         <button
                             onClick={() => {
                                 setShowFavorites(false);
-                                setIsFavEditMode(false);
-                                setEditingFav(null);
                                 setShowRecent(!showRecent);
                             }}
                             className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showRecent ? 'text-indigo-600 bg-indigo-50' : 'text-brutal-black/50 hover:text-indigo-600 hover:bg-black/5'}`}
