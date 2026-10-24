@@ -56,11 +56,11 @@ export default function MealPickerCard({ entry, mode, expanded, pending, isFavor
             {mode === 'recent' ? <Star size={20} /> : <Trash2 size={20} />}
         </div>}
         <div className="relative bg-white transition-transform duration-150 motion-reduce:transition-none" style={{ transform: `translateX(${offset}px)` }}>
-            <div className="flex items-center gap-1 p-2">
+            <div className="flex items-center gap-1 p-1">
                 <button type="button" disabled={busy} aria-expanded={expanded}
                     aria-label={`${t.smartLogging.mealDetails}: ${title}`}
                     style={{ touchAction: 'pan-y' }}
-                    className="flex-1 min-w-0 text-left p-1.5 rounded-xl focus-visible:outline-indigo-500 select-none"
+                    className="flex-1 min-w-0 text-left px-2 py-1 rounded-xl focus-visible:outline-indigo-500 select-none"
                     onPointerDown={event => {
                         if (event.button !== 0 || !event.isPrimary) return;
                         gesture.current = { x: event.clientX, y: event.clientY, axis: null };
@@ -96,31 +96,35 @@ export default function MealPickerCard({ entry, mode, expanded, pending, isFavor
                     </div>
                 </button>
                 <button type="button" disabled={busy || dirty} onClick={onAdd} aria-label={`${t.smartLogging.addRecentToday}: ${title}`}
-                    className="shrink-0 w-11 h-11 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center disabled:opacity-40">
+                    className="shrink-0 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center disabled:opacity-40">
                     <Plus size={20} />
                 </button>
             </div>
-            {expanded && <div className="px-3 pb-3 border-t border-black/5 pt-3">
-                {details && <p className="text-xs leading-relaxed whitespace-pre-wrap break-words mb-3">{details}</p>}
-                <dl className="grid grid-cols-2 gap-2 text-xs mb-3">
-                    {fields.map(key => <div key={key} className="bg-black/[0.03] rounded-xl p-2"><dt className="opacity-60">{t.common[key]}</dt><dd className="font-bold mt-1">{entry[key]} {key === 'kcal' ? 'kcal' : 'g'}</dd></div>)}
-                </dl>
+            {expanded && <div className="px-3 pb-2 border-t border-black/5 pt-2">
+                {mode === 'recent' && details && <p className="text-xs leading-snug whitespace-pre-wrap break-words mb-2">{details}</p>}
+                {mode === 'recent' && <dl className="grid grid-cols-3 gap-2 text-xs mb-2">
+                    {fields.filter(key => key !== 'kcal').map(key => <div key={key} className="min-w-0"><dt title={t.common[key]} className="opacity-60 text-[10px] truncate">{t.common[key]}</dt><dd className="font-bold">{entry[key]} g</dd></div>)}
+                </dl>}
                 {mode === 'favorites' && <form onSubmit={event => { event.preventDefault(); if (valid && dirty && !busy) onSave({ ...draft, name: draft.name.trim() }); }}>
                     <fieldset disabled={busy} className="space-y-2">
                         <label className="block text-xs">{t.smartLogging.mealDescription}
-                            <textarea required value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })}
-                                className="mt-1 block w-full rounded-xl bg-black/5 p-2 min-h-20 text-sm" />
+                            <textarea required rows={2} value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })}
+                                className="mt-1 block w-full rounded-lg bg-black/5 px-2 py-1.5 text-sm leading-snug resize-y" />
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {fields.map(key => <label key={key} className="text-xs">{t.common[key]}
+                        <div className="grid grid-cols-4 gap-1.5">
+                            {fields.map(key => <label key={key} className="min-w-0 text-[10px]"><span title={t.common[key]} className="block truncate">{t.common[key]}</span>
                                 <input required min="0" step="any" type="number" value={Number.isNaN(draft[key]) ? '' : draft[key]}
                                     onChange={event => setDraft({ ...draft, [key]: event.target.valueAsNumber })}
-                                    className="mt-1 block w-full min-w-0 rounded-xl bg-black/5 p-2 text-sm" />
+                                    className="mt-1 block w-full min-w-0 rounded-lg bg-black/5 px-1.5 py-1.5 text-sm" />
                             </label>)}
                         </div>
                         {duplicate && <p role="alert" className="text-xs text-red-600">{t.smartLogging.duplicateFavorite}</p>}
                         {adjustError && <p role="alert" className="text-xs text-red-600">{t.smartLogging.pickerError}</p>}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <button type="button" onClick={onFavorite} title={favoriteLabel} aria-label={favoriteLabel}
+                                className="w-9 h-9 flex items-center justify-center text-red-600 bg-red-50 rounded-xl">
+                                <Trash2 size={15} />
+                            </button>
                             <button type="button" disabled={!draft.name.trim()} onClick={() => void recalculate()} className="text-xs p-2 rounded-xl bg-indigo-50 text-indigo-600">{adjusting ? t.common.loading : t.common.recalculate}</button>
                             {dirty && <>
                                 <button type="button" onClick={() => setDraft(entry)} className="text-xs p-2 rounded-xl bg-black/5">{t.common.cancel}</button>
@@ -129,10 +133,10 @@ export default function MealPickerCard({ entry, mode, expanded, pending, isFavor
                         </div>
                     </fieldset>
                 </form>}
-                <button type="button" disabled={busy} onClick={onFavorite}
-                    className={`flex items-center gap-2 mt-3 p-2 rounded-xl text-xs disabled:opacity-40 ${isFavorite ? 'text-red-600 bg-red-50' : 'text-amber-700 bg-amber-50'}`}>
+                {mode === 'recent' && <button type="button" disabled={busy} onClick={onFavorite}
+                    className={`flex items-center gap-2 mt-1 px-2 py-1.5 min-h-9 rounded-xl text-xs disabled:opacity-40 ${isFavorite ? 'text-red-600 bg-red-50' : 'text-amber-700 bg-amber-50'}`}>
                     {isFavorite ? <Trash2 size={15} /> : <Star size={15} />}{favoriteLabel}
-                </button>
+                </button>}
             </div>}
         </div>
     </article>;

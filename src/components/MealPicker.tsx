@@ -102,9 +102,9 @@ export default function MealPicker({ mode, onClose }: { mode: 'recent' | 'favori
     return <>
         <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-xl" onClick={onClose} />
         <section id={panelId} aria-labelledby={`${panelId}-title`} aria-busy={pending}
-            className="relative z-40 w-full max-w-sm mx-auto px-2 pb-4 mb-2">
-            <div className="bg-white/90 backdrop-blur-2xl border border-white/50 rounded-3xl shadow-2xl p-4">
-                <div className="flex items-center justify-between gap-2 mb-2">
+            className="relative z-40 w-full max-w-sm mx-auto px-1 pb-2 mb-1">
+            <div className="bg-white/90 backdrop-blur-2xl border border-white/50 rounded-3xl shadow-2xl p-2.5">
+                <div className="flex items-center justify-between gap-2 mb-1">
                     <h3 id={`${panelId}-title`} className="flex items-center gap-2 font-bold text-sm">
                         {mode === 'recent' ? <History size={17} className="text-indigo-600" /> : <Star size={17} className="text-amber-500" />}
                         {mode === 'recent' ? t.smartLogging.recent : t.smartLogging.favoritesTitle}
@@ -114,13 +114,13 @@ export default function MealPicker({ mode, onClose }: { mode: 'recent' | 'favori
                         <X size={18} />
                     </button>
                 </div>
-                <p className="text-[11px] opacity-60 mb-3">{mode === 'recent' ? t.smartLogging.recentHint : t.smartLogging.favoritesHint}</p>
+                <p className="text-[11px] opacity-60 mb-2 leading-tight">{mode === 'recent' ? t.smartLogging.recentHint : t.smartLogging.favoritesHint}</p>
                 {error && <p role="alert" className="text-sm text-red-600 mb-2">{t.smartLogging.pickerError}</p>}
                 {removed && <div role="status" className="flex items-center justify-between gap-2 text-xs bg-amber-50 p-2 rounded-xl mb-2">
                     <span>{t.smartLogging.favoriteRemoved}</span>
                     <button disabled={pending} className="font-bold p-2 text-indigo-600" onClick={() => void changeFavorite(removed, false)}>{t.smartLogging.undo}</button>
                 </div>}
-                <div className="flex flex-col gap-2 max-h-[45vh] overflow-y-auto overscroll-contain custom-scrollbar">
+                <div className="flex flex-col gap-1.5 max-h-[45vh] overflow-y-auto overscroll-contain custom-scrollbar">
                     {items.length === 0 && <p className="text-sm opacity-60 py-3">{mode === 'recent' ? t.smartLogging.recentEmpty : t.smartLogging.favEmpty}</p>}
                     {items.map(entry => {
                         const key = mode === 'recent' ? (entry as FoodEntry).id : entry.name;
