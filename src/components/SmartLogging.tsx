@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, X, Activity, LayoutGrid, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
+import { Camera, Send, X, Activity, LayoutGrid, History, Star, Edit2, Trash2, Mic, Image as ImageIcon } from 'lucide-react';
 import BatchUpload from './BatchUpload';
+import RecentMeals from './RecentMeals';
 import gsap from 'gsap';
 import { useStore } from '../store/useStore';
 import { playSound } from '../utils/audio';
@@ -17,6 +18,8 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const [showFavorites, setShowFavorites] = useState(false);
+    const [showRecent, setShowRecent] = useState(false);
+    const closeRecent = useCallback(() => setShowRecent(false), []);
     const [isFavEditMode, setIsFavEditMode] = useState(false);
     const [editingFav, setEditingFav] = useState<any>(null);
     const [isFavAdjusting, setIsFavAdjusting] = useState(false);
@@ -501,6 +504,8 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
                 </div>
             )}
 
+            {showRecent && <RecentMeals onClose={closeRecent} />}
+
             {/* Frosted Glass Backdrop */}
             {showFavorites && favorites && favorites.length > 0 && (
                 <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-xl" onClick={() => { setShowFavorites(false); setIsFavEditMode(false); setEditingFav(null); }} />
@@ -730,13 +735,28 @@ const SmartLogging = (_props: SmartLoggingProps = {}) => {
                         {/* Favorites Toggle */}
                         {favorites && favorites.length > 0 && (
                             <button
-                                onClick={() => setShowFavorites(!showFavorites)}
+                                onClick={() => { setShowRecent(false); setShowFavorites(!showFavorites); }}
                                 className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showFavorites ? 'text-amber-500 bg-amber-50' : 'text-amber-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                 title={t.smartLogging.favorites}
                             >
                                 <Star size={19} strokeWidth={2} fill={showFavorites ? 'currentColor' : 'none'} />
                             </button>
                         )}
+                        <button
+                            onClick={() => {
+                                setShowFavorites(false);
+                                setIsFavEditMode(false);
+                                setEditingFav(null);
+                                setShowRecent(!showRecent);
+                            }}
+                            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${showRecent ? 'text-indigo-600 bg-indigo-50' : 'text-brutal-black/50 hover:text-indigo-600 hover:bg-black/5'}`}
+                            title={t.smartLogging.recent}
+                            aria-label={t.smartLogging.recent}
+                            aria-expanded={showRecent}
+                            aria-controls="recent-meals"
+                        >
+                            <History size={19} strokeWidth={2} />
+                        </button>
                     </div>
 
                     {/* Selected Image Thumbnail */}

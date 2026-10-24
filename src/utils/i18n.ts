@@ -133,6 +133,10 @@ export interface Translations {
         voiceDictation: string;
         voiceListening: string;
         favorites: string;
+        recent: string;
+        recentEmpty: string;
+        addRecentToday: string;
+        recentError: string;
         viewProgress: string;
         analyzingImage: string;
         retrying: string;
@@ -330,6 +334,10 @@ export const translations: Record<Language, Translations> = {
             voiceDictation: 'Voice Dictation',
             voiceListening: 'Listening...',
             favorites: 'Toggle Favorites',
+            recent: 'Recent meals',
+            recentEmpty: 'No meals logged yet. Your meals will appear here.',
+            addRecentToday: 'Add to today',
+            recentError: 'Could not save the meal. Please try again.',
             viewProgress: 'View Deficit & Progress',
             analyzingImage: 'Analyzing image...',
             retrying: 'Retrying...',
@@ -525,6 +533,10 @@ export const translations: Record<Language, Translations> = {
             voiceDictation: 'Hlasový záznam',
             voiceListening: 'Poslouchám...',
             favorites: 'Oblíbené',
+            recent: 'Historie jídel',
+            recentEmpty: 'Zatím nemáte zapsaná žádná jídla. Zde se objeví vaše historie.',
+            addRecentToday: 'Přidat do dneška',
+            recentError: 'Jídlo se nepodařilo uložit. Zkuste to znovu.',
             viewProgress: 'Zobrazit deficit a pokrok',
             analyzingImage: 'Analyzuji fotku...',
             retrying: 'Opakuji pokus...',
@@ -720,6 +732,10 @@ export const translations: Record<Language, Translations> = {
             voiceDictation: 'Spracheingabe',
             voiceListening: 'Höre zu...',
             favorites: 'Favoriten umschalten',
+            recent: 'Letzte Mahlzeiten',
+            recentEmpty: 'Noch keine Mahlzeiten erfasst. Hier erscheint dein Verlauf.',
+            addRecentToday: 'Zu heute hinzufügen',
+            recentError: 'Die Mahlzeit konnte nicht gespeichert werden. Bitte erneut versuchen.',
             viewProgress: 'Defizit & Fortschritt anzeigen',
             analyzingImage: 'Foto wird analysiert...',
             retrying: 'Wiederhole Versuch...',
